@@ -158,7 +158,14 @@ export function calculateApplicationProfit(
   let unrealizedYourProfit = 0
   let hasUnrealized = false
 
-  const totalAllottedShares = application.allottedShares || 0
+  const totalAllottedShares =
+    application.allottedShares !== undefined && application.allottedShares > 0
+      ? application.allottedShares
+      : application.allottedLots !== undefined && application.allottedLots > 0
+        ? application.allottedLots * ipo.lotSize
+        : application.status === "allotted" || application.status === "sold"
+          ? application.sharesApplied || (application.lotsApplied || 1) * ipo.lotSize
+          : 0
   const sharesSold = application.sharesSold || 0
   const unsoldShares = Math.max(0, totalAllottedShares - sharesSold)
 

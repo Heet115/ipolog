@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import {
   Check,
   CheckCircle2,
@@ -11,6 +11,10 @@ import {
   PartyPopper,
   RotateCcw,
   Landmark,
+  Search,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react"
 import {
   Dialog,
@@ -20,6 +24,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,7 +91,7 @@ export function BulkAllotmentDialog({
 }: BulkAllotmentDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-2xl md:max-w-3xl lg:max-w-4xl">
+      <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[88svh] overflow-y-auto">
         {open && (
           <BulkAllotmentForm
             key={ipo.id}
@@ -117,8 +129,14 @@ function BulkAllotmentForm({
   onClose: () => void
   onSuccess: () => void
 }) {
-  const accountMap = new Map(accounts.map((a) => [a.id, a]))
-  const bankMap = new Map(bankAccounts.map((b) => [b.id, b]))
+  const accountMap = useMemo(
+    () => new Map(accounts.map((a) => [a.id, a])),
+    [accounts]
+  )
+  const bankMap = useMemo(
+    () => new Map(bankAccounts.map((b) => [b.id, b])),
+    [bankAccounts]
+  )
 
   // Local state for each application's allotment status and lots
   const [rowStates, setRowStates] = useState<Record<string, RowState>>(() => {
@@ -139,9 +157,27 @@ function BulkAllotmentForm({
     return init
   })
 
+  const [search, setSearch] = useState("")
+  const [sortColumn, setSortColumn] = useState<
+    "account" | "bank" | "applied" | "status" | "invested" | null
+  >(null)
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [loading, setLoading] = useState(false)
   const [confirmResetOpen, setConfirmResetOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const toggleSort = (
+    col: "account" | "bank" | "applied" | "status" | "invested"
+  ) => {
+    if (sortColumn !== col) {
+      setSortColumn(col)
+      setSortDirection("asc")
+    } else if (sortDirection === "asc") {
+      setSortDirection("desc")
+    } else {
+      setSortColumn(null)
+    }
+  }
 
   const setStatus = (appId: string, status: ApplicationStatus) => {
     setRowStates((prev) => {
@@ -226,6 +262,69 @@ function BulkAllotmentForm({
     })
   }
 
+  // Filter & Sort Applications
+  const filteredApps = useMemo(() => {
+    return applications.filter((app) => {
+      if (!search.trim()) return true
+      const q = search.toLowerCase()
+      const acc = accountMap.get(app.accountId)?.name?.toLowerCase() || ""
+      const bank = bankMap.get(app.bankAccountId)
+      const bName = bank?.bankName?.toLowerCase() || ""
+      const bNick = bank?.nickname?.toLowerCase() || ""
+      return acc.includes(q) || bName.includes(q) || bNick.includes(q)
+    })
+  }, [applications, search, accountMap, bankMap])
+
+  const sortedApps = useMemo(() => {
+    if (!sortColumn) return filteredApps
+
+    const list = [...filteredApps]
+    list.sort((appA, appB) => {
+      const accA = accountMap.get(appA.accountId)
+      const accB = accountMap.get(appB.accountId)
+      const bankA = bankMap.get(appA.bankAccountId)
+      const bankB = bankMap.get(appB.bankAccountId)
+      const stateA = rowStates[appA.id] || {
+        status: appA.status,
+        allottedLots: appA.lotsApplied,
+      }
+      const stateB = rowStates[appB.id] || {
+        status: appB.status,
+        allottedLots: appB.lotsApplied,
+      }
+
+      let res = 0
+      if (sortColumn === "account") {
+        res = (accA?.name || "").localeCompare(accB?.name || "")
+      } else if (sortColumn === "bank") {
+        res = (bankA?.bankName || "").localeCompare(bankB?.bankName || "")
+      } else if (sortColumn === "applied") {
+        res = appA.amountApplied - appB.amountApplied
+      } else if (sortColumn === "status") {
+        const order: Record<string, number> = {
+          allotted: 1,
+          sold: 2,
+          pending: 3,
+          not_allotted: 4,
+        }
+        res = (order[stateA.status] || 9) - (order[stateB.status] || 9)
+      } else if (sortColumn === "invested") {
+        const invA =
+          stateA.status === "allotted" || stateA.status === "sold"
+            ? stateA.allottedLots * ipo.lotSize * ipo.issuePrice
+            : 0
+        const invB =
+          stateB.status === "allotted" || stateB.status === "sold"
+            ? stateB.allottedLots * ipo.lotSize * ipo.issuePrice
+            : 0
+        res = invA - invB
+      }
+
+      return sortDirection === "asc" ? res : -res
+    })
+    return list
+  }, [filteredApps, sortColumn, sortDirection, accountMap, bankMap, rowStates, ipo.lotSize, ipo.issuePrice])
+
   // Calculate live summary stats
   let allottedCount = 0
   let notAllottedCount = 0
@@ -258,7 +357,9 @@ function BulkAllotmentForm({
 
   const totalDecided = allottedCount + soldCount + notAllottedCount
   const successRate =
-    totalDecided > 0 ? ((allottedCount + soldCount) / totalDecided) * 100 : 0
+    totalDecided > 0
+      ? ((allottedCount + soldCount) / totalDecided) * 100
+      : 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -304,18 +405,18 @@ function BulkAllotmentForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <DialogHeader className="pb-1">
-        <div className="flex items-center justify-between">
-          <DialogTitle>Update Allotment — {ipo.name}</DialogTitle>
-          <Badge variant="outline" className="text-xs uppercase">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <DialogTitle className="truncate max-w-md">
+            Update Allotment — {ipo.name}
+          </DialogTitle>
+          <Badge variant="outline" className="text-xs uppercase font-mono">
             {ipo.lotSize} sh/lot • {formatCurrency(ipo.issuePrice)}
           </Badge>
         </div>
         <DialogDescription>
-          Record allotment results across all {applications.length} accounts.
-          Allotted shares convert to invested funds; unallotted funds are marked
-          for refund.
+          Record allotment results across all {applications.length} accounts. Allotted shares convert to invested funds; unallotted funds are marked for refund.
         </DialogDescription>
       </DialogHeader>
 
@@ -326,12 +427,11 @@ function BulkAllotmentForm({
       )}
 
       {/* Live Allotment Overview Card */}
-      <div className="flex flex-col gap-3 rounded-none border bg-muted/30 p-3.5">
+      <div className="rounded-none border bg-muted/30 p-3.5 flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1 font-semibold text-success">
-              <CheckCircle2 className="size-3.5" /> {allottedCount + soldCount}{" "}
-              Allotted
+              <CheckCircle2 className="size-3.5" /> {allottedCount + soldCount} Allotted
             </span>
             <span className="flex items-center gap-1 font-semibold text-destructive">
               <XCircle className="size-3.5" /> {notAllottedCount} Not Allotted
@@ -341,18 +441,12 @@ function BulkAllotmentForm({
             </span>
           </div>
 
-          <div className="flex items-center gap-3 text-right">
+          <div className="flex items-center gap-3 text-right font-mono">
             <span className="text-xs text-muted-foreground">
-              Invested:{" "}
-              <strong className="text-foreground">
-                {formatCurrency(totalInvested)}
-              </strong>
+              Invested: <strong className="text-foreground">{formatCurrency(totalInvested)}</strong>
             </span>
             <span className="text-xs text-muted-foreground">
-              Refunds:{" "}
-              <strong className="text-warning-foreground">
-                {formatCurrency(totalRefund)}
-              </strong>
+              Refunds: <strong className="text-warning-foreground">{formatCurrency(totalRefund)}</strong>
             </span>
           </div>
         </div>
@@ -362,226 +456,342 @@ function BulkAllotmentForm({
           <div className="flex flex-col gap-1">
             <div className="flex justify-between text-[11px] text-muted-foreground">
               <span>Allotment Rate</span>
-              <span className="font-semibold text-foreground">
-                {successRate.toFixed(0)}% Success
-              </span>
+              <span className="font-semibold text-foreground font-mono">{successRate.toFixed(0)}% Success</span>
             </div>
             <Progress value={successRate} className="h-1.5 w-full bg-muted" />
           </div>
         )}
 
-        {/* 1-Click Fast Presets */}
-        <div className="flex flex-wrap items-center gap-2 border-t border-border/50 pt-2.5">
-          <span className="mr-1 text-[11px] font-medium text-muted-foreground">
-            Quick Actions:
-          </span>
-          <Button
-            type="button"
-            variant="outline"
-            size="xs"
-            onClick={handleAllAllotted}
-            className="text-xs"
-          >
-            <PartyPopper data-icon="inline-start" />
-            All Allotted
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="xs"
-            onClick={handleAllNotAllotted}
-            className="text-xs"
-          >
-            <XCircle data-icon="inline-start" />
-            All Not Allotted
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="xs"
-            onClick={() => setConfirmResetOpen(true)}
-            className="text-xs"
-          >
-            <RotateCcw data-icon="inline-start" />
-            Reset All
-          </Button>
+        {/* Quick Action Presets + Search */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-2.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-medium text-muted-foreground mr-1">
+              Quick Actions:
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={handleAllAllotted}
+              className="text-xs h-7"
+            >
+              <PartyPopper data-icon="inline-start" />
+              All Allotted
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={handleAllNotAllotted}
+              className="text-xs h-7"
+            >
+              <XCircle data-icon="inline-start" />
+              All Not Allotted
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              onClick={() => setConfirmResetOpen(true)}
+              className="text-xs h-7"
+            >
+              <RotateCcw data-icon="inline-start" />
+              Reset All
+            </Button>
+          </div>
+
+          {/* Quick Search */}
+          <div className="relative w-full sm:w-48">
+            <Search className="absolute top-1/2 left-2 size-3 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Filter accounts..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-7 pl-7 text-xs bg-background"
+            />
+          </div>
         </div>
       </div>
 
-      {/* Account Allotment Cards List */}
-      <div className="flex max-h-[380px] flex-col gap-2.5 overflow-y-auto pr-1">
-        {applications.map((app) => {
-          const account = accountMap.get(app.accountId)
-          const bank = bankMap.get(app.bankAccountId)
-          const state = rowStates[app.id] || {
-            status: app.status,
-            allottedLots: app.allottedLots ?? app.lotsApplied,
-          }
+      {/* Sortable Allotment Table */}
+      <div className="max-h-[340px] min-w-0 overflow-x-auto overflow-y-auto rounded-none border border-border/80">
+        <Table className="min-w-[650px]">
+          <TableHeader>
+            <TableRow className="bg-muted/30 border-b border-border/70">
+              <TableHead className="min-w-[170px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("account")}
+                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                >
+                  Account
+                  {sortColumn === "account" ? (
+                    sortDirection === "asc" ? (
+                      <ArrowUp className="size-3 text-foreground" />
+                    ) : (
+                      <ArrowDown className="size-3 text-foreground" />
+                    )
+                  ) : (
+                    <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
+                  )}
+                </button>
+              </TableHead>
 
-          const isSold = app.status === "sold"
-          const isAllotted = state.status === "allotted"
-          const isNotAllotted = state.status === "not_allotted"
-          const isPending = state.status === "pending"
+              <TableHead className="min-w-[150px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("bank")}
+                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                >
+                  Bank
+                  {sortColumn === "bank" ? (
+                    sortDirection === "asc" ? (
+                      <ArrowUp className="size-3 text-foreground" />
+                    ) : (
+                      <ArrowDown className="size-3 text-foreground" />
+                    )
+                  ) : (
+                    <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
+                  )}
+                </button>
+              </TableHead>
 
-          const currentInvested = isAllotted
-            ? state.allottedLots * ipo.lotSize * ipo.issuePrice
-            : 0
+              <TableHead className="text-right min-w-[110px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("applied")}
+                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors ml-auto flex-row-reverse"
+                >
+                  Applied
+                  {sortColumn === "applied" ? (
+                    sortDirection === "asc" ? (
+                      <ArrowUp className="size-3 text-foreground" />
+                    ) : (
+                      <ArrowDown className="size-3 text-foreground" />
+                    )
+                  ) : (
+                    <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
+                  )}
+                </button>
+              </TableHead>
 
-          return (
-            <div
-              key={app.id}
-              className={`flex flex-col gap-2.5 rounded-none border p-3 transition-all ${
-                isAllotted
-                  ? "border-success/30 bg-success/5"
-                  : isNotAllotted
-                    ? "border-muted bg-muted/20 opacity-80"
-                    : "border-border bg-card"
-              }`}
-            >
-              <div className="flex min-w-0 flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-                {/* Account & Bank Details */}
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                    <span
-                      className="block max-w-[200px] truncate text-xs font-bold text-foreground sm:max-w-xs"
-                      title={account?.name || "Account"}
-                    >
-                      {account?.name || "Account"}
-                    </span>
-                    <Badge
-                      variant={account?.type === "my" ? "secondary" : "default"}
-                      className="shrink-0 px-1 py-0 text-[9px] font-normal"
-                    >
-                      {account?.type === "my"
-                        ? "My"
-                        : `${account?.profitSharePercent}%`}
-                    </Badge>
-                    {bank && (
-                      <span className="flex max-w-[180px] items-center gap-1 truncate text-[11px] text-muted-foreground">
-                        <Landmark className="size-3 shrink-0" />{" "}
-                        {formatBankAccount(bank)}
+              <TableHead className="min-w-[220px] text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("status")}
+                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors mx-auto"
+                >
+                  Allotment Decision
+                  {sortColumn === "status" ? (
+                    sortDirection === "asc" ? (
+                      <ArrowUp className="size-3 text-foreground" />
+                    ) : (
+                      <ArrowDown className="size-3 text-foreground" />
+                    )
+                  ) : (
+                    <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
+                  )}
+                </button>
+              </TableHead>
+
+              <TableHead className="text-right min-w-[130px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("invested")}
+                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors ml-auto flex-row-reverse"
+                >
+                  Invested / Lots
+                  {sortColumn === "invested" ? (
+                    sortDirection === "asc" ? (
+                      <ArrowUp className="size-3 text-foreground" />
+                    ) : (
+                      <ArrowDown className="size-3 text-foreground" />
+                    )
+                  ) : (
+                    <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
+                  )}
+                </button>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {sortedApps.map((app) => {
+              const account = accountMap.get(app.accountId)
+              const bank = bankMap.get(app.bankAccountId)
+              const state = rowStates[app.id] || {
+                status: app.status,
+                allottedLots: app.allottedLots ?? app.lotsApplied,
+              }
+
+              const isSold = app.status === "sold"
+              const isAllotted = state.status === "allotted"
+              const isNotAllotted = state.status === "not_allotted"
+              const isPending = state.status === "pending"
+
+              const currentInvested = isAllotted
+                ? state.allottedLots * ipo.lotSize * ipo.issuePrice
+                : 0
+
+              return (
+                <TableRow
+                  key={app.id}
+                  className={`transition-colors ${
+                    isAllotted
+                      ? "bg-success/5 hover:bg-success/10"
+                      : isNotAllotted
+                        ? "bg-muted/15 opacity-75 hover:bg-muted/25"
+                        : "hover:bg-muted/30"
+                  }`}
+                >
+                  {/* Account Name */}
+                  <TableCell className="text-xs font-medium">
+                    <div className="flex max-w-[200px] min-w-0 items-center gap-1.5">
+                      <span
+                        className="block truncate font-semibold text-foreground"
+                        title={account?.name || "Account"}
+                      >
+                        {account?.name || "Account"}
                       </span>
-                    )}
-                  </div>
-                  <span className="font-mono text-[11px] text-muted-foreground">
-                    Applied: {app.lotsApplied} lots ({app.sharesApplied} sh /{" "}
-                    {formatCurrency(app.amountApplied)})
-                  </span>
-                </div>
-
-                {/* 3-Way Status Selector */}
-                {isSold ? (
-                  <Badge variant="info" className="text-xs">
-                    Sold ({app.sharesSold} shares)
-                  </Badge>
-                ) : (
-                  <div className="flex items-center rounded-none border bg-muted/50 p-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setStatus(app.id, "allotted")}
-                      className={`px-2.5 py-1 text-xs font-semibold transition-all ${
-                        isAllotted
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <Check className="mr-1 inline size-3" />
-                      Allotted
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setStatus(app.id, "not_allotted")}
-                      className={`px-2.5 py-1 text-xs font-semibold transition-all ${
-                        isNotAllotted
-                          ? "text-destructive-foreground bg-destructive"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <XCircle className="mr-1 inline size-3" />
-                      Not Allotted
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setStatus(app.id, "pending")}
-                      className={`px-2.5 py-1 text-xs font-semibold transition-all ${
-                        isPending
-                          ? "border bg-background text-foreground"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Pending
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Allotment Adjuster for Allotted Status */}
-              {isAllotted && (
-                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-muted-foreground">
-                      Allotted Lots:
-                    </span>
-                    <div className="flex items-center rounded-none border bg-background">
-                      <button
-                        type="button"
-                        disabled={state.allottedLots <= 1}
-                        onClick={() =>
-                          setAllottedLots(app.id, state.allottedLots - 1)
-                        }
-                        className="px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                      <Badge
+                        variant={account?.type === "my" ? "secondary" : "default"}
+                        className="shrink-0 px-1 py-0 text-[9px] font-normal"
                       >
-                        <Minus className="size-3" />
-                      </button>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={app.lotsApplied}
-                        value={state.allottedLots}
-                        onChange={(e) =>
-                          setAllottedLots(
-                            app.id,
-                            parseInt(e.target.value, 10) || 1
-                          )
-                        }
-                        className="h-7 w-12 [appearance:textfield] border-0 p-0 text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                      />
-                      <button
-                        type="button"
-                        disabled={state.allottedLots >= app.lotsApplied}
-                        onClick={() =>
-                          setAllottedLots(app.id, state.allottedLots + 1)
-                        }
-                        className="px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
-                      >
-                        <Plus className="size-3" />
-                      </button>
+                        {account?.type === "my"
+                          ? "My"
+                          : `${account?.profitSharePercent}%`}
+                      </Badge>
                     </div>
-                    <span className="text-[11px] text-muted-foreground">
-                      ={" "}
-                      <strong>{state.allottedLots * ipo.lotSize} shares</strong>
-                    </span>
-                  </div>
+                  </TableCell>
 
-                  <div className="text-right">
-                    <span className="text-xs font-bold text-success">
-                      Invested: {formatCurrency(currentInvested)}
-                    </span>
-                    {app.amountApplied > currentInvested && (
-                      <span className="block text-[10px] font-medium text-warning-foreground">
-                        Refund:{" "}
-                        {formatCurrency(app.amountApplied - currentInvested)}
-                      </span>
+                  {/* Bank Account */}
+                  <TableCell className="text-xs text-muted-foreground">
+                    {bank ? (
+                      <div className="flex items-center gap-1 truncate max-w-[150px]" title={formatBankAccount(bank)}>
+                        <Landmark className="size-3 shrink-0" />
+                        <span className="truncate">{formatBankAccount(bank)}</span>
+                      </div>
+                    ) : (
+                      "—"
                     )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )
-        })}
+                  </TableCell>
+
+                  {/* Applied Amount */}
+                  <TableCell className="text-right text-xs font-mono">
+                    <span className="font-semibold text-foreground block">
+                      {formatCurrency(app.amountApplied)}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {app.lotsApplied} lots ({app.sharesApplied} sh)
+                    </span>
+                  </TableCell>
+
+                  {/* 3-Way Status Toggle */}
+                  <TableCell className="text-center">
+                    {isSold ? (
+                      <Badge variant="info" className="text-xs">
+                        Sold ({app.sharesSold} sh)
+                      </Badge>
+                    ) : (
+                      <div className="inline-flex items-center rounded-none border bg-muted/40 p-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setStatus(app.id, "allotted")}
+                          className={`px-2 py-0.5 text-xs font-semibold transition-all ${
+                            isAllotted
+                              ? "bg-primary text-primary-foreground"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <Check className="mr-1 inline size-3" />
+                          Allotted
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setStatus(app.id, "not_allotted")}
+                          className={`px-2 py-0.5 text-xs font-semibold transition-all ${
+                            isNotAllotted
+                              ? "text-destructive-foreground bg-destructive"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <XCircle className="mr-1 inline size-3" />
+                          Not Allotted
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setStatus(app.id, "pending")}
+                          className={`px-2 py-0.5 text-xs font-semibold transition-all ${
+                            isPending
+                              ? "border bg-background text-foreground"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Pending
+                        </button>
+                      </div>
+                    )}
+                  </TableCell>
+
+                  {/* Allotted Lots Stepper / Invested Calculation */}
+                  <TableCell className="text-right text-xs font-mono">
+                    {isAllotted ? (
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center rounded-none border bg-background">
+                          <button
+                            type="button"
+                            disabled={state.allottedLots <= 1}
+                            onClick={() =>
+                              setAllottedLots(app.id, state.allottedLots - 1)
+                            }
+                            className="px-1.5 py-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                          >
+                            <Minus className="size-2.5" />
+                          </button>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={app.lotsApplied}
+                            value={state.allottedLots}
+                            onChange={(e) =>
+                              setAllottedLots(
+                                app.id,
+                                parseInt(e.target.value, 10) || 1
+                              )
+                            }
+                            className="h-6 w-10 [appearance:textfield] border-0 p-0 text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          />
+                          <button
+                            type="button"
+                            disabled={state.allottedLots >= app.lotsApplied}
+                            onClick={() =>
+                              setAllottedLots(app.id, state.allottedLots + 1)
+                            }
+                            className="px-1.5 py-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                          >
+                            <Plus className="size-2.5" />
+                          </button>
+                        </div>
+                        <span className="font-bold text-success text-xs">
+                          {formatCurrency(currentInvested)}
+                        </span>
+                      </div>
+                    ) : isNotAllotted ? (
+                      <span className="text-[11px] text-muted-foreground">
+                        Refund: {formatCurrency(app.amountApplied)}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
       </div>
 
-      <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
+      <DialogFooter className="border-t pt-3 flex items-center justify-between sm:justify-end gap-2">
         <Button
           type="button"
           variant="outline"
@@ -598,13 +808,15 @@ function BulkAllotmentForm({
       </DialogFooter>
 
       {/* Reset All Confirmation Dialog */}
-      <AlertDialog open={confirmResetOpen} onOpenChange={setConfirmResetOpen}>
+      <AlertDialog
+        open={confirmResetOpen}
+        onOpenChange={setConfirmResetOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Reset all allotments?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to reset all accounts back to pending
-              status? Any customized allotment counts will be cleared.
+              Are you sure you want to reset all accounts back to pending status? Any customized allotment counts will be cleared.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

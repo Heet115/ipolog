@@ -250,7 +250,12 @@ function EditApplicationForm({
               onValueChange={(val) => val && setBankAccountId(val)}
             >
               <SelectTrigger className="h-8 w-full bg-background text-xs">
-                <SelectValue placeholder="Select bank" />
+                <SelectValue placeholder="Select bank">
+                  {(val) => {
+                    const b = activeBanks.find((acc) => acc.id === val)
+                    return b ? formatBankAccount(b) : "Select bank"
+                  }}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {activeBanks.map((b) => (
@@ -306,7 +311,17 @@ function EditApplicationForm({
                 }
               >
                 <SelectTrigger className="h-8 w-full bg-background text-xs">
-                  <SelectValue />
+                  <SelectValue>
+                    {(val) => {
+                      const labels: Record<string, string> = {
+                        pending: "Pending",
+                        allotted: "Allotted",
+                        not_allotted: "Not Allotted",
+                        sold: "Sold",
+                      }
+                      return val ? labels[val] || val : "Select status"
+                    }}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pending">Pending</SelectItem>

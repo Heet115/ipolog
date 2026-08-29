@@ -609,18 +609,6 @@ export default function IpoDetailPage() {
                   Total realized return
                 </span>
               </div>
-
-              <div className="flex flex-col gap-0.5 rounded-none border border-border/50 bg-muted/30 p-3">
-                <span className="block text-[10px] tracking-wider text-muted-foreground uppercase">
-                  Unrealized Gain (CMP)
-                </span>
-                <span className="font-mono text-lg font-bold text-foreground">
-                  {formatCurrency(profitSummary.totalUnrealizedYourProfit)}
-                </span>
-                <span className="block text-[10px] text-muted-foreground">
-                  On unsold shares
-                </span>
-              </div>
             </div>
           </CardContent>
         </Card>

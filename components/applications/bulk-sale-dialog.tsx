@@ -1,7 +1,14 @@
 "use client"
 
-import { useState } from "react"
-import { Check, Sparkles, TrendingUp } from "lucide-react"
+import { useState, useMemo } from "react"
+import {
+  Check,
+  Sparkles,
+  TrendingUp,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react"
 import { Timestamp } from "firebase/firestore"
 import {
   Dialog,
@@ -98,7 +105,10 @@ function BulkSaleForm({
   onCancel: () => void
   onSuccess: () => void
 }) {
-  const accountMap = new Map(accounts.map((a) => [a.id, a]))
+  const accountMap = useMemo(
+    () => new Map(accounts.map((a) => [a.id, a])),
+    [accounts]
+  )
 
   // Only allotted and partially sold applications
   const eligibleApps = applications.filter(
@@ -130,8 +140,21 @@ function BulkSaleForm({
     }
   )
 
+  const [sortColumn, setSortColumn] = useState<"account" | "shares" | "price" | "profit" | null>(null)
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const toggleSort = (col: "account" | "shares" | "price" | "profit") => {
+    if (sortColumn !== col) {
+      setSortColumn(col)
+      setSortDirection("asc")
+    } else if (sortDirection === "asc") {
+      setSortDirection("desc")
+    } else {
+      setSortColumn(null)
+    }
+  }
 
   const handleFillCmp = () => {
     const cmp = ipo.currentPrice || ipo.listingPrice
@@ -290,18 +313,71 @@ function BulkSaleForm({
     eligibleApps.length > 0 &&
     eligibleApps.every((a) => rowStates[a.id]?.selected)
 
+  const sortedEligibleApps = useMemo(() => {
+    if (!sortColumn) return eligibleApps
+
+    const list = [...eligibleApps]
+    list.sort((appA, appB) => {
+      const accA = accountMap.get(appA.accountId)
+      const accB = accountMap.get(appB.accountId)
+      const stateA = rowStates[appA.id] || {
+        selected: false,
+        salePrice: defaultPrice,
+        sharesSold: 0,
+      }
+      const stateB = rowStates[appB.id] || {
+        selected: false,
+        salePrice: defaultPrice,
+        sharesSold: 0,
+      }
+
+      let res = 0
+      if (sortColumn === "account") {
+        res = (accA?.name || "").localeCompare(accB?.name || "")
+      } else if (sortColumn === "shares") {
+        res = stateA.sharesSold - stateB.sharesSold
+      } else if (sortColumn === "price") {
+        res = stateA.salePrice - stateB.salePrice
+      } else if (sortColumn === "profit") {
+        const grossA = calculateRealizedGrossProfit(
+          stateA.sharesSold,
+          stateA.salePrice,
+          ipo.issuePrice
+        )
+        const yourA = calculateYourProfit(
+          grossA,
+          accA?.type === "my" ? 0 : (accA?.profitSharePercent ?? 40)
+        )
+        const grossB = calculateRealizedGrossProfit(
+          stateB.sharesSold,
+          stateB.salePrice,
+          ipo.issuePrice
+        )
+        const yourB = calculateYourProfit(
+          grossB,
+          accB?.type === "my" ? 0 : (accB?.profitSharePercent ?? 40)
+        )
+        res = yourA - yourB
+      }
+
+      return sortDirection === "asc" ? res : -res
+    })
+    return list
+  }, [eligibleApps, sortColumn, sortDirection, accountMap, rowStates, defaultPrice, ipo.issuePrice])
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <DialogHeader>
-        <div className="flex items-center justify-between">
-          <DialogTitle>Record Bulk Sale — {ipo.name}</DialogTitle>
-          <Badge variant="outline" className="text-xs">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <DialogTitle className="truncate max-w-md">
+            Bulk Exit / Sale — {ipo.name}
+          </DialogTitle>
+          <Badge variant="outline" className="text-xs font-mono">
             Issue: {formatCurrency(ipo.issuePrice)}
           </Badge>
         </div>
         <DialogDescription>
-          Record listing-day exit across multiple accounts simultaneously and
-          commit in a single transaction.
+          Record listing-day exit across multiple accounts simultaneously and commit in a single transaction.
         </DialogDescription>
       </DialogHeader>
 
@@ -312,7 +388,7 @@ function BulkSaleForm({
       )}
 
       {/* Global Sale Controls */}
-      <div className="grid grid-cols-1 gap-3 rounded-none border bg-muted/40 p-3 text-xs sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 rounded-none bg-muted/40 p-3 sm:grid-cols-2 text-xs border">
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
             <label className="text-[11px] font-semibold text-muted-foreground">
@@ -322,7 +398,7 @@ function BulkSaleForm({
               <button
                 type="button"
                 onClick={handleFillCmp}
-                className="flex items-center gap-1 text-[10px] font-medium text-primary hover:underline"
+                className="text-[10px] text-primary hover:underline flex items-center gap-1 font-medium"
               >
                 <Sparkles className="size-3" />
                 CMP: ₹{ipo.currentPrice || ipo.listingPrice}
@@ -364,10 +440,10 @@ function BulkSaleForm({
       </div>
 
       {/* Accounts Table */}
-      <div className="max-h-[300px] min-w-0 overflow-x-auto overflow-y-auto rounded-none border">
+      <div className="max-h-[300px] min-w-0 overflow-x-auto overflow-y-auto rounded-none border border-border/80">
         <Table className="min-w-[550px]">
           <TableHeader>
-            <TableRow className="bg-muted/30">
+            <TableRow className="bg-muted/30 border-b border-border/70">
               <TableHead className="w-10 text-center">
                 <Checkbox
                   checked={allSelected}
@@ -376,16 +452,82 @@ function BulkSaleForm({
                   }
                 />
               </TableHead>
-              <TableHead className="min-w-[160px] text-xs">Account</TableHead>
-              <TableHead className="w-[100px] text-xs">Shares Sold</TableHead>
-              <TableHead className="w-[110px] text-xs">
-                Sale Price (₹)
+              <TableHead className="min-w-[160px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("account")}
+                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                >
+                  Account
+                  {sortColumn === "account" ? (
+                    sortDirection === "asc" ? (
+                      <ArrowUp className="size-3 text-foreground" />
+                    ) : (
+                      <ArrowDown className="size-3 text-foreground" />
+                    )
+                  ) : (
+                    <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
+                  )}
+                </button>
               </TableHead>
-              <TableHead className="text-right text-xs">Profit (You)</TableHead>
+              <TableHead className="w-[100px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("shares")}
+                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                >
+                  Shares Sold
+                  {sortColumn === "shares" ? (
+                    sortDirection === "asc" ? (
+                      <ArrowUp className="size-3 text-foreground" />
+                    ) : (
+                      <ArrowDown className="size-3 text-foreground" />
+                    )
+                  ) : (
+                    <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
+                  )}
+                </button>
+              </TableHead>
+              <TableHead className="w-[110px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("price")}
+                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                >
+                  Sale Price (₹)
+                  {sortColumn === "price" ? (
+                    sortDirection === "asc" ? (
+                      <ArrowUp className="size-3 text-foreground" />
+                    ) : (
+                      <ArrowDown className="size-3 text-foreground" />
+                    )
+                  ) : (
+                    <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
+                  )}
+                </button>
+              </TableHead>
+              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                <button
+                  type="button"
+                  onClick={() => toggleSort("profit")}
+                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors ml-auto flex-row-reverse"
+                >
+                  Profit (You)
+                  {sortColumn === "profit" ? (
+                    sortDirection === "asc" ? (
+                      <ArrowUp className="size-3 text-foreground" />
+                    ) : (
+                      <ArrowDown className="size-3 text-foreground" />
+                    )
+                  ) : (
+                    <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
+                  )}
+                </button>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {eligibleApps.map((app) => {
+            {sortedEligibleApps.map((app) => {
               const account = accountMap.get(app.accountId)
               const state = rowStates[app.id] || {
                 selected: false,

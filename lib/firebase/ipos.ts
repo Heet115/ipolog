@@ -11,14 +11,14 @@ import {
   where,
   serverTimestamp,
   type DocumentData,
-  type QueryDocumentSnapshot,
+  type DocumentSnapshot,
   type Timestamp,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase/firebase"
 import type { Ipo, IpoType } from "@/types"
 
-function docToIpo(docSnap: QueryDocumentSnapshot<DocumentData>): Ipo {
-  const data = docSnap.data()
+function docToIpo(docSnap: DocumentSnapshot<DocumentData>): Ipo {
+  const data = docSnap.data() || {}
   return {
     id: docSnap.id,
     userId: data.userId,
@@ -77,26 +77,7 @@ export async function getIpoById(
     return null
   }
 
-  const data = snap.data()
-  return {
-    id: snap.id,
-    userId: data.userId,
-    name: data.name,
-    companyName: data.companyName || "",
-    type: (data.type as IpoType) || "mainboard",
-    issuePrice: Number(data.issuePrice) || 0,
-    priceBandMin: data.priceBandMin ? Number(data.priceBandMin) : undefined,
-    priceBandMax: data.priceBandMax ? Number(data.priceBandMax) : undefined,
-    lotSize: Number(data.lotSize) || 1,
-    openDate: data.openDate || undefined,
-    closeDate: data.closeDate || undefined,
-    allotmentDate: data.allotmentDate || undefined,
-    listingDate: data.listingDate || undefined,
-    notes: data.notes || "",
-    archived: Boolean(data.archived),
-    createdAt: data.createdAt,
-    updatedAt: data.updatedAt,
-  }
+  return docToIpo(snap)
 }
 
 /**

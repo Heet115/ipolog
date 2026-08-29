@@ -1,7 +1,16 @@
 "use client"
 
-import { useState } from "react"
-import { ArrowRight, ArrowLeft, Check, Plus, Minus } from "lucide-react"
+import { useState, useMemo } from "react"
+import {
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  Plus,
+  Minus,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -116,8 +125,21 @@ function BulkApplicationForm({
   const [accountConfigs, setAccountConfigs] = useState<
     Record<string, AccountConfig>
   >({})
+  const [sortColumn, setSortColumn] = useState<"account" | "bank" | "lots" | "amount" | null>(null)
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const toggleSort = (col: "account" | "bank" | "lots" | "amount") => {
+    if (sortColumn !== col) {
+      setSortColumn(col)
+      setSortDirection("asc")
+    } else if (sortDirection === "asc") {
+      setSortDirection("desc")
+    } else {
+      setSortColumn(null)
+    }
+  }
 
   const appliedAccountIds = new Set(
     existingApplications.map((a) => a.accountId)
@@ -359,14 +381,46 @@ function BulkApplicationForm({
   )
   const totalAmount = totalLots * ipo.lotSize * ipo.issuePrice
 
+  const sortedSelectedAccountIds = useMemo(() => {
+    if (!sortColumn) return selectedAccountIds
+
+    const list = [...selectedAccountIds]
+    list.sort((idA, idB) => {
+      const accA = accounts.find((a) => a.id === idA)
+      const accB = accounts.find((a) => a.id === idB)
+      const cfgA = accountConfigs[idA]
+      const cfgB = accountConfigs[idB]
+
+      let res = 0
+      if (sortColumn === "account") {
+        res = (accA?.name || "").localeCompare(accB?.name || "")
+      } else if (sortColumn === "bank") {
+        const bankA = bankAccounts.find((b) => b.id === (cfgA?.bankAccountId || defaultBankId))
+        const bankB = bankAccounts.find((b) => b.id === (cfgB?.bankAccountId || defaultBankId))
+        res = (bankA?.bankName || "").localeCompare(bankB?.bankName || "")
+      } else if (sortColumn === "lots") {
+        const lotsA = cfgA?.lots || defaultLots
+        const lotsB = cfgB?.lots || defaultLots
+        res = lotsA - lotsB
+      } else if (sortColumn === "amount") {
+        const lotsA = cfgA?.lots || defaultLots
+        const lotsB = cfgB?.lots || defaultLots
+        res = lotsA - lotsB
+      }
+
+      return sortDirection === "asc" ? res : -res
+    })
+    return list
+  }, [selectedAccountIds, sortColumn, sortDirection, accounts, accountConfigs, bankAccounts, defaultBankId, defaultLots])
+
   return (
     <div className="flex flex-col gap-4">
       <DialogHeader>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <DialogTitle className="max-w-md truncate">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <DialogTitle className="truncate max-w-md">
             Record Applications — {ipo.name}
           </DialogTitle>
-          <Badge variant="outline" className="font-mono text-xs">
+          <Badge variant="outline" className="text-xs font-mono">
             Step {step} of 2
           </Badge>
         </div>
@@ -587,7 +641,12 @@ function BulkApplicationForm({
                 onValueChange={(val) => val && applyGlobalBank(val)}
               >
                 <SelectTrigger className="h-8 w-full bg-background text-xs">
-                  <SelectValue placeholder="Select bank" />
+                  <SelectValue placeholder="Select bank">
+                    {(val) => {
+                      const b = activeBankAccounts.find((acc) => acc.id === val)
+                      return b ? formatBankAccount(b) : "Select bank"
+                    }}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {activeBankAccounts.map((b) => (
@@ -632,23 +691,89 @@ function BulkApplicationForm({
           </div>
 
           {/* Detailed Applications Table */}
-          <div className="max-h-[300px] min-w-0 overflow-x-auto overflow-y-auto rounded-none border">
+          <div className="max-h-[300px] min-w-0 overflow-x-auto overflow-y-auto rounded-none border border-border/80">
             <Table className="min-w-[600px]">
               <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead className="min-w-[180px] text-xs">
-                    Account
+                <TableRow className="bg-muted/30 border-b border-border/70">
+                  <TableHead className="min-w-[180px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("account")}
+                      className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                    >
+                      Account
+                      {sortColumn === "account" ? (
+                        sortDirection === "asc" ? (
+                          <ArrowUp className="size-3 text-foreground" />
+                        ) : (
+                          <ArrowDown className="size-3 text-foreground" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
+                      )}
+                    </button>
                   </TableHead>
-                  <TableHead className="min-w-[200px] text-xs">
-                    Bank Account
+                  <TableHead className="min-w-[200px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("bank")}
+                      className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                    >
+                      Bank Account
+                      {sortColumn === "bank" ? (
+                        sortDirection === "asc" ? (
+                          <ArrowUp className="size-3 text-foreground" />
+                        ) : (
+                          <ArrowDown className="size-3 text-foreground" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
+                      )}
+                    </button>
                   </TableHead>
-                  <TableHead className="w-[80px] text-xs">Lots</TableHead>
-                  <TableHead className="text-right text-xs">Shares</TableHead>
-                  <TableHead className="text-right text-xs">Amount</TableHead>
+                  <TableHead className="w-[80px] text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("lots")}
+                      className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors mx-auto"
+                    >
+                      Lots
+                      {sortColumn === "lots" ? (
+                        sortDirection === "asc" ? (
+                          <ArrowUp className="size-3 text-foreground" />
+                        ) : (
+                          <ArrowDown className="size-3 text-foreground" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
+                      )}
+                    </button>
+                  </TableHead>
+                  <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                    Shares
+                  </TableHead>
+                  <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("amount")}
+                      className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors ml-auto flex-row-reverse"
+                    >
+                      Amount
+                      {sortColumn === "amount" ? (
+                        sortDirection === "asc" ? (
+                          <ArrowUp className="size-3 text-foreground" />
+                        ) : (
+                          <ArrowDown className="size-3 text-foreground" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
+                      )}
+                    </button>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {selectedAccountIds.map((accountId) => {
+                {sortedSelectedAccountIds.map((accountId) => {
                   const account = accounts.find((a) => a.id === accountId)
                   const cfg = accountConfigs[accountId]
                   const lots = cfg?.lots || defaultLots
@@ -691,7 +816,12 @@ function BulkApplicationForm({
                           }
                         >
                           <SelectTrigger className="h-7 w-full truncate bg-background text-xs">
-                            <SelectValue placeholder="Select bank" />
+                            <SelectValue placeholder="Select bank">
+                              {(val) => {
+                                const b = activeBankAccounts.find((acc) => acc.id === val)
+                                return b ? formatBankAccount(b) : "Select bank"
+                              }}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             {activeBankAccounts.map((b) => (
