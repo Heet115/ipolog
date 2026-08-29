@@ -93,6 +93,7 @@ export default function IpoDetailPage() {
   const [appToSell, setAppToSell] = useState<Application | null>(null)
   const [appToEdit, setAppToEdit] = useState<Application | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [syncing, setSyncing] = useState(false)
 
   const reloadData = useCallback(async () => {
     if (!user || !ipoId) return
@@ -155,6 +156,43 @@ export default function IpoDetailPage() {
       ignore = true
     }
   }, [user, ipoId])
+
+  const handleRefreshData = async () => {
+    if (!user || !ipo || !ipo.externalId) return
+    setSyncing(true)
+    try {
+      const token = await user.getIdToken()
+      const res = await fetch(`/api/ipos/${ipo.id}/sync`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Failed to refresh IPO data.")
+      }
+
+      toast.add({
+        title: "Data Refreshed",
+        description: `${ipo.name} updated from Upstox.`,
+        type: "success",
+      })
+      reloadData()
+    } catch (err: unknown) {
+      console.error("Failed to sync IPO data:", err)
+      toast.add({
+        title: "Refresh Failed",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Could not refresh IPO data. Please try again.",
+        type: "error",
+      })
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   const handleToggleArchive = async () => {
     if (!user || !ipo) return
@@ -270,6 +308,21 @@ export default function IpoDetailPage() {
         </Link>
 
         <div className="flex flex-wrap items-center gap-2">
+          {Boolean(ipo.externalId) && (
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={handleRefreshData}
+              disabled={syncing}
+              className="h-7 text-xs"
+            >
+              <RefreshCw
+                className={`size-3.5 ${syncing ? "animate-spin" : ""}`}
+                data-icon="inline-start"
+              />
+              {syncing ? "Syncing..." : "Refresh Data"}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="xs"
@@ -327,6 +380,14 @@ export default function IpoDetailPage() {
                 <h1 className="text-xl font-bold text-foreground sm:text-2xl">
                   {ipo.name}
                 </h1>
+                {ipo.symbol && (
+                  <Badge
+                    variant="outline"
+                    className="px-1.5 py-0 font-mono text-[10px]"
+                  >
+                    {ipo.symbol}
+                  </Badge>
+                )}
                 <Badge
                   variant={ipo.type === "sme" ? "secondary" : "outline"}
                   className="px-1.5 py-0 font-mono text-[10px] uppercase"
@@ -339,6 +400,14 @@ export default function IpoDetailPage() {
                 >
                   {statusInfo.label}
                 </Badge>
+                {ipo.provider && (
+                  <Badge
+                    variant="outline"
+                    className="border-primary/40 px-1.5 py-0 font-mono text-[10px] uppercase text-primary"
+                  >
+                    {ipo.provider}
+                  </Badge>
+                )}
                 {ipo.archived && (
                   <Badge
                     variant="outline"
@@ -351,6 +420,11 @@ export default function IpoDetailPage() {
               {ipo.companyName && (
                 <p className="font-mono text-xs text-muted-foreground">
                   {ipo.companyName}
+                  {ipo.lastSyncedAt && (
+                    <span className="ml-2 text-[11px] text-muted-foreground/80">
+                      • Last synced: {formatDate(ipo.lastSyncedAt)}
+                    </span>
+                  )}
                 </p>
               )}
             </div>

@@ -135,3 +135,33 @@ export function inputValueToTimestamp(val: string): Timestamp | undefined {
   )
   return Timestamp.fromDate(date)
 }
+
+/**
+ * Formats an ISO YYYY-MM-DD date string into a friendly format (e.g. 28 Aug or 28 Aug 2026).
+ */
+export function formatIsoDate(
+  isoDate?: string | null,
+  includeYear = false
+): string {
+  if (!isoDate) return "—"
+  try {
+    const parts = isoDate.split("-")
+    if (parts.length < 3) return isoDate
+    const date = new Date(
+      Number(parts[0]),
+      Number(parts[1]) - 1,
+      Number(parts[2]),
+      12,
+      0,
+      0
+    )
+    return new Intl.DateTimeFormat("en-IN", {
+      day: "numeric",
+      month: "short",
+      ...(includeYear ? { year: "numeric" } : {}),
+    }).format(date)
+  } catch {
+    return isoDate
+  }
+}
+

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, FileText } from "lucide-react"
+import { Plus, FileText, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -13,6 +13,7 @@ import {
   EmptyContent,
 } from "@/components/ui/empty"
 import { IpoDialog } from "@/components/ipo/ipo-dialog"
+import { ImportIpoDialog } from "@/components/ipo/import-ipo-dialog"
 import { IpoList } from "@/components/ipo/ipo-list"
 import { IpoListSkeleton } from "@/components/ipo/ipo-skeleton"
 import { useAuth } from "@/lib/firebase/auth-context"
@@ -28,6 +29,7 @@ export default function IposPage() {
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [ipoToEdit, setIpoToEdit] = useState<Ipo | null>(null)
 
   const reloadData = useCallback(async () => {
@@ -96,10 +98,20 @@ export default function IposPage() {
             performance
           </p>
         </div>
-        <Button size="sm" onClick={handleAddClick}>
-          <Plus data-icon="inline-start" />
-          Add IPO
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setImportOpen(true)}
+          >
+            <Download data-icon="inline-start" />
+            Import IPO
+          </Button>
+          <Button size="sm" onClick={handleAddClick}>
+            <Plus data-icon="inline-start" />
+            Add IPO
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -112,11 +124,19 @@ export default function IposPage() {
             </EmptyMedia>
             <EmptyTitle>No IPOs tracked yet</EmptyTitle>
             <EmptyDescription>
-              Add an upcoming or open IPO to begin recording your applications
-              across multiple accounts and bank accounts.
+              Import an upcoming or open IPO from Upstox, or manually add an IPO
+              to begin recording applications.
             </EmptyDescription>
           </EmptyHeader>
-          <EmptyContent>
+          <EmptyContent className="flex flex-row items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setImportOpen(true)}
+            >
+              <Download data-icon="inline-start" />
+              Import from Upstox
+            </Button>
             <Button size="sm" onClick={handleAddClick}>
               <Plus data-icon="inline-start" />
               Add First IPO
@@ -135,13 +155,28 @@ export default function IposPage() {
 
       {/* Add / Edit Dialog */}
       {user && (
-        <IpoDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
-          userId={user.uid}
-          ipoToEdit={ipoToEdit}
-          onSuccess={handleSuccess}
-        />
+        <>
+          <IpoDialog
+            open={dialogOpen}
+            onOpenChange={setDialogOpen}
+            userId={user.uid}
+            ipoToEdit={ipoToEdit}
+            onSuccess={handleSuccess}
+          />
+          <ImportIpoDialog
+            open={importOpen}
+            onOpenChange={setImportOpen}
+            userId={user.uid}
+            existingIpos={ipos}
+            onSuccess={() => {
+              reloadData()
+            }}
+            onViewIpo={(ipoId) => {
+              setImportOpen(false)
+              router.push(`/ipos/${ipoId}`)
+            }}
+          />
+        </>
       )}
     </div>
   )

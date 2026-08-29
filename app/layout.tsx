@@ -15,7 +15,7 @@ const fontMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "IPO Tracker",
+  title: "IPO Log",
   description: "Track your IPO applications, allotments, and profits",
 }
 

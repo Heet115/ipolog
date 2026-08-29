@@ -3,7 +3,12 @@ import { Timestamp } from "firebase/firestore"
 export type IpoType = "mainboard" | "sme"
 
 export type IpoStatus =
-  "upcoming" | "open" | "closed" | "allotment_pending" | "listed" | "completed"
+  | "upcoming"
+  | "open"
+  | "closed"
+  | "allotment_pending"
+  | "listed"
+  | "completed"
 
 export interface Ipo {
   id: string
@@ -11,6 +16,7 @@ export interface Ipo {
 
   name: string
   companyName?: string
+  symbol?: string
 
   type: IpoType
 
@@ -18,6 +24,7 @@ export interface Ipo {
   priceBandMin?: number
   priceBandMax?: number
   lotSize: number
+  issueSize?: number // in Cr
 
   openDate?: Timestamp
   closeDate?: Timestamp
@@ -26,6 +33,14 @@ export interface Ipo {
 
   listingPrice?: number
   currentPrice?: number
+
+  isin?: string
+
+  // Source & Sync Metadata
+  source?: "manual" | "api"
+  provider?: "upstox" | string
+  externalId?: string
+  lastSyncedAt?: Timestamp
 
   notes?: string
 

@@ -24,17 +24,24 @@ function docToIpo(docSnap: DocumentSnapshot<DocumentData>): Ipo {
     userId: data.userId,
     name: data.name,
     companyName: data.companyName || "",
+    symbol: data.symbol || undefined,
     type: (data.type as IpoType) || "mainboard",
     issuePrice: Number(data.issuePrice) || 0,
     priceBandMin: data.priceBandMin ? Number(data.priceBandMin) : undefined,
     priceBandMax: data.priceBandMax ? Number(data.priceBandMax) : undefined,
     lotSize: Number(data.lotSize) || 1,
+    issueSize: data.issueSize ? Number(data.issueSize) : undefined,
     openDate: data.openDate || undefined,
     closeDate: data.closeDate || undefined,
     allotmentDate: data.allotmentDate || undefined,
     listingDate: data.listingDate || undefined,
     listingPrice: data.listingPrice ? Number(data.listingPrice) : undefined,
     currentPrice: data.currentPrice ? Number(data.currentPrice) : undefined,
+    isin: data.isin || undefined,
+    source: data.source || "manual",
+    provider: data.provider || undefined,
+    externalId: data.externalId || undefined,
+    lastSyncedAt: data.lastSyncedAt || undefined,
     notes: data.notes || "",
     archived: Boolean(data.archived),
     createdAt: data.createdAt,
@@ -81,6 +88,27 @@ export async function getIpoById(
 }
 
 /**
+ * Finds an IPO document by provider and external ID within a user's collection.
+ */
+export async function findIpoByExternalId(
+  userId: string,
+  provider: string,
+  externalId: string
+): Promise<Ipo | null> {
+  const iposRef = collection(db, "users", userId, "ipos")
+  const q = query(
+    iposRef,
+    where("provider", "==", provider),
+    where("externalId", "==", externalId)
+  )
+  const snap = await getDocs(q)
+  if (snap.empty) {
+    return null
+  }
+  return docToIpo(snap.docs[0])
+}
+
+/**
  * Creates a new IPO document.
  */
 export async function createIpo(
@@ -88,15 +116,24 @@ export async function createIpo(
   data: {
     name: string
     companyName?: string
+    symbol?: string
+    isin?: string
     type: IpoType
     issuePrice: number
     priceBandMin?: number
     priceBandMax?: number
     lotSize: number
+    issueSize?: number
     openDate?: Timestamp
     closeDate?: Timestamp
     allotmentDate?: Timestamp
     listingDate?: Timestamp
+    listingPrice?: number
+    currentPrice?: number
+    source?: "manual" | "api"
+    provider?: string
+    externalId?: string
+    lastSyncedAt?: Timestamp
     notes?: string
   }
 ): Promise<string> {
@@ -109,12 +146,22 @@ export async function createIpo(
     type: data.type,
     issuePrice: Number(data.issuePrice),
     lotSize: Number(data.lotSize),
+    source: data.source || "manual",
     notes: data.notes?.trim() || "",
     archived: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }
 
+  if (data.symbol) payload.symbol = data.symbol.trim()
+  if (data.isin) payload.isin = data.isin.trim()
+  if (data.provider) payload.provider = data.provider
+  if (data.externalId) payload.externalId = data.externalId
+  if (data.lastSyncedAt) payload.lastSyncedAt = data.lastSyncedAt
+
+  if (data.issueSize !== undefined && !isNaN(data.issueSize)) {
+    payload.issueSize = Number(data.issueSize)
+  }
   if (data.priceBandMin !== undefined && !isNaN(data.priceBandMin)) {
     payload.priceBandMin = Number(data.priceBandMin)
   }
@@ -125,6 +172,12 @@ export async function createIpo(
   if (data.closeDate) payload.closeDate = data.closeDate
   if (data.allotmentDate) payload.allotmentDate = data.allotmentDate
   if (data.listingDate) payload.listingDate = data.listingDate
+  if (data.listingPrice !== undefined && !isNaN(data.listingPrice)) {
+    payload.listingPrice = Number(data.listingPrice)
+  }
+  if (data.currentPrice !== undefined && !isNaN(data.currentPrice)) {
+    payload.currentPrice = Number(data.currentPrice)
+  }
 
   const docRef = await addDoc(iposRef, payload)
   return docRef.id
@@ -179,6 +232,71 @@ export async function updateIpo(
   if (data.allotmentDate !== undefined)
     payload.allotmentDate = data.allotmentDate
   if (data.listingDate !== undefined) payload.listingDate = data.listingDate
+
+  await updateDoc(ipoRef, payload)
+}
+
+/**
+ * Updates public IPO fields from an external sync without affecting user notes or applications.
+ */
+export async function syncIpoPublicData(
+  userId: string,
+  ipoId: string,
+  data: {
+    name?: string
+    companyName?: string
+    symbol?: string
+    isin?: string
+    type?: IpoType
+    issuePrice?: number
+    priceBandMin?: number
+    priceBandMax?: number
+    lotSize?: number
+    issueSize?: number
+    openDate?: Timestamp
+    closeDate?: Timestamp
+    allotmentDate?: Timestamp
+    listingDate?: Timestamp
+    listingPrice?: number
+    lastSyncedAt: Timestamp
+  }
+): Promise<void> {
+  const ipoRef = doc(db, "users", userId, "ipos", ipoId)
+
+  const payload: Record<string, unknown> = {
+    lastSyncedAt: data.lastSyncedAt,
+    updatedAt: serverTimestamp(),
+  }
+
+  if (data.name !== undefined) payload.name = data.name.trim()
+  if (data.companyName !== undefined)
+    payload.companyName = data.companyName.trim()
+  if (data.symbol !== undefined) payload.symbol = data.symbol.trim()
+  if (data.isin !== undefined) payload.isin = data.isin.trim()
+  if (data.type !== undefined) payload.type = data.type
+  if (data.issuePrice !== undefined && !isNaN(data.issuePrice)) {
+    payload.issuePrice = Number(data.issuePrice)
+  }
+  if (data.lotSize !== undefined && !isNaN(data.lotSize)) {
+    payload.lotSize = Number(data.lotSize)
+  }
+  if (data.issueSize !== undefined && !isNaN(data.issueSize)) {
+    payload.issueSize = Number(data.issueSize)
+  }
+  if (data.priceBandMin !== undefined) {
+    payload.priceBandMin = data.priceBandMin ? Number(data.priceBandMin) : null
+  }
+  if (data.priceBandMax !== undefined) {
+    payload.priceBandMax = data.priceBandMax ? Number(data.priceBandMax) : null
+  }
+  if (data.openDate !== undefined) payload.openDate = data.openDate
+  if (data.closeDate !== undefined) payload.closeDate = data.closeDate
+  if (data.allotmentDate !== undefined)
+    payload.allotmentDate = data.allotmentDate
+  if (data.listingDate !== undefined) payload.listingDate = data.listingDate
+  if (data.listingPrice !== undefined && !isNaN(data.listingPrice)) {
+    payload.listingPrice = Number(data.listingPrice)
+  }
 
   await updateDoc(ipoRef, payload)
 }
