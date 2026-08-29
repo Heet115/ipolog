@@ -24,6 +24,9 @@ export interface Ipo {
   allotmentDate?: Timestamp
   listingDate?: Timestamp
 
+  listingPrice?: number
+  currentPrice?: number
+
   notes?: string
 
   archived: boolean

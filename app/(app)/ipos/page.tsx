@@ -1,34 +1,141 @@
-import { Card, CardContent } from "@/components/ui/card"
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { Plus, FileText, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { FileText, Plus } from "lucide-react"
+import { IpoDialog } from "@/components/ipo/ipo-dialog"
+import { IpoList } from "@/components/ipo/ipo-list"
+import { useAuth } from "@/lib/firebase/auth-context"
+import { getIpos } from "@/lib/firebase/ipos"
+import { getApplications } from "@/lib/firebase/applications"
+import type { Ipo, Application } from "@/types"
 
 export default function IposPage() {
+  const { user } = useAuth()
+  const router = useRouter()
+
+  const [ipos, setIpos] = useState<Ipo[]>([])
+  const [applications, setApplications] = useState<Application[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [ipoToEdit, setIpoToEdit] = useState<Ipo | null>(null)
+
+  const reloadData = useCallback(async () => {
+    if (!user) return
+    try {
+      const [iposData, appsData] = await Promise.all([
+        getIpos(user.uid, true),
+        getApplications(user.uid),
+      ])
+      setIpos(iposData)
+      setApplications(appsData)
+    } catch (err) {
+      console.error("Failed to load IPOs and applications:", err)
+    }
+  }, [user])
+
+  useEffect(() => {
+    let ignore = false
+    if (!user) return
+
+    Promise.all([
+      getIpos(user.uid, true),
+      getApplications(user.uid),
+    ])
+      .then(([iposData, appsData]) => {
+        if (!ignore) {
+          setIpos(iposData)
+          setApplications(appsData)
+          setLoading(false)
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load IPOs:", err)
+        if (!ignore) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [user])
+
+  const handleAddClick = () => {
+    setIpoToEdit(null)
+    setDialogOpen(true)
+  }
+
+  const handleEditClick = (ipo: Ipo) => {
+    setIpoToEdit(ipo)
+    setDialogOpen(true)
+  }
+
+  const handleSuccess = (newIpoId?: string) => {
+    reloadData()
+    if (newIpoId && !ipoToEdit) {
+      router.push(`/ipos/${newIpoId}`)
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-semibold">My IPOs</h1>
-          <p className="text-sm text-muted-foreground">
-            Track your IPO applications and allotments
+          <h1 className="text-lg font-semibold text-foreground">My IPOs</h1>
+          <p className="text-xs text-muted-foreground">
+            Track and manage IPO applications, allotments, and performance
           </p>
         </div>
-        <Button size="sm" disabled>
+        <Button size="sm" onClick={handleAddClick}>
           <Plus className="mr-1.5 size-4" />
           Add IPO
         </Button>
       </div>
 
-      {/* Empty state */}
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <FileText className="mb-4 size-10 text-muted-foreground/50" />
-          <h2 className="text-sm font-medium">No IPOs yet</h2>
-          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            Add your first IPO to start tracking applications, allotments, and
-            profits.
+      {loading ? (
+        <div className="flex min-h-[250px] items-center justify-center">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : ipos.length === 0 ? (
+        <div className="flex min-h-[300px] flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+          <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+            <FileText className="size-6 text-muted-foreground" />
+          </div>
+          <h2 className="mt-3 text-sm font-semibold text-foreground">
+            No IPOs tracked yet
+          </h2>
+          <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+            Add an upcoming or open IPO to begin recording your applications
+            across multiple accounts and bank accounts.
           </p>
-        </CardContent>
-      </Card>
+          <Button size="sm" className="mt-4" onClick={handleAddClick}>
+            <Plus className="mr-1.5 size-3.5" />
+            Add First IPO
+          </Button>
+        </div>
+      ) : (
+        <IpoList
+          ipos={ipos}
+          applications={applications}
+          userId={user?.uid || ""}
+          onEdit={handleEditClick}
+          onRefresh={reloadData}
+        />
+      )}
+
+      {/* Add / Edit Dialog */}
+      {user && (
+        <IpoDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          userId={user.uid}
+          ipoToEdit={ipoToEdit}
+          onSuccess={handleSuccess}
+        />
+      )}
     </div>
   )
 }
