@@ -8,24 +8,33 @@ import {
   Archive,
   ArchiveRestore,
   Trash2,
-  FileText,
   Search,
   Calendar,
   ExternalLink,
   Layers,
   TrendingUp,
+  FolderOpen,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,6 +62,7 @@ type StatusFilter =
   | "all"
   | "open"
   | "upcoming"
+  | "allotment_pending"
   | "closed"
   | "listed"
   | "archived"
@@ -71,6 +81,12 @@ export function IpoList({
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")
   const [ipoToDelete, setIpoToDelete] = useState<Ipo | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  // Map application counts per IPO
+  const appCountMap = new Map<string, number>()
+  for (const app of applications) {
+    appCountMap.set(app.ipoId, (appCountMap.get(app.ipoId) || 0) + 1)
+  }
 
   const filteredIpos = ipos.filter((ipo) => {
     // Archived filter logic
@@ -117,7 +133,7 @@ export function IpoList({
     } catch (err) {
       console.error(err)
       toast.add({
-        title: "Failed to update IPO archive state",
+        title: "Failed to update IPO",
         type: "error",
       })
     }
@@ -146,103 +162,100 @@ export function IpoList({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-5">
       {/* Controls Bar: Search & Status Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        {/* Search Input */}
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search IPOs by name, company..."
+            placeholder="Search IPO name, company, notes..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
+            className="h-8 bg-background pl-8 text-xs"
           />
         </div>
 
         {/* Filters Group */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Mainboard vs SME Type Toggle */}
-          <div className="flex items-center rounded-md border p-0.5 bg-muted/40">
-            {[
-              { key: "all", label: "All Types" },
-              { key: "mainboard", label: "Mainboard" },
-              { key: "sme", label: "SME" },
-            ].map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                className={`rounded px-2 py-0.5 text-[11px] font-medium transition-colors ${
-                  typeFilter === t.key
-                    ? "bg-background text-foreground shadow-xs font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setTypeFilter(t.key as TypeFilter)}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <ToggleGroup
+            value={[typeFilter]}
+            onValueChange={(val) => {
+              if (val && val[0]) setTypeFilter(val[0] as TypeFilter)
+            }}
+            className="h-8"
+          >
+            <ToggleGroupItem value="all" className="h-7 px-2.5 text-xs">
+              All Types
+            </ToggleGroupItem>
+            <ToggleGroupItem value="mainboard" className="h-7 px-2.5 text-xs">
+              Mainboard
+            </ToggleGroupItem>
+            <ToggleGroupItem value="sme" className="h-7 px-2.5 text-xs">
+              SME
+            </ToggleGroupItem>
+          </ToggleGroup>
 
           {/* Status Filters */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
-            {(
-              [
-                { key: "all", label: "All Active" },
-                { key: "open", label: "Open" },
-                { key: "upcoming", label: "Upcoming" },
-                { key: "closed", label: "Closed" },
-                { key: "listed", label: "Listed" },
-                ...(archivedCount > 0
-                  ? [
-                      {
-                        key: "archived" as const,
-                        label: `Archived (${archivedCount})`,
-                      },
-                    ]
-                  : []),
-              ] as { key: StatusFilter; label: string }[]
-            ).map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                className={`rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap transition-colors ${
-                  statusFilter === tab.key
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-                onClick={() => setStatusFilter(tab.key)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          <ToggleGroup
+            value={[statusFilter]}
+            onValueChange={(val) => {
+              if (val && val[0]) setStatusFilter(val[0] as StatusFilter)
+            }}
+            className="h-8"
+          >
+            <ToggleGroupItem value="all" className="h-7 px-2.5 text-xs">
+              All ({ipos.filter((i) => !i.archived).length})
+            </ToggleGroupItem>
+            <ToggleGroupItem value="open" className="h-7 px-2.5 text-xs">
+              Open
+            </ToggleGroupItem>
+            <ToggleGroupItem value="upcoming" className="h-7 px-2.5 text-xs">
+              Upcoming
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="allotment_pending"
+              className="h-7 px-2.5 text-xs"
+            >
+              Allotment
+            </ToggleGroupItem>
+            <ToggleGroupItem value="listed" className="h-7 px-2.5 text-xs">
+              Listed
+            </ToggleGroupItem>
+            {archivedCount > 0 && (
+              <ToggleGroupItem value="archived" className="h-7 px-2.5 text-xs">
+                Archived ({archivedCount})
+              </ToggleGroupItem>
+            )}
+          </ToggleGroup>
         </div>
       </div>
 
+      {/* Grid of IPO Cards */}
       {filteredIpos.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <FileText className="mb-3 size-8 text-muted-foreground/50" />
-            <p className="text-xs font-medium text-foreground">
-              No matching IPOs found
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FolderOpen className="size-6 text-muted-foreground" />
+            </EmptyMedia>
+            <EmptyTitle>No IPOs match your filters</EmptyTitle>
+            <EmptyDescription>
               {search || statusFilter !== "all" || typeFilter !== "all"
-                ? "Try adjusting your search or filters"
-                : "Add your first IPO to start tracking applications"}
-            </p>
-          </CardContent>
-        </Card>
+                ? "Try clearing your filters or changing your search criteria"
+                : "Add an IPO to begin tracking multi-account applications"}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredIpos.map((ipo) => {
-            const ipoApps = applications.filter((a) => a.ipoId === ipo.id)
-
+            const count = appCountMap.get(ipo.id) || 0
             return (
               <IpoCard
                 key={ipo.id}
                 ipo={ipo}
-                applicationsCount={ipoApps.length}
+                applicationsCount={count}
                 onEdit={() => onEdit(ipo)}
                 onToggleArchive={() => handleToggleArchive(ipo)}
                 onDelete={() => setIpoToDelete(ipo)}
@@ -300,31 +313,34 @@ function IpoCard({
 
   return (
     <Card
-      className={`group relative overflow-hidden transition-all hover:border-foreground/20 ${
-        ipo.archived ? "opacity-60 bg-muted/20" : ""
+      className={`group relative overflow-hidden rounded-none border border-border/70 transition-all hover:border-foreground/30 ${
+        ipo.archived ? "bg-muted/20 opacity-60" : "bg-card"
       }`}
     >
-      <CardContent className="flex flex-col justify-between p-3.5 h-full">
-        <div className="space-y-3">
-          {/* Top Header */}
+      <CardContent className="flex h-full flex-col justify-between gap-3.5 p-4">
+        <div className="flex flex-col gap-3">
+          {/* Top Header: Name & Menu */}
           <div className="flex items-start justify-between gap-2">
-            <div className="space-y-1 min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <Link
                   href={`/ipos/${ipo.id}`}
-                  className="font-semibold text-sm text-foreground hover:text-primary transition-colors truncate"
+                  className="truncate text-sm font-bold text-foreground hover:underline"
                 >
                   {ipo.name}
                 </Link>
                 {ipo.archived && (
-                  <Badge variant="outline" className="text-[10px] py-0 px-1.5">
+                  <Badge
+                    variant="outline"
+                    className="px-1 py-0 font-mono text-[10px]"
+                  >
                     Archived
                   </Badge>
                 )}
               </div>
 
               {ipo.companyName && (
-                <p className="text-[11px] text-muted-foreground truncate">
+                <p className="truncate text-[11px] text-muted-foreground">
                   {ipo.companyName}
                 </p>
               )}
@@ -336,7 +352,7 @@ function IpoCard({
                   <Button
                     variant="ghost"
                     size="icon-xs"
-                    className="text-muted-foreground hover:text-foreground"
+                    className="size-7 text-muted-foreground hover:text-foreground"
                   />
                 }
               >
@@ -344,102 +360,101 @@ function IpoCard({
                 <span className="sr-only">IPO actions</span>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-36">
-                <DropdownMenuItem render={<Link href={`/ipos/${ipo.id}`} />}>
-                  <ExternalLink className="mr-2 size-3.5" />
-                  View Details
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onEdit}>
-                  <Edit2 className="mr-2 size-3.5" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onToggleArchive}>
-                  {ipo.archived ? (
-                    <>
-                      <ArchiveRestore className="mr-2 size-3.5" />
-                      Restore
-                    </>
-                  ) : (
-                    <>
-                      <Archive className="mr-2 size-3.5" />
-                      Archive
-                    </>
-                  )}
-                </DropdownMenuItem>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem render={<Link href={`/ipos/${ipo.id}`} />}>
+                    <ExternalLink data-icon="inline-start" />
+                    Open IPO
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onEdit}>
+                    <Edit2 data-icon="inline-start" />
+                    Edit Details
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onToggleArchive}>
+                    {ipo.archived ? (
+                      <>
+                        <ArchiveRestore data-icon="inline-start" />
+                        Restore
+                      </>
+                    ) : (
+                      <>
+                        <Archive data-icon="inline-start" />
+                        Archive
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={onDelete}
-                >
-                  <Trash2 className="mr-2 size-3.5" />
-                  Delete
-                </DropdownMenuItem>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                    <Trash2 data-icon="inline-start" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
-          {/* Badges & Applications Tag */}
-          <div className="flex items-center justify-between gap-1.5 flex-wrap">
-            <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Badges & Application Count */}
+          <div className="flex flex-wrap items-center justify-between gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               <Badge
-                variant={ipo.type === "sme" ? "secondary" : "outline"}
-                className="text-[10px] py-0 px-1.5 font-normal uppercase"
+                variant={ipo.type === "sme" ? "outline" : "secondary"}
+                className="px-1 py-0 font-mono text-[9px] uppercase"
               >
                 {ipo.type}
               </Badge>
               <Badge
                 variant={statusInfo.variant}
-                className="text-[10px] py-0 px-1.5 font-normal"
+                className="px-1.5 py-0 text-[9px] font-normal"
               >
                 {statusInfo.label}
               </Badge>
             </div>
 
             {applicationsCount > 0 && (
-              <span className="text-[11px] font-medium text-foreground flex items-center gap-1">
+              <span className="flex items-center gap-1 text-[11px] font-medium text-foreground">
                 <Layers className="size-3 text-muted-foreground" />
                 {applicationsCount} Apps
               </span>
             )}
           </div>
 
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-2 gap-2 rounded-md bg-muted/40 p-2.5 text-xs">
+          {/* Pricing & Lots Metric Grid */}
+          <div className="grid grid-cols-2 gap-2 rounded-none border border-border/50 bg-muted/40 p-2.5 text-xs">
             <div>
-              <span className="text-[10px] text-muted-foreground block">
+              <span className="block text-[10px] text-muted-foreground">
                 Issue Price
               </span>
-              <span className="font-semibold text-foreground">
+              <span className="font-mono font-semibold text-foreground">
                 {formatCurrency(ipo.issuePrice)}
               </span>
             </div>
             <div>
-              <span className="text-[10px] text-muted-foreground block">
+              <span className="block text-[10px] text-muted-foreground">
                 Lot Size
               </span>
-              <span className="font-semibold text-foreground">
-                {ipo.lotSize} shares
+              <span className="font-mono font-semibold text-foreground">
+                {ipo.lotSize} sh/lot
               </span>
             </div>
-            <div className="col-span-2 pt-1 border-t border-border/50 flex justify-between items-center">
-              <span className="text-[10px] text-muted-foreground">
-                1 Lot Investment:
-              </span>
-              <span className="font-medium text-foreground text-xs">
+            <div className="col-span-2 flex items-center justify-between border-t border-border/50 pt-1 text-[11px]">
+              <span className="text-muted-foreground">1-Lot Mandate:</span>
+              <span className="font-mono font-bold text-foreground">
                 {formatCurrency(minAmount)}
               </span>
             </div>
           </div>
 
-          {/* Market Price Tag if set */}
+          {/* Market Price / Performance Badge if set */}
           {(ipo.listingPrice || ipo.currentPrice) && (
-            <div className="flex items-center justify-between rounded bg-muted/30 p-1.5 text-[11px]">
-              <span className="text-muted-foreground flex items-center gap-1">
-                <TrendingUp className="size-3 text-emerald-600 dark:text-emerald-400" />
-                {ipo.currentPrice ? "CMP:" : "Listing:"}
+            <div className="flex items-center justify-between rounded-none border border-border/40 bg-muted/30 p-2 text-xs">
+              <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <TrendingUp className="size-3 text-success" />
+                {ipo.currentPrice ? "CMP:" : "Listing Price:"}
               </span>
-              <span className="font-bold text-foreground">
+              <span className="font-mono font-bold text-foreground">
                 {formatCurrency(ipo.currentPrice || ipo.listingPrice)}
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal ml-1">
+                <span className="ml-1 font-mono text-[10px] font-normal text-success">
                   (
                   {(
                     (((ipo.currentPrice || ipo.listingPrice || 0) -
@@ -453,9 +468,9 @@ function IpoCard({
             </div>
           )}
 
-          {/* Dates */}
+          {/* Key Dates */}
           {(ipo.closeDate || ipo.listingDate) && (
-            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <Calendar className="size-3 shrink-0" />
               {ipo.closeDate && (
                 <span>Closes: {formatDate(ipo.closeDate)}</span>
@@ -468,12 +483,12 @@ function IpoCard({
           )}
         </div>
 
-        {/* Footer CTA */}
-        <div className="pt-3 mt-3 border-t">
+        {/* Action Button */}
+        <div className="border-t border-border/50 pt-2">
           <Button
             variant="outline"
             size="xs"
-            className="w-full text-xs"
+            className="h-8 w-full text-xs"
             render={<Link href={`/ipos/${ipo.id}`} />}
           >
             Manage Applications ({applicationsCount})

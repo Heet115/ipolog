@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Loader2 } from "lucide-react"
+import { Trash2 } from "lucide-react"
+import { Timestamp } from "firebase/firestore"
 import {
   Dialog,
   DialogContent,
@@ -10,11 +11,35 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { DatePicker } from "@/components/ui/date-picker"
+import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Spinner } from "@/components/ui/spinner"
 import { toast } from "@/components/ui/toast"
-import { updateApplication } from "@/lib/firebase/applications"
+import {
+  updateApplication,
+  deleteApplication,
+} from "@/lib/firebase/applications"
 import {
   calculateSharesApplied,
   calculateAmountApplied,
@@ -51,11 +76,13 @@ export function EditApplicationDialog({
 }: EditApplicationDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-lg md:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Edit Application</DialogTitle>
-          <DialogDescription>
-            Modify lots, bank account, or notes for {account?.name}.
+          <DialogTitle className="max-w-md truncate">
+            Edit Application — {account?.name}
+          </DialogTitle>
+          <DialogDescription className="break-words">
+            Modify lots, funding bank account, or notes for this application.
           </DialogDescription>
         </DialogHeader>
 
@@ -69,8 +96,8 @@ export function EditApplicationDialog({
             bankAccounts={bankAccounts}
             onCancel={() => onOpenChange(false)}
             onSuccess={() => {
-              onSuccess()
               onOpenChange(false)
+              onSuccess()
             }}
           />
         )}
@@ -97,31 +124,67 @@ function EditApplicationForm({
   onSuccess: () => void
 }) {
   const [bankAccountId, setBankAccountId] = useState(application.bankAccountId)
-  const [lotsApplied, setLotsApplied] = useState(application.lotsApplied)
+  const [lotsApplied, setLotsApplied] = useState(
+    String(application.lotsApplied)
+  )
   const [status, setStatus] = useState<ApplicationStatus>(application.status)
+  const [allottedLots, setAllottedLots] = useState(
+    application.allottedLots !== undefined
+      ? String(application.allottedLots)
+      : ""
+  )
+  const [applicationDate, setApplicationDate] = useState<Date | undefined>(
+    application.applicationDate?.toDate?.() ?? undefined
+  )
   const [notes, setNotes] = useState(application.notes || "")
   const [loading, setLoading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const activeBankAccounts = bankAccounts.filter((b) => !b.archived || b.id === application.bankAccountId)
-
-  const sharesApplied = calculateSharesApplied(lotsApplied, ipo.lotSize)
+  const numLots = parseInt(lotsApplied, 10) || 1
+  const sharesApplied = calculateSharesApplied(numLots, ipo.lotSize)
   const amountApplied = calculateAmountApplied(
-    lotsApplied,
+    numLots,
     ipo.lotSize,
     ipo.issuePrice
   )
 
+  const activeBanks = bankAccounts.filter(
+    (b) => !b.archived || b.id === application.bankAccountId
+  )
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      await deleteApplication(userId, application.id)
+      toast.add({
+        title: "Application removed",
+        type: "success",
+      })
+      onSuccess()
+    } catch (err: unknown) {
+      console.error(err)
+      toast.add({
+        title: "Failed to remove application",
+        type: "error",
+      })
+    } finally {
+      setDeleting(false)
+      setConfirmDeleteOpen(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!lotsApplied || lotsApplied <= 0) {
-      setError("Lots applied must be at least 1.")
+    if (!bankAccountId) {
+      setError("Please select a bank account.")
       return
     }
 
-    if (!bankAccountId) {
-      setError("Please select a bank account.")
+    if (!numLots || numLots <= 0) {
+      setError("Please enter a valid lot size (at least 1).")
       return
     }
 
@@ -129,17 +192,33 @@ function EditApplicationForm({
     setLoading(true)
 
     try {
+      const numAllottedLots =
+        status === "allotted" || status === "sold"
+          ? parseInt(allottedLots, 10) || numLots
+          : status === "not_allotted"
+            ? 0
+            : undefined
+
+      const finalAllottedShares =
+        numAllottedLots !== undefined
+          ? numAllottedLots * ipo.lotSize
+          : undefined
       await updateApplication(userId, application.id, {
         bankAccountId,
-        lotsApplied,
+        lotsApplied: numLots,
         sharesApplied,
         amountApplied,
         status,
+        allottedLots: numAllottedLots,
+        allottedShares: finalAllottedShares,
+        applicationDate: applicationDate
+          ? Timestamp.fromDate(applicationDate)
+          : undefined,
         notes: notes.trim(),
       })
 
       toast.add({
-        title: "Application updated",
+        title: "Application updated successfully",
         type: "success",
       })
       onSuccess()
@@ -152,146 +231,193 @@ function EditApplicationForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
-          {error}
-        </div>
-      )}
+    <>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      {/* Account Info */}
-      <div className="rounded-md bg-muted/40 p-2.5 text-xs">
-        <span className="text-muted-foreground block text-[11px]">Account</span>
-        <span className="font-semibold text-foreground">
-          {account?.name || "Application Account"}
-        </span>
-        <span className="text-muted-foreground ml-2">
-          ({account?.type === "my" ? "My Account" : `${account?.profitSharePercent}% Share`})
-        </span>
-      </div>
+        <FieldGroup>
+          {/* Bank Account Selection (Select) */}
+          <Field>
+            <FieldLabel>
+              Bank Account <span className="text-destructive">*</span>
+            </FieldLabel>
+            <Select
+              value={bankAccountId}
+              onValueChange={(val) => val && setBankAccountId(val)}
+            >
+              <SelectTrigger className="h-8 w-full bg-background text-xs">
+                <SelectValue placeholder="Select bank" />
+              </SelectTrigger>
+              <SelectContent>
+                {activeBanks.map((b) => (
+                  <SelectItem key={b.id} value={b.id}>
+                    {formatBankAccount(b)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
 
-      {/* Bank Account */}
-      <div className="space-y-1">
-        <label
-          htmlFor="edit-bank"
-          className="text-xs font-medium text-foreground"
-        >
-          Bank Account *
-        </label>
-        <select
-          id="edit-bank"
-          className="w-full rounded-md border bg-background px-2.5 py-1.5 text-xs outline-none focus:ring-1 focus:ring-ring"
-          value={bankAccountId}
-          onChange={(e) => setBankAccountId(e.target.value)}
-          disabled={loading}
-          required
-        >
-          {activeBankAccounts.map((b) => (
-            <option key={b.id} value={b.id}>
-              {formatBankAccount(b)}
-            </option>
-          ))}
-        </select>
-      </div>
+          {/* Lots Applied & Real-time calculation */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field>
+              <FieldLabel htmlFor="edit-lots">
+                Lots Applied <span className="text-destructive">*</span>
+              </FieldLabel>
+              <Input
+                id="edit-lots"
+                type="number"
+                min="1"
+                step="1"
+                value={lotsApplied}
+                onChange={(e) => setLotsApplied(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </Field>
 
-      {/* Lots & Calculations */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label
-            htmlFor="edit-lots"
-            className="text-xs font-medium text-foreground"
+            <div className="flex flex-col justify-end">
+              <div className="rounded-none border bg-muted/40 p-2 text-xs">
+                <span className="block text-[10px] text-muted-foreground">
+                  Applied Amount:
+                </span>
+                <span className="font-mono font-bold text-foreground">
+                  {formatCurrency(amountApplied)}{" "}
+                  <span className="text-[10px] font-normal text-muted-foreground">
+                    ({sharesApplied} shares)
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Status & Allotted Lots */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field>
+              <FieldLabel>Status</FieldLabel>
+              <Select
+                value={status}
+                onValueChange={(val) =>
+                  val && setStatus(val as ApplicationStatus)
+                }
+              >
+                <SelectTrigger className="h-8 w-full bg-background text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="allotted">Allotted</SelectItem>
+                  <SelectItem value="not_allotted">Not Allotted</SelectItem>
+                  <SelectItem value="sold">Sold</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+
+            {status === "allotted" && (
+              <Field>
+                <FieldLabel htmlFor="edit-allotted-lots">
+                  Allotted Lots
+                </FieldLabel>
+                <Input
+                  id="edit-allotted-lots"
+                  type="number"
+                  min="1"
+                  max={numLots}
+                  step="1"
+                  value={allottedLots}
+                  onChange={(e) => setAllottedLots(e.target.value)}
+                  placeholder={`Max ${numLots}`}
+                  disabled={loading}
+                  className="font-mono"
+                />
+              </Field>
+            )}
+          </div>
+
+          {/* Application Date (DatePicker) */}
+          <Field>
+            <FieldLabel>Application Date</FieldLabel>
+            <DatePicker
+              date={applicationDate}
+              onDateChange={setApplicationDate}
+              placeholder="Select application date"
+              disabled={loading}
+            />
+          </Field>
+
+          {/* Notes */}
+          <Field>
+            <FieldLabel htmlFor="edit-notes">Notes (Optional)</FieldLabel>
+            <Textarea
+              id="edit-notes"
+              placeholder="e.g. Applied via UPI Mandate..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              disabled={loading}
+              className="resize-none"
+            />
+          </Field>
+        </FieldGroup>
+
+        <DialogFooter className="flex flex-col items-stretch justify-between gap-2 border-t pt-3 sm:flex-row sm:items-center">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setConfirmDeleteOpen(true)}
+            className="border-destructive/30 text-destructive hover:bg-destructive/10"
+            disabled={loading || deleting}
           >
-            Lots Applied *
-          </label>
-          <Input
-            id="edit-lots"
-            type="number"
-            min="1"
-            step="1"
-            value={lotsApplied}
-            onChange={(e) => setLotsApplied(Math.max(1, Number(e.target.value)))}
-            disabled={loading}
-            required
-          />
-        </div>
+            <Trash2 data-icon="inline-start" />
+            Delete Application
+          </Button>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="edit-status"
-            className="text-xs font-medium text-foreground"
-          >
-            Status
-          </label>
-          <select
-            id="edit-status"
-            className="w-full rounded-md border bg-background px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-ring capitalize"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as ApplicationStatus)}
-            disabled={loading}
-          >
-            <option value="pending">Pending</option>
-            <option value="allotted">Allotted</option>
-            <option value="not_allotted">Not Allotted</option>
-            <option value="sold">Sold</option>
-          </select>
-        </div>
-      </div>
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={loading || deleting}
+              size="sm"
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading || deleting} size="sm">
+              {loading && <Spinner data-icon="inline-start" />}
+              {loading ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        </DialogFooter>
+      </form>
 
-      {/* Calculation Summary */}
-      <div className="rounded-md border bg-muted/20 p-2.5 text-xs flex justify-between items-center">
-        <div>
-          <span className="text-[11px] text-muted-foreground block">
-            Shares: {sharesApplied}
-          </span>
-        </div>
-        <div>
-          <span className="text-[11px] text-muted-foreground block">
-            Total Amount
-          </span>
-          <span className="font-semibold text-foreground">
-            {formatCurrency(amountApplied)}
-          </span>
-        </div>
-      </div>
-
-      {/* Notes */}
-      <div className="space-y-1">
-        <label
-          htmlFor="edit-notes"
-          className="text-xs font-medium text-foreground"
-        >
-          Notes (Optional)
-        </label>
-        <Textarea
-          id="edit-notes"
-          placeholder="e.g. Mandate accepted via GPay"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          disabled={loading}
-          rows={2}
-        />
-      </div>
-
-      <DialogFooter className="gap-2 sm:gap-0">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={loading}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            "Save Changes"
-          )}
-        </Button>
-      </DialogFooter>
-    </form>
+      {/* Delete Application Confirmation Dialog */}
+      <AlertDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Application?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this application for{" "}
+              <strong>{account?.name || "this account"}</strong>? This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting..." : "Delete Application"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

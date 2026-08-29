@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Loader2, TrendingUp, AlertCircle } from "lucide-react"
+import { TrendingUp, Sparkles, Check } from "lucide-react"
+import { Timestamp } from "firebase/firestore"
 import {
   Dialog,
   DialogContent,
@@ -10,10 +11,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
+import { DatePicker } from "@/components/ui/date-picker"
+import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
+import { Spinner } from "@/components/ui/spinner"
 import { toast } from "@/components/ui/toast"
 import { recordSaleSingle } from "@/lib/firebase/applications"
 import {
@@ -21,16 +25,8 @@ import {
   calculateProfitShared,
   calculateYourProfit,
 } from "@/lib/calculations/financials"
-import {
-  formatCurrency,
-  dateToInputValue,
-  inputValueToTimestamp,
-} from "@/lib/utils/ipo"
-import type {
-  Ipo,
-  Application,
-  ApplicationAccount,
-} from "@/types"
+import { formatCurrency } from "@/lib/utils/ipo"
+import type { Ipo, Application, ApplicationAccount } from "@/types"
 
 interface RecordSaleDialogProps {
   open: boolean
@@ -53,24 +49,28 @@ export function RecordSaleDialog({
 }: RecordSaleDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-lg md:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Record Sale — {account?.name}</DialogTitle>
-          <DialogDescription>
-            Record sale price and shares sold to compute gross profit and profit splits.
+          <DialogTitle className="max-w-md truncate">
+            Record Sale — {account?.name}
+          </DialogTitle>
+          <DialogDescription className="break-words">
+            Record exit / sale price and calculate profit sharing for {ipo.name}
+            .
           </DialogDescription>
         </DialogHeader>
 
         {open && application && (
           <RecordSaleForm
+            key={application.id}
             userId={userId}
             ipo={ipo}
             application={application}
             account={account}
             onCancel={() => onOpenChange(false)}
             onSuccess={() => {
-              onSuccess()
               onOpenChange(false)
+              onSuccess()
             }}
           />
         )}
@@ -94,46 +94,60 @@ function RecordSaleForm({
   onCancel: () => void
   onSuccess: () => void
 }) {
-  const initialShares =
-    application.sharesSold && application.sharesSold > 0
-      ? application.sharesSold
-      : application.allottedShares || application.sharesApplied || ipo.lotSize
+  const maxShares =
+    application.allottedShares || (application.allottedLots || 1) * ipo.lotSize
 
-  const initialPrice =
-    application.salePrice && application.salePrice > 0
+  const [salePrice, setSalePrice] = useState<string>(
+    application.salePrice
       ? String(application.salePrice)
       : ipo.currentPrice
         ? String(ipo.currentPrice)
         : ipo.listingPrice
           ? String(ipo.listingPrice)
           : ""
-
-  const initialDate =
-    dateToInputValue(application.saleDate) ||
-    dateToInputValue(ipo.listingDate) ||
-    dateToInputValue(new Date())
-
-  const [salePrice, setSalePrice] = useState<string>(initialPrice)
-  const [sharesSold, setSharesSold] = useState<number>(initialShares)
-  const [saleDate, setSaleDate] = useState<string>(initialDate)
-  const [notes, setNotes] = useState<string>(application.notes || "")
+  )
+  const [sharesSold, setSharesSold] = useState<string>(
+    application.sharesSold ? String(application.sharesSold) : String(maxShares)
+  )
+  const [saleDate, setSaleDate] = useState<Date | undefined>(
+    application.saleDate?.toDate?.() ?? new Date()
+  )
+  const [notes, setNotes] = useState(application.notes || "")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const numSalePrice = parseFloat(salePrice) || 0
-  const profitSharePercent =
-    account?.type === "my" ? 0 : (account?.profitSharePercent ?? 0)
+  const numSharesSold = parseInt(sharesSold, 10) || 0
 
-  // Calculations
-  const totalCost = sharesSold * ipo.issuePrice
-  const totalSaleValue = sharesSold * numSalePrice
+  // Live profit calculation
   const grossProfit = calculateRealizedGrossProfit(
-    sharesSold,
+    numSharesSold,
     numSalePrice,
     ipo.issuePrice
   )
-  const profitShared = calculateProfitShared(grossProfit, profitSharePercent)
-  const yourProfit = calculateYourProfit(grossProfit, profitSharePercent)
+  const profitSharePct = account?.profitSharePercent ?? 40
+  const isMyAccount = account?.type === "my"
+  const profitShared = calculateProfitShared(
+    grossProfit,
+    isMyAccount ? 0 : profitSharePct
+  )
+  const yourProfit = calculateYourProfit(
+    grossProfit,
+    isMyAccount ? 0 : profitSharePct
+  )
+
+  const handleFillCmp = () => {
+    if (ipo.currentPrice) setSalePrice(String(ipo.currentPrice))
+    else if (ipo.listingPrice) setSalePrice(String(ipo.listingPrice))
+  }
+
+  const handleAllShares = () => {
+    setSharesSold(String(maxShares))
+  }
+
+  const handleHalfShares = () => {
+    setSharesSold(String(Math.floor(maxShares / 2)))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -143,8 +157,13 @@ function RecordSaleForm({
       return
     }
 
-    if (!sharesSold || sharesSold <= 0) {
+    if (!numSharesSold || numSharesSold <= 0) {
       setError("Please enter valid shares sold (at least 1).")
+      return
+    }
+
+    if (numSharesSold > maxShares) {
+      setError(`Cannot sell more shares than allotted (${maxShares} shares).`)
       return
     }
 
@@ -153,9 +172,9 @@ function RecordSaleForm({
 
     try {
       await recordSaleSingle(userId, application.id, {
-        sharesSold,
         salePrice: numSalePrice,
-        saleDate: inputValueToTimestamp(saleDate),
+        sharesSold: numSharesSold,
+        saleDate: saleDate ? Timestamp.fromDate(saleDate) : undefined,
         notes: notes.trim(),
       })
 
@@ -173,150 +192,131 @@ function RecordSaleForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && (
-        <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">
-          <AlertCircle className="size-4 shrink-0" />
-          <span>{error}</span>
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {/* Account Info Header */}
-      <div className="rounded-md bg-muted/40 p-2.5 text-xs flex justify-between items-center">
+      <div className="flex items-center justify-between rounded-none border bg-muted/40 p-3 text-xs">
         <div>
-          <span className="font-semibold text-foreground">{account?.name}</span>
-          <span className="text-[11px] text-muted-foreground block">
-            Issue Price: {formatCurrency(ipo.issuePrice)} • Allotted:{" "}
-            {application.allottedShares || application.sharesApplied} sh
+          <span className="block text-muted-foreground">Account</span>
+          <span className="font-bold text-foreground">
+            {account?.name || "Account"}
           </span>
         </div>
-        <Badge
-          variant={account?.type === "my" ? "secondary" : "default"}
-          className="text-[10px] py-0"
-        >
-          {account?.type === "my"
-            ? "My Account (100% User)"
-            : `${account?.profitSharePercent}% Other Share`}
-        </Badge>
+        <div className="text-right">
+          <span className="block text-muted-foreground">Allotted</span>
+          <span className="font-bold text-foreground">
+            {maxShares} shares ({application.allottedLots} lots)
+          </span>
+        </div>
       </div>
 
-      {/* Inputs */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label
-            htmlFor="sale-price"
-            className="text-xs font-medium text-foreground"
-          >
-            Sale Price (₹) *
-          </label>
+      <FieldGroup>
+        {/* Sale Price Input + CMP shortcut */}
+        <Field>
+          <div className="flex items-center justify-between">
+            <FieldLabel htmlFor="sale-price">
+              Sale / Exit Price (₹) <span className="text-destructive">*</span>
+            </FieldLabel>
+            {(ipo.currentPrice || ipo.listingPrice) && (
+              <button
+                type="button"
+                onClick={handleFillCmp}
+                className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+              >
+                <Sparkles className="size-3" />
+                Fill CMP: ₹{ipo.currentPrice || ipo.listingPrice}
+              </button>
+            )}
+          </div>
           <Input
             id="sale-price"
             type="number"
-            min="0.01"
             step="0.01"
-            placeholder="e.g. 950"
+            min="0.01"
+            placeholder={`Issue Price was ₹${ipo.issuePrice}`}
             value={salePrice}
             onChange={(e) => setSalePrice(e.target.value)}
-            disabled={loading}
             required
-            autoFocus
+            disabled={loading}
           />
-        </div>
+        </Field>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="shares-sold"
-            className="text-xs font-medium text-foreground"
-          >
-            Shares Sold *
-          </label>
+        {/* Shares Sold + 100% / 50% shortcuts */}
+        <Field>
+          <div className="flex items-center justify-between">
+            <FieldLabel htmlFor="shares-sold">
+              Shares Sold <span className="text-destructive">*</span>
+            </FieldLabel>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                onClick={handleAllShares}
+                className="h-5 px-1.5 text-[10px]"
+              >
+                100% (All)
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                onClick={handleHalfShares}
+                className="h-5 px-1.5 text-[10px]"
+              >
+                50% (Half)
+              </Button>
+            </div>
+          </div>
           <Input
             id="shares-sold"
             type="number"
             min="1"
+            max={maxShares}
             step="1"
             value={sharesSold}
-            onChange={(e) => setSharesSold(Math.max(1, Number(e.target.value)))}
-            disabled={loading}
+            onChange={(e) => setSharesSold(e.target.value)}
             required
+            disabled={loading}
           />
-        </div>
-      </div>
+        </Field>
+      </FieldGroup>
 
-      <div className="space-y-1">
-        <label
-          htmlFor="sale-date"
-          className="text-xs font-medium text-foreground"
-        >
-          Sale Date
-        </label>
-        <Input
-          id="sale-date"
-          type="date"
-          value={saleDate}
-          onChange={(e) => setSaleDate(e.target.value)}
-          disabled={loading}
-        />
-      </div>
+      {/* Live Profit Split Preview Card */}
+      {numSalePrice > 0 && numSharesSold > 0 && (
+        <div className="flex flex-col gap-2 rounded-none border border-success/30 bg-success/5 p-3">
+          <div className="flex items-center justify-between border-b border-success/20 pb-2 text-xs">
+            <span className="flex items-center gap-1 font-semibold text-foreground">
+              <TrendingUp className="text-success" />
+              Sale Value: {formatCurrency(numSalePrice * numSharesSold)}
+            </span>
+            <span
+              className={`font-bold ${
+                grossProfit > 0
+                  ? "text-success"
+                  : grossProfit < 0
+                    ? "text-destructive"
+                    : "text-foreground"
+              }`}
+            >
+              Gross: {formatCurrency(grossProfit)}
+            </span>
+          </div>
 
-      {/* Live Profit Preview Box */}
-      {numSalePrice > 0 && (
-        <div className="space-y-2 rounded-md border bg-muted/20 p-3 text-xs">
-          <span className="font-semibold text-foreground block text-[11px] uppercase tracking-wider">
-            Profit Breakdown Preview
-          </span>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <span className="text-[10px] text-muted-foreground block">
-                Total Proceeds
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex flex-col gap-0.5 rounded-none border bg-card/60 p-2">
+              <span className="text-[10px] text-muted-foreground">
+                Your Net Profit
               </span>
-              <span className="font-medium text-foreground">
-                {formatCurrency(totalSaleValue)}
-              </span>
-            </div>
-
-            <div>
-              <span className="text-[10px] text-muted-foreground block">
-                Total Cost Basis
-              </span>
-              <span className="font-medium text-foreground">
-                {formatCurrency(totalCost)}
-              </span>
-            </div>
-
-            <div className="col-span-2 border-t pt-1.5 flex justify-between items-center">
-              <span className="text-muted-foreground">Gross Profit:</span>
               <span
-                className={`font-semibold ${
-                  grossProfit > 0
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : grossProfit < 0
-                      ? "text-destructive"
-                      : "text-foreground"
-                }`}
-              >
-                {formatCurrency(grossProfit)}
-              </span>
-            </div>
-
-            {account?.type === "other" && (
-              <div className="col-span-2 flex justify-between items-center text-[11px]">
-                <span className="text-muted-foreground">
-                  Shared with Other ({profitSharePercent}%):
-                </span>
-                <span className="font-medium text-amber-600 dark:text-amber-400">
-                  {formatCurrency(profitShared)}
-                </span>
-              </div>
-            )}
-
-            <div className="col-span-2 border-t pt-1.5 flex justify-between items-center font-bold">
-              <span className="text-foreground">Your Net Profit:</span>
-              <span
-                className={`text-sm ${
+                className={`text-sm font-bold ${
                   yourProfit > 0
-                    ? "text-emerald-600 dark:text-emerald-400"
+                    ? "text-success"
                     : yourProfit < 0
                       ? "text-destructive"
                       : "text-foreground"
@@ -325,47 +325,62 @@ function RecordSaleForm({
                 {formatCurrency(yourProfit)}
               </span>
             </div>
+
+            <div className="flex flex-col gap-0.5 rounded-none border bg-card/60 p-2">
+              <span className="text-[10px] text-muted-foreground">
+                Profit Shared ({isMyAccount ? "0%" : `${profitSharePct}%`})
+              </span>
+              <span className="text-sm font-bold text-warning-foreground">
+                {formatCurrency(profitShared)}
+              </span>
+            </div>
           </div>
         </div>
       )}
 
+      {/* Sale Date (DatePicker) */}
+      <Field>
+        <FieldLabel>Sale Date</FieldLabel>
+        <DatePicker
+          date={saleDate}
+          onDateChange={setSaleDate}
+          placeholder="Select sale date"
+          disabled={loading}
+        />
+      </Field>
+
       {/* Notes */}
-      <div className="space-y-1">
-        <label
-          htmlFor="sale-notes"
-          className="text-xs font-medium text-foreground"
-        >
-          Notes (Optional)
-        </label>
+      <Field>
+        <FieldLabel htmlFor="sale-notes">Notes (Optional)</FieldLabel>
         <Textarea
           id="sale-notes"
-          placeholder="e.g. Sold on listing morning via Zerodha"
+          placeholder="e.g. Sold on listing day at 9:30 AM"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          disabled={loading}
           rows={2}
+          disabled={loading}
+          className="resize-none"
         />
-      </div>
+      </Field>
 
-      <DialogFooter className="gap-2 sm:gap-0">
+      <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={loading}
+          size="sm"
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} size="sm">
+          {loading && <Spinner data-icon="inline-start" />}
           {loading ? (
-            <>
-              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-              Saving Sale...
-            </>
+            "Recording Sale..."
           ) : (
             <>
-              <TrendingUp className="mr-1.5 size-3.5" />
-              Record Sale
+              <Check data-icon="inline-start" />
+              Confirm Sale
             </>
           )}
         </Button>

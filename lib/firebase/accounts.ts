@@ -24,7 +24,8 @@ function docToAccount(
     userId: data.userId,
     name: data.name,
     type: data.type,
-    profitSharePercent: data.profitSharePercent ?? (data.type === "my" ? 0 : 40),
+    profitSharePercent:
+      data.profitSharePercent ?? (data.type === "my" ? 0 : 40),
     notes: data.notes || "",
     archived: Boolean(data.archived),
     createdAt: data.createdAt,
@@ -43,7 +44,11 @@ export async function getApplicationAccounts(
   let q = query(accountsRef, orderBy("createdAt", "asc"))
 
   if (!includeArchived) {
-    q = query(accountsRef, where("archived", "==", false), orderBy("createdAt", "asc"))
+    q = query(
+      accountsRef,
+      where("archived", "==", false),
+      orderBy("createdAt", "asc")
+    )
   }
 
   const snap = await getDocs(q)

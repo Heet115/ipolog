@@ -9,8 +9,6 @@ import {
   Trash2,
   Users,
   Search,
-  CheckCircle2,
-  Layers,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -19,10 +17,18 @@ import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -98,7 +104,7 @@ export function AccountList({
     } catch (err) {
       console.error(err)
       toast.add({
-        title: "Failed to update account archive state",
+        title: "Failed to update account",
         type: "error",
       })
     }
@@ -127,16 +133,16 @@ export function AccountList({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Controls Bar: Search & Archived Toggle */}
+    <div className="flex flex-col gap-6">
+      {/* Controls Bar: Search & Archive Toggle */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search accounts..."
+            placeholder="Search account name, notes..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
+            className="h-8 bg-background pl-8 text-xs"
           />
         </div>
 
@@ -145,7 +151,7 @@ export function AccountList({
             variant="outline"
             size="xs"
             onClick={() => setShowArchived(!showArchived)}
-            className="text-xs"
+            className="h-8 self-start text-xs sm:self-auto"
           >
             {showArchived
               ? "Hide Archived"
@@ -155,35 +161,41 @@ export function AccountList({
       </div>
 
       {filteredAccounts.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <Users className="mb-3 size-8 text-muted-foreground/50" />
-            <p className="text-xs font-medium text-foreground">
-              No matching application accounts found
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Users className="size-6 text-muted-foreground" />
+            </EmptyMedia>
+            <EmptyTitle>No accounts match your filter</EmptyTitle>
+            <EmptyDescription>
               {search
-                ? "Try clearing your search query"
-                : "Add your first application account to get started"}
-            </p>
-          </CardContent>
-        </Card>
+                ? "Try a different search term"
+                : "Add application accounts to start recording applications"}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
           {/* My Accounts Section */}
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <h2 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                 My Accounts ({myAccounts.length})
               </h2>
+              <Badge
+                variant="secondary"
+                className="px-1 py-0 font-mono text-[10px]"
+              >
+                100% Profit Retention
+              </Badge>
             </div>
 
             {myAccounts.length === 0 ? (
-              <p className="text-xs italic text-muted-foreground">
-                No &quot;My Accounts&quot; recorded.
+              <p className="text-xs text-muted-foreground italic">
+                No personal accounts configured.
               </p>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {myAccounts.map((account) => {
                   const summary = calculateAccountMoneySummary(
                     account.id,
@@ -207,20 +219,26 @@ export function AccountList({
             )}
           </div>
 
-          {/* Other Accounts Section */}
-          <div className="space-y-3">
+          {/* Other / Investor Accounts Section */}
+          <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Other Accounts ({otherAccounts.length})
+              <h2 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+                Other / Family Accounts ({otherAccounts.length})
               </h2>
+              <Badge
+                variant="outline"
+                className="px-1 py-0 font-mono text-[10px]"
+              >
+                Profit Sharing Active
+              </Badge>
             </div>
 
             {otherAccounts.length === 0 ? (
-              <p className="text-xs italic text-muted-foreground">
-                No &quot;Other Accounts&quot; recorded.
+              <p className="text-xs text-muted-foreground italic">
+                No family/investor accounts configured.
               </p>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {otherAccounts.map((account) => {
                   const summary = calculateAccountMoneySummary(
                     account.id,
@@ -291,37 +309,40 @@ function AccountCard({
 }) {
   return (
     <Card
-      className={`group relative overflow-hidden transition-all hover:border-foreground/20 ${
-        account.archived ? "opacity-60 bg-muted/20" : ""
+      className={`group relative overflow-hidden rounded-none border border-border/70 transition-all hover:border-foreground/30 ${
+        account.archived ? "bg-muted/20 opacity-60" : "bg-card"
       }`}
     >
-      <CardContent className="flex flex-col justify-between p-3.5 space-y-3">
+      <CardContent className="flex h-full flex-col justify-between gap-3.5 p-4">
         {/* Top Header */}
         <div className="flex items-start justify-between gap-2">
-          <div className="space-y-1 min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-xs text-foreground truncate">
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="truncate text-sm font-bold text-foreground">
                 {account.name}
               </span>
               {account.archived && (
-                <Badge variant="outline" className="text-[10px] py-0 px-1.5">
+                <Badge
+                  variant="outline"
+                  className="px-1 py-0 font-mono text-[10px]"
+                >
                   Archived
                 </Badge>
               )}
             </div>
 
-            <div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
               {account.type === "my" ? (
                 <Badge
                   variant="secondary"
-                  className="text-[10px] py-0 px-1.5 font-normal"
+                  className="px-1.5 py-0 text-[10px] font-normal"
                 >
-                  My Account (0%)
+                  My Account (100% to You)
                 </Badge>
               ) : (
                 <Badge
                   variant="default"
-                  className="text-[10px] py-0 px-1.5 font-normal"
+                  className="px-1.5 py-0 text-[10px] font-normal"
                 >
                   Other ({account.profitSharePercent}% Share)
                 </Badge>
@@ -335,7 +356,7 @@ function AccountCard({
                 <Button
                   variant="ghost"
                   size="icon-xs"
-                  className="text-muted-foreground hover:text-foreground"
+                  className="size-7 text-muted-foreground hover:text-foreground"
                 />
               }
             >
@@ -343,62 +364,63 @@ function AccountCard({
               <span className="sr-only">Account actions</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-36">
-              <DropdownMenuItem onClick={onEdit}>
-                <Edit2 className="mr-2 size-3.5" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onToggleArchive}>
-                {account.archived ? (
-                  <>
-                    <ArchiveRestore className="mr-2 size-3.5" />
-                    Restore
-                  </>
-                ) : (
-                  <>
-                    <Archive className="mr-2 size-3.5" />
-                    Archive
-                  </>
-                )}
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={onEdit}>
+                  <Edit2 data-icon="inline-start" />
+                  Edit Details
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onToggleArchive}>
+                  {account.archived ? (
+                    <>
+                      <ArchiveRestore data-icon="inline-start" />
+                      Restore
+                    </>
+                  ) : (
+                    <>
+                      <Archive data-icon="inline-start" />
+                      Archive
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={onDelete}
-              >
-                <Trash2 className="mr-2 size-3.5" />
-                Delete
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                  <Trash2 data-icon="inline-start" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
-        {/* Account Statistics (Section 16 of spec) */}
-        <div className="grid grid-cols-2 gap-2 rounded-md bg-muted/40 p-2.5 text-xs">
+        {/* Account Statistics Grid */}
+        <div className="grid grid-cols-2 gap-2 rounded-none border border-border/50 bg-muted/40 p-2.5 text-xs">
           <div>
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-              <CheckCircle2 className="size-2.5" /> Invested
+            <span className="block text-[10px] text-muted-foreground">
+              Invested Value
             </span>
-            <span className="font-semibold text-xs text-foreground">
+            <span className="font-mono font-bold text-foreground">
               {formatCurrency(summary.totalInvested)}
             </span>
           </div>
 
           <div>
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-              <Layers className="size-2.5" /> Applied
+            <span className="block text-[10px] text-muted-foreground">
+              Total Applied
             </span>
-            <span className="font-semibold text-xs text-foreground">
+            <span className="font-mono font-semibold text-foreground">
               {formatCurrency(summary.totalApplied)}
             </span>
           </div>
 
           {summary.soldCount > 0 && (
-            <div className="col-span-2 pt-1 border-t border-border/50 flex justify-between items-center text-[11px]">
-              <span className="text-muted-foreground">Realized Profit (You):</span>
+            <div className="col-span-2 flex items-center justify-between border-t border-border/50 pt-1.5 text-[11px]">
+              <span className="text-muted-foreground">Your Net P&L:</span>
               <span
-                className={`font-bold ${
+                className={`font-mono font-bold ${
                   summary.totalRealizedYourProfit > 0
-                    ? "text-emerald-600 dark:text-emerald-400"
+                    ? "text-success"
                     : summary.totalRealizedYourProfit < 0
                       ? "text-destructive"
                       : "text-foreground"
@@ -409,27 +431,27 @@ function AccountCard({
             </div>
           )}
 
-          {account.type === "other" && summary.totalRealizedProfitShared > 0 && (
-            <div className="col-span-2 flex justify-between items-center text-[10px] text-amber-600 dark:text-amber-400">
-              <span>Shared with Account:</span>
-              <span className="font-medium">
-                {formatCurrency(summary.totalRealizedProfitShared)}
-              </span>
-            </div>
-          )}
+          {account.type === "other" &&
+            summary.totalRealizedProfitShared > 0 && (
+              <div className="col-span-2 flex items-center justify-between font-mono text-[10px] text-warning-foreground">
+                <span>Owner Profit Share:</span>
+                <span className="font-medium">
+                  {formatCurrency(summary.totalRealizedProfitShared)}
+                </span>
+              </div>
+            )}
 
-          <div className="col-span-2 pt-1 border-t border-border/50 text-[10px] text-muted-foreground flex items-center justify-between">
-            <span>
-              {summary.totalApplications} Applications:
-            </span>
+          <div className="col-span-2 flex items-center justify-between border-t border-border/50 pt-1 text-[10px] text-muted-foreground">
+            <span>{summary.totalApplications} Applications:</span>
             <span className="font-medium text-foreground">
-              {summary.allottedCount} Allotted • {summary.soldCount} Sold • {summary.pendingCount} Pending
+              {summary.allottedCount} Allotted • {summary.soldCount} Sold •{" "}
+              {summary.pendingCount} Pending
             </span>
           </div>
         </div>
 
         {account.notes && (
-          <p className="text-[11px] text-muted-foreground line-clamp-2 bg-muted/30 p-1.5 rounded">
+          <p className="line-clamp-2 rounded-none border border-border/40 bg-muted/30 p-2 text-[11px] text-muted-foreground">
             {account.notes}
           </p>
         )}

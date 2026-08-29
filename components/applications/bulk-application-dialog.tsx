@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Loader2, ArrowRight, ArrowLeft, Check, AlertCircle } from "lucide-react"
+import { ArrowRight, ArrowLeft, Check, Plus, Minus } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -10,10 +10,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -22,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Spinner } from "@/components/ui/spinner"
 import { toast } from "@/components/ui/toast"
 import { createApplicationsBatch } from "@/lib/firebase/applications"
 import {
@@ -29,12 +38,7 @@ import {
   calculateAmountApplied,
 } from "@/lib/calculations/financials"
 import { formatCurrency, formatBankAccount } from "@/lib/utils/ipo"
-import type {
-  Ipo,
-  ApplicationAccount,
-  BankAccount,
-  Application,
-} from "@/types"
+import type { Ipo, ApplicationAccount, BankAccount, Application } from "@/types"
 
 interface BulkApplicationDialogProps {
   open: boolean
@@ -65,9 +69,10 @@ export function BulkApplicationDialog({
 }: BulkApplicationDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-2xl md:max-w-3xl lg:max-w-4xl">
         {open && (
           <BulkApplicationForm
+            key={ipo.id}
             userId={userId}
             ipo={ipo}
             existingApplications={existingApplications}
@@ -75,8 +80,8 @@ export function BulkApplicationDialog({
             bankAccounts={bankAccounts}
             onCancel={() => onOpenChange(false)}
             onSuccess={() => {
-              onSuccess()
               onOpenChange(false)
+              onSuccess()
             }}
           />
         )}
@@ -105,7 +110,7 @@ function BulkApplicationForm({
   const [step, setStep] = useState<1 | 2>(1)
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([])
   const [defaultBankId, setDefaultBankId] = useState<string>(
-    bankAccounts[0]?.id || ""
+    bankAccounts.find((b) => !b.archived)?.id || ""
   )
   const [defaultLots, setDefaultLots] = useState<number>(1)
   const [accountConfigs, setAccountConfigs] = useState<
@@ -114,127 +119,207 @@ function BulkApplicationForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Active accounts only
-  const activeAccounts = accounts.filter((a) => !a.archived)
-  const activeBankAccounts = bankAccounts.filter((b) => !b.archived)
-
   const appliedAccountIds = new Set(
-    existingApplications.map((app) => app.accountId)
+    existingApplications.map((a) => a.accountId)
   )
 
+  const activeAccounts = accounts.filter((a) => !a.archived)
   const myAccounts = activeAccounts.filter((a) => a.type === "my")
   const otherAccounts = activeAccounts.filter((a) => a.type === "other")
+  const activeBankAccounts = bankAccounts.filter((b) => !b.archived)
 
-  const toggleAccountSelection = (id: string) => {
-    if (selectedAccountIds.includes(id)) {
-      setSelectedAccountIds(selectedAccountIds.filter((accId) => accId !== id))
-    } else {
-      setSelectedAccountIds([...selectedAccountIds, id])
-    }
+  const toggleAccountSelection = (accountId: string) => {
+    if (appliedAccountIds.has(accountId)) return
+
+    setSelectedAccountIds((prev) => {
+      if (prev.includes(accountId)) {
+        const next = prev.filter((id) => id !== accountId)
+        setAccountConfigs((cfg) => {
+          const updated = { ...cfg }
+          delete updated[accountId]
+          return updated
+        })
+        return next
+      } else {
+        setAccountConfigs((cfg) => ({
+          ...cfg,
+          [accountId]: {
+            accountId,
+            bankAccountId: defaultBankId,
+            lots: defaultLots,
+          },
+        }))
+        return [...prev, accountId]
+      }
+    })
   }
 
   const selectAllMy = () => {
     const available = myAccounts
       .filter((a) => !appliedAccountIds.has(a.id))
       .map((a) => a.id)
-    const newSelected = Array.from(
-      new Set([...selectedAccountIds, ...available])
-    )
-    setSelectedAccountIds(newSelected)
+
+    setSelectedAccountIds((prev) => {
+      const merged = Array.from(new Set([...prev, ...available]))
+      setAccountConfigs((cfg) => {
+        const nextCfg = { ...cfg }
+        for (const id of available) {
+          if (!nextCfg[id]) {
+            nextCfg[id] = {
+              accountId: id,
+              bankAccountId: defaultBankId,
+              lots: defaultLots,
+            }
+          }
+        }
+        return nextCfg
+      })
+      return merged
+    })
   }
 
   const selectAllOther = () => {
     const available = otherAccounts
       .filter((a) => !appliedAccountIds.has(a.id))
       .map((a) => a.id)
-    const newSelected = Array.from(
-      new Set([...selectedAccountIds, ...available])
-    )
-    setSelectedAccountIds(newSelected)
+
+    setSelectedAccountIds((prev) => {
+      const merged = Array.from(new Set([...prev, ...available]))
+      setAccountConfigs((cfg) => {
+        const nextCfg = { ...cfg }
+        for (const id of available) {
+          if (!nextCfg[id]) {
+            nextCfg[id] = {
+              accountId: id,
+              bankAccountId: defaultBankId,
+              lots: defaultLots,
+            }
+          }
+        }
+        return nextCfg
+      })
+      return merged
+    })
+  }
+
+  const selectAllAvailable = () => {
+    const available = activeAccounts
+      .filter((a) => !appliedAccountIds.has(a.id))
+      .map((a) => a.id)
+
+    setSelectedAccountIds(available)
+    setAccountConfigs((cfg) => {
+      const nextCfg = { ...cfg }
+      for (const id of available) {
+        if (!nextCfg[id]) {
+          nextCfg[id] = {
+            accountId: id,
+            bankAccountId: defaultBankId,
+            lots: defaultLots,
+          }
+        }
+      }
+      return nextCfg
+    })
   }
 
   const deselectAll = () => {
     setSelectedAccountIds([])
+    setAccountConfigs({})
   }
 
-  const handleProceedToStep2 = () => {
-    if (selectedAccountIds.length === 0) {
-      setError("Please select at least one application account.")
-      return
-    }
-
-    if (activeBankAccounts.length === 0) {
-      setError("Please add at least one bank account before applying.")
-      return
-    }
-
-    // Initialize configs
-    const initialConfigs: Record<string, AccountConfig> = {}
-    selectedAccountIds.forEach((id) => {
-      initialConfigs[id] = {
-        accountId: id,
-        bankAccountId: accountConfigs[id]?.bankAccountId || defaultBankId || activeBankAccounts[0]?.id || "",
-        lots: accountConfigs[id]?.lots || defaultLots || 1,
+  const applyGlobalBank = (bankId: string) => {
+    setDefaultBankId(bankId)
+    setAccountConfigs((prev) => {
+      const updated: Record<string, AccountConfig> = {}
+      for (const id of selectedAccountIds) {
+        updated[id] = {
+          accountId: id,
+          bankAccountId: bankId,
+          lots: prev[id]?.lots || defaultLots,
+        }
       }
+      return updated
     })
-
-    setAccountConfigs(initialConfigs)
-    setError(null)
-    setStep(2)
   }
 
-  const updateIndividualBank = (accountId: string, bankAccountId: string) => {
+  const applyGlobalLots = (lots: number) => {
+    const safeLots = Math.max(1, lots)
+    setDefaultLots(safeLots)
+    setAccountConfigs((prev) => {
+      const updated: Record<string, AccountConfig> = {}
+      for (const id of selectedAccountIds) {
+        updated[id] = {
+          accountId: id,
+          bankAccountId: prev[id]?.bankAccountId || defaultBankId,
+          lots: safeLots,
+        }
+      }
+      return updated
+    })
+  }
+
+  const updateIndividualBank = (accountId: string, bankId: string) => {
     setAccountConfigs((prev) => ({
       ...prev,
       [accountId]: {
-        ...prev[accountId],
-        bankAccountId,
+        accountId,
+        bankAccountId: bankId,
+        lots: prev[accountId]?.lots || defaultLots,
       },
     }))
   }
 
   const updateIndividualLots = (accountId: string, lots: number) => {
+    const safeLots = Math.max(1, lots)
     setAccountConfigs((prev) => ({
       ...prev,
       [accountId]: {
-        ...prev[accountId],
-        lots: Math.max(1, lots),
+        accountId,
+        bankAccountId: prev[accountId]?.bankAccountId || defaultBankId,
+        lots: safeLots,
       },
     }))
   }
 
-  const applyGlobalLots = (newLots: number) => {
-    setDefaultLots(newLots)
-    setAccountConfigs((prev) => {
-      const updated: Record<string, AccountConfig> = {}
-      Object.keys(prev).forEach((id) => {
-        updated[id] = { ...prev[id], lots: Math.max(1, newLots) }
-      })
-      return updated
-    })
+  const handleProceedToStep2 = () => {
+    if (selectedAccountIds.length === 0) {
+      setError("Please select at least one account to proceed.")
+      return
+    }
+
+    if (activeBankAccounts.length === 0) {
+      setError(
+        "No bank accounts found. Please add a bank account before recording applications."
+      )
+      return
+    }
+
+    setError(null)
+    setStep(2)
   }
 
-  const applyGlobalBank = (newBankId: string) => {
-    setDefaultBankId(newBankId)
-    setAccountConfigs((prev) => {
-      const updated: Record<string, AccountConfig> = {}
-      Object.keys(prev).forEach((id) => {
-        updated[id] = { ...prev[id], bankAccountId: newBankId }
-      })
-      return updated
-    })
-  }
-
-  const handleSaveApplications = async () => {
+  const handleSubmit = async () => {
     setError(null)
     setLoading(true)
 
     try {
+      if (selectedAccountIds.length === 0) {
+        throw new Error("No accounts selected")
+      }
+
+      for (const id of selectedAccountIds) {
+        const cfg = accountConfigs[id]
+        if (!cfg?.bankAccountId) {
+          throw new Error("Please select a bank account for all applications.")
+        }
+      }
+
       const applicationsToCreate = selectedAccountIds.map((accountId) => {
         const cfg = accountConfigs[accountId]
         const lots = cfg?.lots || 1
-        const bankAccountId =
-          cfg?.bankAccountId || defaultBankId || activeBankAccounts[0]?.id || ""
+        const bankAccountId = cfg?.bankAccountId || defaultBankId
+
         const sharesApplied = calculateSharesApplied(lots, ipo.lotSize)
         const amountApplied = calculateAmountApplied(
           lots,
@@ -254,70 +339,74 @@ function BulkApplicationForm({
 
       await createApplicationsBatch(userId, applicationsToCreate)
       toast.add({
-        title: `${applicationsToCreate.length} Applications created`,
+        title: `${applicationsToCreate.length} Applications recorded successfully`,
         type: "success",
       })
       onSuccess()
     } catch (err: unknown) {
       console.error(err)
-      setError("Failed to create applications. Please try again.")
+      setError(
+        err instanceof Error ? err.message : "Failed to create applications."
+      )
     } finally {
       setLoading(false)
     }
   }
 
-  // Calculate review totals
   const totalLots = selectedAccountIds.reduce(
-    (sum, id) => sum + (accountConfigs[id]?.lots || 1),
+    (sum, id) => sum + (accountConfigs[id]?.lots || defaultLots),
     0
   )
   const totalAmount = totalLots * ipo.lotSize * ipo.issuePrice
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       <DialogHeader>
-        <div className="flex items-center justify-between">
-          <DialogTitle>Add Applications — {ipo.name}</DialogTitle>
-          <span className="text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <DialogTitle className="max-w-md truncate">
+            Record Applications — {ipo.name}
+          </DialogTitle>
+          <Badge variant="outline" className="font-mono text-xs">
             Step {step} of 2
-          </span>
+          </Badge>
         </div>
         <DialogDescription>
           {step === 1
-            ? "Select the application accounts you want to apply with."
-            : "Configure lot sizes and bank accounts, review, and confirm."}
+            ? "Select accounts to apply with. Already applied accounts are disabled to prevent duplicates."
+            : "Assign lot sizes and funding bank accounts, review live totals, and confirm."}
         </DialogDescription>
       </DialogHeader>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">
-          <AlertCircle className="size-4 shrink-0" />
-          <span>{error}</span>
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {/* STEP 1: Account Selection */}
       {step === 1 && (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           {activeAccounts.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground">
-              You haven&apos;t created any application accounts yet. Please add accounts from the Application Accounts page first.
+              You haven&apos;t created any application accounts yet. Please add
+              accounts from the Application Accounts page first.
             </div>
           ) : (
             <>
-              {/* Quick Actions */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2 text-xs">
-                <span className="font-medium text-foreground">
-                  Selected: {selectedAccountIds.length} of {activeAccounts.length}
+              {/* Quick Actions Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2 text-xs">
+                <span className="font-semibold text-foreground">
+                  Selected: {selectedAccountIds.length} of{" "}
+                  {activeAccounts.length}
                 </span>
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <Button
                     type="button"
                     variant="outline"
                     size="xs"
                     onClick={selectAllMy}
                   >
-                    Select All My
+                    All My
                   </Button>
                   <Button
                     type="button"
@@ -325,7 +414,15 @@ function BulkApplicationForm({
                     size="xs"
                     onClick={selectAllOther}
                   >
-                    Select All Other
+                    All Other
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                    onClick={selectAllAvailable}
+                  >
+                    Select All
                   </Button>
                   {selectedAccountIds.length > 0 && (
                     <Button
@@ -333,6 +430,7 @@ function BulkApplicationForm({
                       variant="ghost"
                       size="xs"
                       onClick={deselectAll}
+                      className="text-muted-foreground"
                     >
                       Clear
                     </Button>
@@ -341,54 +439,62 @@ function BulkApplicationForm({
               </div>
 
               {/* My Accounts */}
-              <div className="space-y-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
-                  My Accounts ({myAccounts.length})
-                </span>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {myAccounts.map((account) => {
-                    const alreadyApplied = appliedAccountIds.has(account.id)
-                    const isSelected = selectedAccountIds.includes(account.id)
+              {myAccounts.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <span className="block text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                    My Accounts ({myAccounts.length})
+                  </span>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {myAccounts.map((account) => {
+                      const alreadyApplied = appliedAccountIds.has(account.id)
+                      const isSelected = selectedAccountIds.includes(account.id)
 
-                    return (
-                      <label
-                        key={account.id}
-                        className={`flex items-center justify-between rounded-md border p-2.5 cursor-pointer text-xs transition-colors ${
-                          alreadyApplied
-                            ? "opacity-50 cursor-not-allowed bg-muted/20 border-dashed"
-                            : isSelected
-                              ? "border-primary bg-primary/5 ring-1 ring-primary"
-                              : "border-border hover:bg-muted/40"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <Checkbox
-                            checked={isSelected}
-                            disabled={alreadyApplied}
-                            onCheckedChange={() =>
-                              !alreadyApplied &&
-                              toggleAccountSelection(account.id)
-                            }
-                          />
-                          <span className="font-medium truncate">
-                            {account.name}
-                          </span>
-                        </div>
-                        {alreadyApplied && (
-                          <Badge variant="outline" className="text-[10px] py-0">
-                            Already Applied
-                          </Badge>
-                        )}
-                      </label>
-                    )
-                  })}
+                      return (
+                        <label
+                          key={account.id}
+                          className={`flex min-w-0 cursor-pointer items-center justify-between gap-2 rounded-none border p-2.5 text-xs transition-all ${
+                            alreadyApplied
+                              ? "cursor-not-allowed border-dashed bg-muted/20 opacity-50"
+                              : isSelected
+                                ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                : "border-border hover:bg-muted/40"
+                          }`}
+                        >
+                          <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                            <Checkbox
+                              checked={isSelected}
+                              disabled={alreadyApplied}
+                              onCheckedChange={() =>
+                                !alreadyApplied &&
+                                toggleAccountSelection(account.id)
+                              }
+                            />
+                            <span
+                              className="truncate text-xs font-semibold text-foreground"
+                              title={account.name}
+                            >
+                              {account.name}
+                            </span>
+                          </div>
+                          {alreadyApplied && (
+                            <Badge
+                              variant="outline"
+                              className="shrink-0 py-0 font-mono text-[10px]"
+                            >
+                              Applied
+                            </Badge>
+                          )}
+                        </label>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Other Accounts */}
               {otherAccounts.length > 0 && (
-                <div className="space-y-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block">
+                <div className="flex flex-col gap-2">
+                  <span className="block text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                     Other Accounts ({otherAccounts.length})
                   </span>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -399,15 +505,15 @@ function BulkApplicationForm({
                       return (
                         <label
                           key={account.id}
-                          className={`flex items-center justify-between rounded-md border p-2.5 cursor-pointer text-xs transition-colors ${
+                          className={`flex min-w-0 cursor-pointer items-center justify-between gap-2 rounded-none border p-2.5 text-xs transition-all ${
                             alreadyApplied
-                              ? "opacity-50 cursor-not-allowed bg-muted/20 border-dashed"
+                              ? "cursor-not-allowed border-dashed bg-muted/20 opacity-50"
                               : isSelected
                                 ? "border-primary bg-primary/5 ring-1 ring-primary"
                                 : "border-border hover:bg-muted/40"
                           }`}
                         >
-                          <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="flex min-w-0 flex-1 items-center gap-2.5">
                             <Checkbox
                               checked={isSelected}
                               disabled={alreadyApplied}
@@ -416,11 +522,14 @@ function BulkApplicationForm({
                                 toggleAccountSelection(account.id)
                               }
                             />
-                            <div className="truncate">
-                              <span className="font-medium block truncate">
+                            <div className="min-w-0 flex-1">
+                              <span
+                                className="block truncate text-xs font-semibold text-foreground"
+                                title={account.name}
+                              >
                                 {account.name}
                               </span>
-                              <span className="text-[10px] text-muted-foreground">
+                              <span className="block truncate text-[10px] text-muted-foreground">
                                 {account.profitSharePercent}% profit share
                               </span>
                             </div>
@@ -428,9 +537,9 @@ function BulkApplicationForm({
                           {alreadyApplied && (
                             <Badge
                               variant="outline"
-                              className="text-[10px] py-0"
+                              className="shrink-0 py-0 font-mono text-[10px]"
                             >
-                              Already Applied
+                              Applied
                             </Badge>
                           )}
                         </label>
@@ -442,17 +551,23 @@ function BulkApplicationForm({
             </>
           )}
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={onCancel}>
+          <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              size="sm"
+            >
               Cancel
             </Button>
             <Button
               type="button"
               onClick={handleProceedToStep2}
               disabled={selectedAccountIds.length === 0}
+              size="sm"
             >
               Next: Assign Banks & Lots
-              <ArrowRight className="ml-1.5 size-3.5" />
+              <ArrowRight data-icon="inline-end" />
             </Button>
           </DialogFooter>
         </div>
@@ -460,58 +575,83 @@ function BulkApplicationForm({
 
       {/* STEP 2: Configure & Review */}
       {step === 2 && (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           {/* Global Defaults Bar */}
-          <div className="grid grid-cols-1 gap-3 rounded-md bg-muted/40 p-3 sm:grid-cols-2 text-xs">
-            <div className="space-y-1">
-              <label className="text-[11px] font-medium text-muted-foreground block">
-                Apply Bank to All Selected
+          <div className="grid grid-cols-1 gap-3 rounded-none border bg-muted/40 p-3 text-xs sm:grid-cols-2">
+            <div className="flex min-w-0 flex-col gap-1">
+              <label className="block truncate text-[11px] font-semibold text-muted-foreground">
+                Apply Bank to All
               </label>
-              <select
-                className="w-full rounded-md border bg-background px-2.5 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
+              <Select
                 value={defaultBankId}
-                onChange={(e) => applyGlobalBank(e.target.value)}
+                onValueChange={(val) => val && applyGlobalBank(val)}
               >
-                {activeBankAccounts.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {formatBankAccount(b)}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-8 w-full bg-background text-xs">
+                  <SelectValue placeholder="Select bank" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeBankAccounts.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {formatBankAccount(b)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-[11px] font-medium text-muted-foreground block">
-                Apply Lots to All Selected
+            <div className="flex min-w-0 flex-col gap-1">
+              <label className="block truncate text-[11px] font-semibold text-muted-foreground">
+                Apply Lots to All
               </label>
-              <Input
-                type="number"
-                min="1"
-                step="1"
-                value={defaultLots}
-                onChange={(e) => applyGlobalLots(Number(e.target.value))}
-                className="h-7 text-xs"
-              />
+              <div className="flex h-8 items-center rounded-none border bg-background px-1">
+                <button
+                  type="button"
+                  disabled={defaultLots <= 1}
+                  onClick={() => applyGlobalLots(defaultLots - 1)}
+                  className="px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                >
+                  <Minus className="size-3" />
+                </button>
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={defaultLots}
+                  onChange={(e) => applyGlobalLots(Number(e.target.value))}
+                  className="h-6 [appearance:textfield] border-0 p-0 text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => applyGlobalLots(defaultLots + 1)}
+                  className="px-2 py-1 text-muted-foreground hover:text-foreground"
+                >
+                  <Plus className="size-3" />
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Detailed Applications Table */}
-          <div className="rounded-md border max-h-[300px] overflow-y-auto">
-            <Table>
+          <div className="max-h-[300px] min-w-0 overflow-x-auto overflow-y-auto rounded-none border">
+            <Table className="min-w-[600px]">
               <TableHeader>
-                <TableRow>
-                  <TableHead>Account</TableHead>
-                  <TableHead className="w-[180px]">Bank Account</TableHead>
-                  <TableHead className="w-[80px]">Lots</TableHead>
-                  <TableHead className="text-right">Shares</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
+                <TableRow className="bg-muted/30">
+                  <TableHead className="min-w-[180px] text-xs">
+                    Account
+                  </TableHead>
+                  <TableHead className="min-w-[200px] text-xs">
+                    Bank Account
+                  </TableHead>
+                  <TableHead className="w-[80px] text-xs">Lots</TableHead>
+                  <TableHead className="text-right text-xs">Shares</TableHead>
+                  <TableHead className="text-right text-xs">Amount</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {selectedAccountIds.map((accountId) => {
                   const account = accounts.find((a) => a.id === accountId)
                   const cfg = accountConfigs[accountId]
-                  const lots = cfg?.lots || 1
+                  const lots = cfg?.lots || defaultLots
                   const bankId = cfg?.bankAccountId || defaultBankId
                   const shares = calculateSharesApplied(lots, ipo.lotSize)
                   const amount = calculateAmountApplied(
@@ -522,14 +662,19 @@ function BulkApplicationForm({
 
                   return (
                     <TableRow key={accountId}>
-                      <TableCell className="font-medium text-xs">
-                        <div className="flex items-center gap-1.5">
-                          <span>{account?.name}</span>
+                      <TableCell className="text-xs font-medium">
+                        <div className="flex max-w-[220px] min-w-0 items-center gap-1.5">
+                          <span
+                            className="block truncate font-semibold text-foreground"
+                            title={account?.name}
+                          >
+                            {account?.name}
+                          </span>
                           <Badge
                             variant={
                               account?.type === "my" ? "secondary" : "default"
                             }
-                            className="text-[9px] py-0 px-1 font-normal"
+                            className="shrink-0 px-1 py-0 text-[9px] font-normal"
                           >
                             {account?.type === "my"
                               ? "My"
@@ -539,26 +684,30 @@ function BulkApplicationForm({
                       </TableCell>
 
                       <TableCell>
-                        <select
-                          className="w-full rounded border bg-background px-1.5 py-0.5 text-xs outline-none"
+                        <Select
                           value={bankId}
-                          onChange={(e) =>
-                            updateIndividualBank(accountId, e.target.value)
+                          onValueChange={(val) =>
+                            val && updateIndividualBank(accountId, val)
                           }
                         >
-                          {activeBankAccounts.map((b) => (
-                            <option key={b.id} value={b.id}>
-                              {formatBankAccount(b)}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger className="h-7 w-full truncate bg-background text-xs">
+                            <SelectValue placeholder="Select bank" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {activeBankAccounts.map((b) => (
+                              <SelectItem key={b.id} value={b.id}>
+                                {formatBankAccount(b)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
 
                       <TableCell>
                         <Input
                           type="number"
-                          min="1"
-                          step="1"
+                          min={1}
+                          step={1}
                           value={lots}
                           onChange={(e) =>
                             updateIndividualLots(
@@ -566,15 +715,15 @@ function BulkApplicationForm({
                               Number(e.target.value)
                             )
                           }
-                          className="h-6 w-16 text-xs px-1.5"
+                          className="h-7 w-16 px-1.5 text-center text-xs font-bold"
                         />
                       </TableCell>
 
-                      <TableCell className="text-right text-xs text-muted-foreground">
+                      <TableCell className="text-right font-mono text-xs text-muted-foreground">
                         {shares}
                       </TableCell>
 
-                      <TableCell className="text-right text-xs font-semibold text-foreground">
+                      <TableCell className="text-right font-mono text-xs font-bold text-foreground">
                         {formatCurrency(amount)}
                       </TableCell>
                     </TableRow>
@@ -584,40 +733,51 @@ function BulkApplicationForm({
             </Table>
           </div>
 
-          {/* Grand Totals Summary */}
-          <div className="flex items-center justify-between rounded-md bg-muted/60 px-3 py-2 text-xs font-medium">
-            <span>
-              Total: {selectedAccountIds.length} Applications ({totalLots} Lots)
-            </span>
-            <span className="text-sm font-bold text-foreground">
-              {formatCurrency(totalAmount)}
-            </span>
+          {/* Review Summary Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-none border border-border bg-muted/30 p-3 text-xs">
+            <div className="min-w-0">
+              <span className="block text-[11px] font-medium text-muted-foreground">
+                Total Mandate Commitment:
+              </span>
+              <span className="font-mono text-base font-bold text-foreground">
+                {formatCurrency(totalAmount)}
+              </span>
+            </div>
+            <div className="min-w-0 text-right">
+              <span className="block text-[11px] font-medium text-muted-foreground">
+                Applications / Lots:
+              </span>
+              <span className="font-mono text-xs font-bold text-foreground">
+                {selectedAccountIds.length} Accounts ({totalLots} Lots •{" "}
+                {totalLots * ipo.lotSize} Shares)
+              </span>
+            </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={() => setStep(1)}
               disabled={loading}
+              size="sm"
             >
-              <ArrowLeft className="mr-1.5 size-3.5" />
-              Back
+              <ArrowLeft data-icon="inline-start" />
+              Back to Accounts
             </Button>
             <Button
               type="button"
-              onClick={handleSaveApplications}
+              onClick={handleSubmit}
               disabled={loading}
+              size="sm"
             >
+              {loading && <Spinner data-icon="inline-start" />}
               {loading ? (
-                <>
-                  <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-                  Saving {selectedAccountIds.length} applications...
-                </>
+                "Recording Applications..."
               ) : (
                 <>
-                  <Check className="mr-1.5 size-3.5" />
-                  Confirm & Save All
+                  <Check data-icon="inline-start" />
+                  Confirm & Submit ({selectedAccountIds.length})
                 </>
               )}
             </Button>

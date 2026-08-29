@@ -43,7 +43,11 @@ export async function getBankAccounts(
   let q = query(bankAccountsRef, orderBy("createdAt", "asc"))
 
   if (!includeArchived) {
-    q = query(bankAccountsRef, where("archived", "==", false), orderBy("createdAt", "asc"))
+    q = query(
+      bankAccountsRef,
+      where("archived", "==", false),
+      orderBy("createdAt", "asc")
+    )
   }
 
   const snap = await getDocs(q)

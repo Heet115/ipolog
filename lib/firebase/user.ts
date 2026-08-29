@@ -1,9 +1,4 @@
-import {
-  doc,
-  getDoc,
-  setDoc,
-  serverTimestamp,
-} from "firebase/firestore"
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore"
 import type { User as FirebaseUser } from "firebase/auth"
 import { db } from "@/lib/firebase/firebase"
 
@@ -45,9 +40,7 @@ export async function createOrUpdateUserProfile(
 /**
  * Retrieves the user profile document from Firestore.
  */
-export async function getUserProfile(
-  uid: string
-): Promise<UserProfile | null> {
+export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const userRef = doc(db, "users", uid)
   const snap = await getDoc(userRef)
   if (!snap.exists()) {

@@ -72,9 +72,7 @@ export async function getApplicationsByIpo(
 /**
  * Fetches all applications for a user.
  */
-export async function getApplications(
-  userId: string
-): Promise<Application[]> {
+export async function getApplications(userId: string): Promise<Application[]> {
   const appsRef = collection(db, "users", userId, "applications")
   const q = query(appsRef, orderBy("createdAt", "desc"))
   const snap = await getDocs(q)
@@ -141,16 +139,25 @@ export async function updateApplication(
     updatedAt: serverTimestamp(),
   }
 
-  if (data.bankAccountId !== undefined) payload.bankAccountId = data.bankAccountId
-  if (data.lotsApplied !== undefined) payload.lotsApplied = Number(data.lotsApplied)
-  if (data.sharesApplied !== undefined) payload.sharesApplied = Number(data.sharesApplied)
-  if (data.amountApplied !== undefined) payload.amountApplied = Number(data.amountApplied)
+  if (data.bankAccountId !== undefined)
+    payload.bankAccountId = data.bankAccountId
+  if (data.lotsApplied !== undefined)
+    payload.lotsApplied = Number(data.lotsApplied)
+  if (data.sharesApplied !== undefined)
+    payload.sharesApplied = Number(data.sharesApplied)
+  if (data.amountApplied !== undefined)
+    payload.amountApplied = Number(data.amountApplied)
   if (data.status !== undefined) payload.status = data.status
-  if (data.allottedLots !== undefined) payload.allottedLots = Number(data.allottedLots)
-  if (data.allottedShares !== undefined) payload.allottedShares = Number(data.allottedShares)
-  if (data.listingPrice !== undefined) payload.listingPrice = Number(data.listingPrice)
-  if (data.currentPrice !== undefined) payload.currentPrice = Number(data.currentPrice)
-  if (data.sharesSold !== undefined) payload.sharesSold = Number(data.sharesSold)
+  if (data.allottedLots !== undefined)
+    payload.allottedLots = Number(data.allottedLots)
+  if (data.allottedShares !== undefined)
+    payload.allottedShares = Number(data.allottedShares)
+  if (data.listingPrice !== undefined)
+    payload.listingPrice = Number(data.listingPrice)
+  if (data.currentPrice !== undefined)
+    payload.currentPrice = Number(data.currentPrice)
+  if (data.sharesSold !== undefined)
+    payload.sharesSold = Number(data.sharesSold)
   if (data.salePrice !== undefined) payload.salePrice = Number(data.salePrice)
   if (data.saleDate !== undefined) payload.saleDate = data.saleDate
   if (data.notes !== undefined) payload.notes = data.notes.trim()
@@ -195,8 +202,10 @@ export async function updateAllotmentsBatch(
     }
 
     if (item.status === "allotted") {
-      payload.allottedLots = item.allottedLots !== undefined ? Number(item.allottedLots) : 1
-      payload.allottedShares = item.allottedShares !== undefined ? Number(item.allottedShares) : 0
+      payload.allottedLots =
+        item.allottedLots !== undefined ? Number(item.allottedLots) : 1
+      payload.allottedShares =
+        item.allottedShares !== undefined ? Number(item.allottedShares) : 0
     } else {
       payload.allottedLots = 0
       payload.allottedShares = 0

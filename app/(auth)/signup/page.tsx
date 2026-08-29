@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { FileText, Loader2 } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -14,13 +13,20 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
+import { Spinner } from "@/components/ui/spinner"
 import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/lib/firebase/auth-context"
 import { getAuthErrorMessage } from "@/lib/firebase/auth-errors"
 
 export default function SignupPage() {
-  const { user, loading: authLoading, signUpWithEmail, signInWithGoogle } =
-    useAuth()
+  const {
+    user,
+    loading: authLoading,
+    signUpWithEmail,
+    signInWithGoogle,
+  } = useAuth()
   const router = useRouter()
 
   const [email, setEmail] = useState("")
@@ -98,106 +104,89 @@ export default function SignupPage() {
   if (authLoading) {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        <Spinner />
       </div>
     )
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <FileText className="size-5" />
+    <Card className="w-full rounded-none border border-border/80 bg-card">
+      <CardHeader className="pb-2 text-center">
+        <div className="mx-auto mb-3 flex size-9 items-center justify-center rounded-none border border-border bg-muted/40 text-sm font-black tracking-tighter text-foreground">
+          IPO
         </div>
-        <CardTitle className="text-lg">Create your account</CardTitle>
+        <CardTitle className="text-lg font-bold">Create your account</CardTitle>
         <CardDescription className="text-xs">
-          Start tracking your IPO applications today
+          Start tracking your IPO applications and profit sharing today
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="flex flex-col gap-4">
         {error && (
-          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">
-            {error}
-          </div>
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="space-y-1">
-            <label
-              htmlFor="email"
-              className="text-xs font-medium text-foreground"
-            >
-              Email
-            </label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading || googleLoading}
-              required
-              autoComplete="email"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="email">Email</FieldLabel>
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading || googleLoading}
+                required
+                autoComplete="email"
+              />
+            </Field>
 
-          <div className="space-y-1">
-            <label
-              htmlFor="password"
-              className="text-xs font-medium text-foreground"
-            >
-              Password
-            </label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="•••••••• (min 6 characters)"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading || googleLoading}
-              required
-              autoComplete="new-password"
-            />
-          </div>
+            <Field>
+              <FieldLabel htmlFor="password">Password</FieldLabel>
+              <Input
+                id="password"
+                type="password"
+                placeholder="•••••••• (min 6 characters)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading || googleLoading}
+                required
+                autoComplete="new-password"
+              />
+            </Field>
 
-          <div className="space-y-1">
-            <label
-              htmlFor="confirmPassword"
-              className="text-xs font-medium text-foreground"
-            >
-              Confirm Password
-            </label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={loading || googleLoading}
-              required
-              autoComplete="new-password"
-            />
-          </div>
+            <Field>
+              <FieldLabel htmlFor="confirmPassword">
+                Confirm Password
+              </FieldLabel>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={loading || googleLoading}
+                required
+                autoComplete="new-password"
+              />
+            </Field>
+          </FieldGroup>
 
           <Button
             type="submit"
             className="w-full"
             disabled={loading || googleLoading}
           >
-            {loading ? (
-              <>
-                <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-                Creating account...
-              </>
-            ) : (
-              "Create Account"
-            )}
+            {loading && <Spinner data-icon="inline-start" />}
+            {loading ? "Creating account..." : "Create Account"}
           </Button>
         </form>
 
-        <div className="relative my-3 flex items-center justify-center">
+        <div className="relative my-2 flex items-center justify-center">
           <Separator className="w-full" />
-          <span className="absolute bg-card px-2 text-[10px] uppercase text-muted-foreground">
+          <span className="absolute bg-card px-2 text-[10px] text-muted-foreground uppercase">
             Or continue with
           </span>
         </div>
@@ -205,14 +194,14 @@ export default function SignupPage() {
         <Button
           type="button"
           variant="outline"
-          className="w-full gap-2"
+          className="w-full"
           onClick={handleGoogleSignIn}
           disabled={loading || googleLoading}
         >
           {googleLoading ? (
-            <Loader2 className="size-3.5 animate-spin" />
+            <Spinner data-icon="inline-start" />
           ) : (
-            <svg className="size-3.5" viewBox="0 0 24 24">
+            <svg data-icon="inline-start" viewBox="0 0 24 24">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                 fill="#4285F4"

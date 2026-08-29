@@ -53,7 +53,11 @@ export async function getIpos(
   let q = query(iposRef, orderBy("createdAt", "desc"))
 
   if (!includeArchived) {
-    q = query(iposRef, where("archived", "==", false), orderBy("createdAt", "desc"))
+    q = query(
+      iposRef,
+      where("archived", "==", false),
+      orderBy("createdAt", "desc")
+    )
   }
 
   const snap = await getDocs(q)
@@ -174,9 +178,11 @@ export async function updateIpo(
   }
 
   if (data.name !== undefined) payload.name = data.name.trim()
-  if (data.companyName !== undefined) payload.companyName = data.companyName.trim()
+  if (data.companyName !== undefined)
+    payload.companyName = data.companyName.trim()
   if (data.type !== undefined) payload.type = data.type
-  if (data.issuePrice !== undefined) payload.issuePrice = Number(data.issuePrice)
+  if (data.issuePrice !== undefined)
+    payload.issuePrice = Number(data.issuePrice)
   if (data.lotSize !== undefined) payload.lotSize = Number(data.lotSize)
   if (data.notes !== undefined) payload.notes = data.notes.trim()
   if (data.archived !== undefined) payload.archived = data.archived
@@ -189,7 +195,8 @@ export async function updateIpo(
   }
   if (data.openDate !== undefined) payload.openDate = data.openDate
   if (data.closeDate !== undefined) payload.closeDate = data.closeDate
-  if (data.allotmentDate !== undefined) payload.allotmentDate = data.allotmentDate
+  if (data.allotmentDate !== undefined)
+    payload.allotmentDate = data.allotmentDate
   if (data.listingDate !== undefined) payload.listingDate = data.listingDate
 
   await updateDoc(ipoRef, payload)
@@ -213,10 +220,7 @@ export async function archiveIpo(
 /**
  * Permanently deletes an IPO document.
  */
-export async function deleteIpo(
-  userId: string,
-  ipoId: string
-): Promise<void> {
+export async function deleteIpo(userId: string, ipoId: string): Promise<void> {
   const ipoRef = doc(db, "users", userId, "ipos", ipoId)
   await deleteDoc(ipoRef)
 }
@@ -238,10 +242,14 @@ export async function updateIpoPrices(
   }
 
   if (prices.listingPrice !== undefined) {
-    payload.listingPrice = prices.listingPrice ? Number(prices.listingPrice) : null
+    payload.listingPrice = prices.listingPrice
+      ? Number(prices.listingPrice)
+      : null
   }
   if (prices.currentPrice !== undefined) {
-    payload.currentPrice = prices.currentPrice ? Number(prices.currentPrice) : null
+    payload.currentPrice = prices.currentPrice
+      ? Number(prices.currentPrice)
+      : null
   }
 
   await updateDoc(ipoRef, payload)

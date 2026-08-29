@@ -21,7 +21,14 @@ export function calculateAmountApplied(
   lotSize: number,
   issuePrice: number
 ): number {
-  if (!lots || lots < 0 || !lotSize || lotSize < 0 || !issuePrice || issuePrice < 0) {
+  if (
+    !lots ||
+    lots < 0 ||
+    !lotSize ||
+    lotSize < 0 ||
+    !issuePrice ||
+    issuePrice < 0
+  ) {
     return 0
   }
   return lots * lotSize * issuePrice
@@ -75,7 +82,12 @@ export function calculateProfitShared(
   grossProfit: number,
   profitSharePercent: number
 ): number {
-  if (!grossProfit || grossProfit <= 0 || !profitSharePercent || profitSharePercent <= 0) {
+  if (
+    !grossProfit ||
+    grossProfit <= 0 ||
+    !profitSharePercent ||
+    profitSharePercent <= 0
+  ) {
     return 0
   }
   return grossProfit * (profitSharePercent / 100)
@@ -231,8 +243,7 @@ export function calculateIpoProfitSummary(
     }
   }
 
-  const totalNetYourProfit =
-    totalRealizedYourProfit + totalUnrealizedYourProfit
+  const totalNetYourProfit = totalRealizedYourProfit + totalUnrealizedYourProfit
 
   return {
     totalRealizedGrossProfit,

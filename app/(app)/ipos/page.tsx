@@ -2,10 +2,19 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, FileText, Loader2 } from "lucide-react"
+import { Plus, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty"
 import { IpoDialog } from "@/components/ipo/ipo-dialog"
 import { IpoList } from "@/components/ipo/ipo-list"
+import { IpoListSkeleton } from "@/components/ipo/ipo-skeleton"
 import { useAuth } from "@/lib/firebase/auth-context"
 import { getIpos } from "@/lib/firebase/ipos"
 import { getApplications } from "@/lib/firebase/applications"
@@ -39,10 +48,7 @@ export default function IposPage() {
     let ignore = false
     if (!user) return
 
-    Promise.all([
-      getIpos(user.uid, true),
-      getApplications(user.uid),
-    ])
+    Promise.all([getIpos(user.uid, true), getApplications(user.uid)])
       .then(([iposData, appsData]) => {
         if (!ignore) {
           setIpos(iposData)
@@ -80,42 +86,43 @@ export default function IposPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-foreground">My IPOs</h1>
+          <h1 className="text-xl font-bold text-foreground">My IPOs</h1>
           <p className="text-xs text-muted-foreground">
-            Track and manage IPO applications, allotments, and performance
+            Track and manage IPO applications, allotments, and market
+            performance
           </p>
         </div>
         <Button size="sm" onClick={handleAddClick}>
-          <Plus className="mr-1.5 size-4" />
+          <Plus data-icon="inline-start" />
           Add IPO
         </Button>
       </div>
 
       {loading ? (
-        <div className="flex min-h-[250px] items-center justify-center">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-        </div>
+        <IpoListSkeleton />
       ) : ipos.length === 0 ? (
-        <div className="flex min-h-[300px] flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-          <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-            <FileText className="size-6 text-muted-foreground" />
-          </div>
-          <h2 className="mt-3 text-sm font-semibold text-foreground">
-            No IPOs tracked yet
-          </h2>
-          <p className="mt-1 max-w-sm text-xs text-muted-foreground">
-            Add an upcoming or open IPO to begin recording your applications
-            across multiple accounts and bank accounts.
-          </p>
-          <Button size="sm" className="mt-4" onClick={handleAddClick}>
-            <Plus className="mr-1.5 size-3.5" />
-            Add First IPO
-          </Button>
-        </div>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FileText />
+            </EmptyMedia>
+            <EmptyTitle>No IPOs tracked yet</EmptyTitle>
+            <EmptyDescription>
+              Add an upcoming or open IPO to begin recording your applications
+              across multiple accounts and bank accounts.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button size="sm" onClick={handleAddClick}>
+              <Plus data-icon="inline-start" />
+              Add First IPO
+            </Button>
+          </EmptyContent>
+        </Empty>
       ) : (
         <IpoList
           ipos={ipos}

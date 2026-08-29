@@ -66,9 +66,7 @@ export function formatCurrency(amount: number | null | undefined): string {
 /**
  * Formats a Firestore Timestamp or Date object into a readable date string (e.g. 15 Sep 2026).
  */
-export function formatDate(
-  date: Timestamp | Date | null | undefined
-): string {
+export function formatDate(date: Timestamp | Date | null | undefined): string {
   if (!date) return "—"
 
   let jsDate: Date
@@ -76,7 +74,10 @@ export function formatDate(
     jsDate = date.toDate()
   } else if (date instanceof Date) {
     jsDate = date
-  } else if (typeof date === "object" && "seconds" in (date as { seconds: number })) {
+  } else if (
+    typeof date === "object" &&
+    "seconds" in (date as { seconds: number })
+  ) {
     jsDate = new Date((date as { seconds: number }).seconds * 1000)
   } else {
     return "—"
@@ -102,7 +103,10 @@ export function dateToInputValue(
     jsDate = date.toDate()
   } else if (date instanceof Date) {
     jsDate = date
-  } else if (typeof date === "object" && "seconds" in (date as { seconds: number })) {
+  } else if (
+    typeof date === "object" &&
+    "seconds" in (date as { seconds: number })
+  ) {
     jsDate = new Date((date as { seconds: number }).seconds * 1000)
   } else {
     return ""
@@ -121,6 +125,13 @@ export function inputValueToTimestamp(val: string): Timestamp | undefined {
   if (!val) return undefined
   const parts = val.split("-")
   if (parts.length !== 3) return undefined
-  const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 12, 0, 0)
+  const date = new Date(
+    Number(parts[0]),
+    Number(parts[1]) - 1,
+    Number(parts[2]),
+    12,
+    0,
+    0
+  )
   return Timestamp.fromDate(date)
 }

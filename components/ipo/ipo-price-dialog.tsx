@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Loader2, DollarSign } from "lucide-react"
+import { DollarSign } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -10,8 +10,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
+import { Spinner } from "@/components/ui/spinner"
 import { toast } from "@/components/ui/toast"
 import { updateIpoPrices } from "@/lib/firebase/ipos"
 import { formatCurrency } from "@/lib/utils/ipo"
@@ -34,10 +37,12 @@ export function IpoPriceDialog({
 }: IpoPriceDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-md md:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Update Market Prices — {ipo.name}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="max-w-md truncate">
+            Update Market Prices — {ipo.name}
+          </DialogTitle>
+          <DialogDescription className="text-xs break-words">
             Set the listing opening price or current market price (CMP) to track
             unrealized and listing gains.
           </DialogDescription>
@@ -45,6 +50,7 @@ export function IpoPriceDialog({
 
         {open && (
           <IpoPriceForm
+            key={ipo.id}
             userId={userId}
             ipo={ipo}
             onCancel={() => onOpenChange(false)}
@@ -117,104 +123,95 @@ function IpoPriceForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {/* Issue Price Reference */}
-      <div className="rounded-md bg-muted/40 p-2.5 text-xs flex justify-between items-center">
-        <span className="text-muted-foreground">Issue Price:</span>
+      <div className="flex items-center justify-between rounded-none border bg-muted/40 p-3 text-xs">
+        <span className="font-medium text-muted-foreground">Issue Price:</span>
         <span className="font-bold text-foreground">
           {formatCurrency(ipo.issuePrice)}
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label
-            htmlFor="ipo-listing-price"
-            className="text-xs font-medium text-foreground"
-          >
-            Listing Price (₹)
-          </label>
-          <Input
-            id="ipo-listing-price"
-            type="number"
-            min="0.01"
-            step="0.01"
-            placeholder="e.g. 850"
-            value={listingPrice}
-            onChange={(e) => setListingPrice(e.target.value)}
-            disabled={loading}
-            autoFocus
-          />
-          {listingGainPct !== null && (
-            <span
-              className={`text-[10px] block font-medium ${
-                listingGainPct >= 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-destructive"
-              }`}
-            >
-              {listingGainPct >= 0 ? "+" : ""}
-              {listingGainPct.toFixed(1)}% Listing Gain
-            </span>
-          )}
-        </div>
+      <FieldGroup>
+        <div className="grid grid-cols-2 gap-3">
+          <Field>
+            <FieldLabel htmlFor="ipo-listing-price">
+              Listing Price (₹)
+            </FieldLabel>
+            <Input
+              id="ipo-listing-price"
+              type="number"
+              min="0.01"
+              step="0.01"
+              placeholder="e.g. 850"
+              value={listingPrice}
+              onChange={(e) => setListingPrice(e.target.value)}
+              disabled={loading}
+              autoFocus
+            />
+            {listingGainPct !== null && (
+              <span
+                className={`block text-[10px] font-semibold ${
+                  listingGainPct >= 0 ? "text-success" : "text-destructive"
+                }`}
+              >
+                {listingGainPct >= 0 ? "+" : ""}
+                {listingGainPct.toFixed(1)}% Listing Gain
+              </span>
+            )}
+          </Field>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="ipo-current-price"
-            className="text-xs font-medium text-foreground"
-          >
-            Current Price (CMP ₹)
-          </label>
-          <Input
-            id="ipo-current-price"
-            type="number"
-            min="0.01"
-            step="0.01"
-            placeholder="e.g. 920"
-            value={currentPrice}
-            onChange={(e) => setCurrentPrice(e.target.value)}
-            disabled={loading}
-          />
-          {currentGainPct !== null && (
-            <span
-              className={`text-[10px] block font-medium ${
-                currentGainPct >= 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-destructive"
-              }`}
-            >
-              {currentGainPct >= 0 ? "+" : ""}
-              {currentGainPct.toFixed(1)}% vs Issue
-            </span>
-          )}
+          <Field>
+            <FieldLabel htmlFor="ipo-current-price">
+              Current Price (CMP ₹)
+            </FieldLabel>
+            <Input
+              id="ipo-current-price"
+              type="number"
+              min="0.01"
+              step="0.01"
+              placeholder="e.g. 920"
+              value={currentPrice}
+              onChange={(e) => setCurrentPrice(e.target.value)}
+              disabled={loading}
+            />
+            {currentGainPct !== null && (
+              <span
+                className={`block text-[10px] font-semibold ${
+                  currentGainPct >= 0 ? "text-success" : "text-destructive"
+                }`}
+              >
+                {currentGainPct >= 0 ? "+" : ""}
+                {currentGainPct.toFixed(1)}% vs Issue
+              </span>
+            )}
+          </Field>
         </div>
-      </div>
+      </FieldGroup>
 
-      <DialogFooter className="gap-2 sm:gap-0">
+      <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={loading}
+          size="sm"
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} size="sm">
+          {loading && <Spinner data-icon="inline-start" />}
           {loading ? (
-            <>
-              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-              Saving...
-            </>
+            "Saving..."
           ) : (
             <>
-              <DollarSign className="mr-1.5 size-3.5" />
+              <DollarSign data-icon="inline-start" />
               Update Prices
             </>
           )}

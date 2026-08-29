@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Loader2 } from "lucide-react"
+import { Calculator } from "lucide-react"
+import { Timestamp } from "firebase/firestore"
 import {
   Dialog,
   DialogContent,
@@ -10,16 +11,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { DatePicker } from "@/components/ui/date-picker"
+import {
+  FieldGroup,
+  Field,
+  FieldLabel,
+  FieldSet,
+  FieldLegend,
+} from "@/components/ui/field"
+import { Spinner } from "@/components/ui/spinner"
 import { toast } from "@/components/ui/toast"
 import { createIpo, updateIpo } from "@/lib/firebase/ipos"
-import {
-  dateToInputValue,
-  inputValueToTimestamp,
-  formatCurrency,
-} from "@/lib/utils/ipo"
+import { formatCurrency } from "@/lib/utils/ipo"
 import type { Ipo, IpoType } from "@/types"
 
 interface IpoDialogProps {
@@ -39,12 +47,12 @@ export function IpoDialog({
 }: IpoDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-xl md:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="max-w-md truncate">
             {ipoToEdit ? "Edit IPO Details" : "Add New IPO"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="break-words">
             {ipoToEdit
               ? "Update IPO pricing, lot size, or key dates."
               : "Record a new IPO to track applications and profit sharing."}
@@ -84,30 +92,30 @@ function IpoForm({
   const [name, setName] = useState(ipoToEdit?.name ?? "")
   const [companyName, setCompanyName] = useState(ipoToEdit?.companyName ?? "")
   const [type, setType] = useState<IpoType>(ipoToEdit?.type ?? "mainboard")
-  const [issuePrice, setIssuePrice] = useState<string>(
-    ipoToEdit?.issuePrice ? String(ipoToEdit.issuePrice) : ""
+  const [issuePrice, setIssuePrice] = useState(
+    ipoToEdit?.issuePrice !== undefined ? String(ipoToEdit.issuePrice) : ""
   )
-  const [priceBandMin, setPriceBandMin] = useState<string>(
-    ipoToEdit?.priceBandMin ? String(ipoToEdit.priceBandMin) : ""
+  const [priceBandMin, setPriceBandMin] = useState(
+    ipoToEdit?.priceBandMin !== undefined ? String(ipoToEdit.priceBandMin) : ""
   )
-  const [priceBandMax, setPriceBandMax] = useState<string>(
-    ipoToEdit?.priceBandMax ? String(ipoToEdit.priceBandMax) : ""
+  const [priceBandMax, setPriceBandMax] = useState(
+    ipoToEdit?.priceBandMax !== undefined ? String(ipoToEdit.priceBandMax) : ""
   )
-  const [lotSize, setLotSize] = useState<string>(
-    ipoToEdit?.lotSize ? String(ipoToEdit.lotSize) : "1"
+  const [lotSize, setLotSize] = useState(
+    ipoToEdit?.lotSize !== undefined ? String(ipoToEdit.lotSize) : ""
   )
 
-  const [openDate, setOpenDate] = useState(
-    dateToInputValue(ipoToEdit?.openDate)
+  const [openDate, setOpenDate] = useState<Date | undefined>(
+    ipoToEdit?.openDate?.toDate?.() ?? undefined
   )
-  const [closeDate, setCloseDate] = useState(
-    dateToInputValue(ipoToEdit?.closeDate)
+  const [closeDate, setCloseDate] = useState<Date | undefined>(
+    ipoToEdit?.closeDate?.toDate?.() ?? undefined
   )
-  const [allotmentDate, setAllotmentDate] = useState(
-    dateToInputValue(ipoToEdit?.allotmentDate)
+  const [allotmentDate, setAllotmentDate] = useState<Date | undefined>(
+    ipoToEdit?.allotmentDate?.toDate?.() ?? undefined
   )
-  const [listingDate, setListingDate] = useState(
-    dateToInputValue(ipoToEdit?.listingDate)
+  const [listingDate, setListingDate] = useState<Date | undefined>(
+    ipoToEdit?.listingDate?.toDate?.() ?? undefined
   )
   const [notes, setNotes] = useState(ipoToEdit?.notes ?? "")
 
@@ -122,7 +130,7 @@ function IpoForm({
     e.preventDefault()
 
     if (!name.trim()) {
-      setError("Please enter an IPO name.")
+      setError("Please enter the IPO name.")
       return
     }
 
@@ -132,7 +140,21 @@ function IpoForm({
     }
 
     if (!numLotSize || numLotSize <= 0) {
-      setError("Please enter a valid lot size (at least 1).")
+      setError("Please enter a valid lot size (at least 1 share).")
+      return
+    }
+
+    if (priceBandMin && priceBandMax) {
+      const min = parseFloat(priceBandMin)
+      const max = parseFloat(priceBandMax)
+      if (min > max) {
+        setError("Price band floor cannot exceed cap.")
+        return
+      }
+    }
+
+    if (openDate && closeDate && openDate > closeDate) {
+      setError("Open date cannot be after close date.")
       return
     }
 
@@ -149,10 +171,12 @@ function IpoForm({
           priceBandMin: priceBandMin ? parseFloat(priceBandMin) : undefined,
           priceBandMax: priceBandMax ? parseFloat(priceBandMax) : undefined,
           lotSize: numLotSize,
-          openDate: inputValueToTimestamp(openDate) ?? null,
-          closeDate: inputValueToTimestamp(closeDate) ?? null,
-          allotmentDate: inputValueToTimestamp(allotmentDate) ?? null,
-          listingDate: inputValueToTimestamp(listingDate) ?? null,
+          openDate: openDate ? Timestamp.fromDate(openDate) : null,
+          closeDate: closeDate ? Timestamp.fromDate(closeDate) : null,
+          allotmentDate: allotmentDate
+            ? Timestamp.fromDate(allotmentDate)
+            : null,
+          listingDate: listingDate ? Timestamp.fromDate(listingDate) : null,
           notes: notes.trim(),
         })
         toast.add({
@@ -169,10 +193,14 @@ function IpoForm({
           priceBandMin: priceBandMin ? parseFloat(priceBandMin) : undefined,
           priceBandMax: priceBandMax ? parseFloat(priceBandMax) : undefined,
           lotSize: numLotSize,
-          openDate: inputValueToTimestamp(openDate),
-          closeDate: inputValueToTimestamp(closeDate),
-          allotmentDate: inputValueToTimestamp(allotmentDate),
-          listingDate: inputValueToTimestamp(listingDate),
+          openDate: openDate ? Timestamp.fromDate(openDate) : undefined,
+          closeDate: closeDate ? Timestamp.fromDate(closeDate) : undefined,
+          allotmentDate: allotmentDate
+            ? Timestamp.fromDate(allotmentDate)
+            : undefined,
+          listingDate: listingDate
+            ? Timestamp.fromDate(listingDate)
+            : undefined,
           notes: notes.trim(),
         })
         toast.add({
@@ -183,304 +211,242 @@ function IpoForm({
       }
     } catch (err: unknown) {
       console.error(err)
-      setError("Failed to save IPO details. Please try again.")
+      setError("Failed to save IPO. Please try again.")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
-      {/* Name & Company */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="space-y-1">
-          <label
-            htmlFor="ipo-name"
-            className="text-xs font-medium text-foreground"
-          >
-            IPO Name *
-          </label>
-          <Input
-            id="ipo-name"
-            placeholder="e.g. Tata Tech, Swiggy"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            disabled={loading}
-            required
-            autoFocus
-          />
+      <FieldGroup>
+        {/* Name & Company */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="ipo-name">
+              IPO Name <span className="text-destructive">*</span>
+            </FieldLabel>
+            <Input
+              id="ipo-name"
+              placeholder="e.g. Swiggy Limited"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              disabled={loading}
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="company-name">
+              Company / Symbol Name
+            </FieldLabel>
+            <Input
+              id="company-name"
+              placeholder="e.g. SWIGGY"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              disabled={loading}
+            />
+          </Field>
         </div>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="company-name"
-            className="text-xs font-medium text-foreground"
+        {/* IPO Type Selection (ToggleGroup) */}
+        <Field>
+          <FieldLabel>
+            IPO Category <span className="text-destructive">*</span>
+          </FieldLabel>
+          <ToggleGroup
+            value={[type]}
+            onValueChange={(val) => {
+              if (val && val[0]) setType(val[0] as IpoType)
+            }}
+            className="grid w-full grid-cols-2"
           >
-            Company Name (Optional)
-          </label>
-          <Input
-            id="company-name"
-            placeholder="e.g. Swiggy Limited"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-            disabled={loading}
-          />
-        </div>
-      </div>
-
-      {/* Type Selection */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium text-foreground">
-          IPO Type *
-        </label>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            className={`flex flex-col items-start rounded-md border p-2 text-left transition-all ${
-              type === "mainboard"
-                ? "border-primary bg-primary/5 ring-1 ring-primary"
-                : "border-border bg-card hover:bg-muted/50"
-            }`}
-            onClick={() => setType("mainboard")}
-            disabled={loading}
-          >
-            <span className="text-xs font-semibold text-foreground">
-              Mainboard
-            </span>
-            <span className="text-[11px] text-muted-foreground">
-              Regular retail IPOs (~₹15k/lot)
-            </span>
-          </button>
-
-          <button
-            type="button"
-            className={`flex flex-col items-start rounded-md border p-2 text-left transition-all ${
-              type === "sme"
-                ? "border-primary bg-primary/5 ring-1 ring-primary"
-                : "border-border bg-card hover:bg-muted/50"
-            }`}
-            onClick={() => setType("sme")}
-            disabled={loading}
-          >
-            <span className="text-xs font-semibold text-foreground">
+            <ToggleGroupItem
+              value="mainboard"
+              className="py-1.5 text-xs font-semibold"
+            >
+              Mainboard IPO
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="sme"
+              className="py-1.5 text-xs font-semibold"
+            >
               SME IPO
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </Field>
+
+        {/* Pricing & Lot Size */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="issue-price">
+              Issue Price (₹) <span className="text-destructive">*</span>
+            </FieldLabel>
+            <Input
+              id="issue-price"
+              type="number"
+              step="0.01"
+              min="0.01"
+              placeholder="e.g. 390"
+              value={issuePrice}
+              onChange={(e) => setIssuePrice(e.target.value)}
+              required
+              disabled={loading}
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="lot-size">
+              Lot Size (Shares per lot){" "}
+              <span className="text-destructive">*</span>
+            </FieldLabel>
+            <Input
+              id="lot-size"
+              type="number"
+              step="1"
+              min="1"
+              placeholder="e.g. 38"
+              value={lotSize}
+              onChange={(e) => setLotSize(e.target.value)}
+              required
+              disabled={loading}
+            />
+          </Field>
+        </div>
+
+        {/* Price Band (Optional) */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="price-band-min">
+              Price Band Floor (₹)
+            </FieldLabel>
+            <Input
+              id="price-band-min"
+              type="number"
+              step="0.01"
+              placeholder="e.g. 371"
+              value={priceBandMin}
+              onChange={(e) => setPriceBandMin(e.target.value)}
+              disabled={loading}
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="price-band-max">Price Band Cap (₹)</FieldLabel>
+            <Input
+              id="price-band-max"
+              type="number"
+              step="0.01"
+              placeholder="e.g. 390"
+              value={priceBandMax}
+              onChange={(e) => setPriceBandMax(e.target.value)}
+              disabled={loading}
+            />
+          </Field>
+        </div>
+
+        {/* Live 1-Lot Investment Preview */}
+        {minApplicationAmount > 0 && (
+          <div className="flex items-center justify-between rounded-none border bg-muted/40 p-2.5 text-xs">
+            <div className="flex items-center gap-1.5 font-medium text-muted-foreground">
+              <Calculator className="size-3.5" />
+              <span>1 Lot Investment Required:</span>
+            </div>
+            <span className="font-bold text-foreground">
+              {formatCurrency(minApplicationAmount)}{" "}
+              <span className="text-[10px] font-normal text-muted-foreground">
+                ({numLotSize} shares)
+              </span>
             </span>
-            <span className="text-[11px] text-muted-foreground">
-              Small & medium enterprise (~₹1L+/lot)
-            </span>
-          </button>
-        </div>
-      </div>
+          </div>
+        )}
 
-      {/* Issue Price, Lot Size, and Min Calculation */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="space-y-1">
-          <label
-            htmlFor="issue-price"
-            className="text-xs font-medium text-foreground"
-          >
-            Issue Price (₹) *
-          </label>
-          <Input
-            id="issue-price"
-            type="number"
-            min="0.01"
-            step="0.01"
-            placeholder="750"
-            value={issuePrice}
-            onChange={(e) => setIssuePrice(e.target.value)}
-            disabled={loading}
-            required
-          />
-        </div>
+        {/* Key Dates (DatePickers) */}
+        <FieldSet className="border-t pt-3">
+          <FieldLegend variant="label">Key Dates (Optional)</FieldLegend>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field>
+              <FieldLabel>Bidding Open Date</FieldLabel>
+              <DatePicker
+                date={openDate}
+                onDateChange={setOpenDate}
+                placeholder="Select open date"
+                disabled={loading}
+              />
+            </Field>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="lot-size"
-            className="text-xs font-medium text-foreground"
-          >
-            Lot Size (Shares) *
-          </label>
-          <Input
-            id="lot-size"
-            type="number"
-            min="1"
-            step="1"
-            placeholder="20"
-            value={lotSize}
-            onChange={(e) => setLotSize(e.target.value)}
-            disabled={loading}
-            required
-          />
-        </div>
+            <Field>
+              <FieldLabel>Bidding Close Date</FieldLabel>
+              <DatePicker
+                date={closeDate}
+                onDateChange={setCloseDate}
+                placeholder="Select close date"
+                disabled={loading}
+              />
+            </Field>
 
-        <div className="col-span-2 space-y-1 rounded-md border bg-muted/40 p-2 sm:col-span-1">
-          <span className="text-[11px] text-muted-foreground block">
-            1 Lot Amount
-          </span>
-          <span className="text-xs font-semibold text-foreground">
-            {formatCurrency(minApplicationAmount)}
-          </span>
-        </div>
-      </div>
+            <Field>
+              <FieldLabel>Allotment Date</FieldLabel>
+              <DatePicker
+                date={allotmentDate}
+                onDateChange={setAllotmentDate}
+                placeholder="Select allotment date"
+                disabled={loading}
+              />
+            </Field>
 
-      {/* Optional Price Band */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label
-            htmlFor="price-band-min"
-            className="text-xs font-medium text-foreground"
-          >
-            Price Band Min (₹, Optional)
-          </label>
-          <Input
-            id="price-band-min"
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="700"
-            value={priceBandMin}
-            onChange={(e) => setPriceBandMin(e.target.value)}
+            <Field>
+              <FieldLabel>Listing Date</FieldLabel>
+              <DatePicker
+                date={listingDate}
+                onDateChange={setListingDate}
+                placeholder="Select listing date"
+                disabled={loading}
+              />
+            </Field>
+          </div>
+        </FieldSet>
+
+        {/* Notes */}
+        <Field>
+          <FieldLabel htmlFor="ipo-notes">Notes</FieldLabel>
+          <Textarea
+            id="ipo-notes"
+            placeholder="e.g. GMP ~ ₹25, applied in Retail & HNI..."
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
             disabled={loading}
           />
-        </div>
+        </Field>
+      </FieldGroup>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="price-band-max"
-            className="text-xs font-medium text-foreground"
-          >
-            Price Band Max (₹, Optional)
-          </label>
-          <Input
-            id="price-band-max"
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="750"
-            value={priceBandMax}
-            onChange={(e) => setPriceBandMax(e.target.value)}
-            disabled={loading}
-          />
-        </div>
-      </div>
-
-      {/* Important Dates */}
-      <div className="space-y-2 rounded-md border p-3">
-        <span className="text-xs font-semibold text-foreground block">
-          Key Dates (Optional)
-        </span>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="space-y-1">
-            <label
-              htmlFor="open-date"
-              className="text-[11px] text-muted-foreground"
-            >
-              Open Date
-            </label>
-            <Input
-              id="open-date"
-              type="date"
-              value={openDate}
-              onChange={(e) => setOpenDate(e.target.value)}
-              disabled={loading}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label
-              htmlFor="close-date"
-              className="text-[11px] text-muted-foreground"
-            >
-              Close Date
-            </label>
-            <Input
-              id="close-date"
-              type="date"
-              value={closeDate}
-              onChange={(e) => setCloseDate(e.target.value)}
-              disabled={loading}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label
-              htmlFor="allotment-date"
-              className="text-[11px] text-muted-foreground"
-            >
-              Allotment Date
-            </label>
-            <Input
-              id="allotment-date"
-              type="date"
-              value={allotmentDate}
-              onChange={(e) => setAllotmentDate(e.target.value)}
-              disabled={loading}
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label
-              htmlFor="listing-date"
-              className="text-[11px] text-muted-foreground"
-            >
-              Listing Date
-            </label>
-            <Input
-              id="listing-date"
-              type="date"
-              value={listingDate}
-              onChange={(e) => setListingDate(e.target.value)}
-              disabled={loading}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Notes */}
-      <div className="space-y-1">
-        <label
-          htmlFor="ipo-notes"
-          className="text-xs font-medium text-foreground"
-        >
-          Notes (Optional)
-        </label>
-        <Textarea
-          id="ipo-notes"
-          placeholder="e.g. Expected subscription, GMP notes, mandate reminders"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          disabled={loading}
-          rows={2}
-        />
-      </div>
-
-      <DialogFooter className="gap-2 sm:gap-0">
+      <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={loading}
+          size="sm"
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-              Saving...
-            </>
-          ) : isEditing ? (
-            "Save Changes"
-          ) : (
-            "Add IPO"
-          )}
+        <Button type="submit" disabled={loading} size="sm">
+          {loading && <Spinner data-icon="inline-start" />}
+          {loading
+            ? isEditing
+              ? "Updating..."
+              : "Creating..."
+            : isEditing
+              ? "Save Changes"
+              : "Create IPO"}
         </Button>
       </DialogFooter>
     </form>

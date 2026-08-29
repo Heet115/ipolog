@@ -1,13 +1,6 @@
-import {
-  calculateApplicationProfit,
-} from "@/lib/calculations/financials"
+import { calculateApplicationProfit } from "@/lib/calculations/financials"
 import { formatBankAccount, formatDate } from "@/lib/utils/ipo"
-import type {
-  Ipo,
-  Application,
-  ApplicationAccount,
-  BankAccount,
-} from "@/types"
+import type { Ipo, Application, ApplicationAccount, BankAccount } from "@/types"
 
 /**
  * Escapes a cell value for standard CSV (RFC 4180).

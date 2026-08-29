@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { Loader2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -10,9 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
+import { Spinner } from "@/components/ui/spinner"
 import { toast } from "@/components/ui/toast"
 import {
   createBankAccount,
@@ -37,12 +39,12 @@ export function BankAccountDialog({
 }: BankAccountDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-lg md:max-w-xl">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="max-w-md truncate">
             {bankAccountToEdit ? "Edit Bank Account" : "Add Bank Account"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs break-words">
             {bankAccountToEdit
               ? "Update bank account details."
               : "Add the bank accounts you use to apply for IPOs."}
@@ -94,8 +96,8 @@ function BankAccountForm({
       return
     }
 
-    if (last4.trim() && !/^\d{1,6}$/.test(last4.trim())) {
-      setError("Last digits should contain only numbers (e.g. 1234).")
+    if (last4.trim() && !/^\d{4}$/.test(last4.trim())) {
+      setError("Last 4 digits must be exactly 4 numeric digits (e.g. 1234).")
       return
     }
 
@@ -106,23 +108,23 @@ function BankAccountForm({
       if (isEditing && bankAccountToEdit) {
         await updateBankAccount(userId, bankAccountToEdit.id, {
           bankName: bankName.trim(),
-          nickname: nickname.trim(),
-          last4: last4.trim(),
+          nickname: nickname.trim() || undefined,
+          last4: last4.trim() || undefined,
           notes: notes.trim(),
         })
         toast.add({
-          title: "Bank account updated",
+          title: "Bank account updated successfully",
           type: "success",
         })
       } else {
         await createBankAccount(userId, {
           bankName: bankName.trim(),
-          nickname: nickname.trim(),
-          last4: last4.trim(),
+          nickname: nickname.trim() || undefined,
+          last4: last4.trim() || undefined,
           notes: notes.trim(),
         })
         toast.add({
-          title: "Bank account added",
+          title: "Bank account created successfully",
           type: "success",
         })
       }
@@ -136,103 +138,90 @@ function BankAccountForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
-      <div className="space-y-1">
-        <label
-          htmlFor="bank-name"
-          className="text-xs font-medium text-foreground"
-        >
-          Bank Name *
-        </label>
-        <Input
-          id="bank-name"
-          placeholder="e.g. HDFC Bank, SBI, ICICI"
-          value={bankName}
-          onChange={(e) => setBankName(e.target.value)}
-          disabled={loading}
-          required
-          autoFocus
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1">
-          <label
-            htmlFor="bank-nickname"
-            className="text-xs font-medium text-foreground"
-          >
-            Nickname (Optional)
-          </label>
+      <FieldGroup>
+        {/* Bank Name */}
+        <Field>
+          <FieldLabel htmlFor="bank-name">
+            Bank Name <span className="text-destructive">*</span>
+          </FieldLabel>
           <Input
-            id="bank-nickname"
-            placeholder="e.g. Primary Savings"
-            value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
+            id="bank-name"
+            placeholder="e.g. HDFC Bank, ICICI Bank, SBI, Kotak..."
+            value={bankName}
+            onChange={(e) => setBankName(e.target.value)}
+            required
             disabled={loading}
           />
+        </Field>
+
+        {/* Nickname & Last 4 */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="nickname">Nickname (Optional)</FieldLabel>
+            <Input
+              id="nickname"
+              placeholder="e.g. Salary A/c, Main..."
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              disabled={loading}
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="last4">Last 4 Digits</FieldLabel>
+            <Input
+              id="last4"
+              placeholder="e.g. 1234"
+              maxLength={4}
+              value={last4}
+              onChange={(e) => setLast4(e.target.value.replace(/\D/g, ""))}
+              disabled={loading}
+              className="font-mono"
+            />
+          </Field>
         </div>
 
-        <div className="space-y-1">
-          <label
-            htmlFor="bank-last4"
-            className="text-xs font-medium text-foreground"
-          >
-            Last 4 Digits (Optional)
-          </label>
-          <Input
-            id="bank-last4"
-            placeholder="e.g. 1234"
-            maxLength={6}
-            value={last4}
-            onChange={(e) => setLast4(e.target.value)}
+        {/* Notes */}
+        <Field>
+          <FieldLabel htmlFor="bank-notes">Notes (Optional)</FieldLabel>
+          <Textarea
+            id="bank-notes"
+            placeholder="e.g. Linked UPI ID: name@okhdfcbank..."
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
             disabled={loading}
+            className="resize-none"
           />
-        </div>
-      </div>
+        </Field>
+      </FieldGroup>
 
-      <div className="space-y-1">
-        <label
-          htmlFor="bank-notes"
-          className="text-xs font-medium text-foreground"
-        >
-          Notes (Optional)
-        </label>
-        <Textarea
-          id="bank-notes"
-          placeholder="e.g. Used for ASBA / UPI mandates"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          disabled={loading}
-          rows={2}
-        />
-      </div>
-
-      <DialogFooter className="gap-2 sm:gap-0">
+      <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={loading}
+          size="sm"
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-              Saving...
-            </>
-          ) : isEditing ? (
-            "Save Changes"
-          ) : (
-            "Add Bank Account"
-          )}
+        <Button type="submit" disabled={loading} size="sm">
+          {loading && <Spinner data-icon="inline-start" />}
+          {loading
+            ? isEditing
+              ? "Updating..."
+              : "Creating..."
+            : isEditing
+              ? "Save Changes"
+              : "Add Bank Account"}
         </Button>
       </DialogFooter>
     </form>

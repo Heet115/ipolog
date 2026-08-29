@@ -21,13 +21,22 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,9 +49,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "@/components/ui/toast"
 import { deleteApplication } from "@/lib/firebase/applications"
-import {
-  calculateApplicationProfit,
-} from "@/lib/calculations/financials"
+import { calculateApplicationProfit } from "@/lib/calculations/financials"
 import { formatCurrency, formatBankAccount, formatDate } from "@/lib/utils/ipo"
 import type {
   Ipo,
@@ -97,14 +104,12 @@ export function ApplicationTable({
       const bName = bank?.bankName?.toLowerCase() || ""
       const bNick = bank?.nickname?.toLowerCase() || ""
       const bLast4 = bank?.last4 || ""
-      const notes = app.notes?.toLowerCase() || ""
-
       return (
         accName.includes(q) ||
         bName.includes(q) ||
         bNick.includes(q) ||
         bLast4.includes(q) ||
-        notes.includes(q)
+        app.notes?.toLowerCase().includes(q)
       )
     }
 
@@ -114,7 +119,6 @@ export function ApplicationTable({
   const handleDelete = async () => {
     if (!appToDelete) return
     setDeleting(true)
-
     try {
       await deleteApplication(userId, appToDelete.id)
       toast.add({
@@ -126,7 +130,7 @@ export function ApplicationTable({
     } catch (err) {
       console.error(err)
       toast.add({
-        title: "Failed to delete application",
+        title: "Failed to remove application",
         type: "error",
       })
     } finally {
@@ -136,119 +140,124 @@ export function ApplicationTable({
 
   const getStatusBadge = (status: ApplicationStatus) => {
     switch (status) {
-      case "pending":
-        return (
-          <Badge variant="outline" className="text-[10px] py-0 px-1.5 font-normal">
-            Pending
-          </Badge>
-        )
       case "allotted":
         return (
-          <Badge variant="default" className="text-[10px] py-0 px-1.5 font-normal bg-emerald-600 dark:bg-emerald-500">
+          <Badge
+            variant="success"
+            className="px-1.5 py-0 text-[10px] font-normal"
+          >
             Allotted
           </Badge>
         )
       case "not_allotted":
         return (
-          <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-normal">
+          <Badge
+            variant="secondary"
+            className="px-1.5 py-0 text-[10px] font-normal"
+          >
             Not Allotted
           </Badge>
         )
       case "sold":
         return (
-          <Badge variant="default" className="text-[10px] py-0 px-1.5 font-normal bg-blue-600 dark:bg-blue-500">
+          <Badge variant="info" className="px-1.5 py-0 text-[10px] font-normal">
             Sold
           </Badge>
         )
+      case "pending":
       default:
-        return <Badge variant="outline">{status}</Badge>
+        return (
+          <Badge
+            variant="outline"
+            className="px-1.5 py-0 text-[10px] font-normal"
+          >
+            Pending
+          </Badge>
+        )
     }
   }
 
-  // Summary figures
-  const totalAmount = applications.reduce((sum, a) => sum + a.amountApplied, 0)
   const totalLots = applications.reduce((sum, a) => sum + a.lotsApplied, 0)
+  const totalAmount = applications.reduce((sum, a) => sum + a.amountApplied, 0)
 
   return (
-    <div className="space-y-4">
-      {/* Controls Bar: Search & Status Filters */}
+    <div className="flex flex-col gap-4">
+      {/* Controls Bar: Search & Status Filter */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative max-w-xs flex-1">
+          <Search className="absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search application account, bank..."
+            placeholder="Search account, bank, notes..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 text-xs h-8"
+            className="pl-8"
           />
         </div>
 
-        {/* Filter buttons */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
-          {[
-            { key: "all", label: `All (${applications.length})` },
-            {
-              key: "pending",
-              label: `Pending (${applications.filter((a) => a.status === "pending").length})`,
-            },
-            {
-              key: "allotted",
-              label: `Allotted (${applications.filter((a) => a.status === "allotted").length})`,
-            },
-            {
-              key: "not_allotted",
-              label: `Not Allotted (${applications.filter((a) => a.status === "not_allotted").length})`,
-            },
-            {
-              key: "sold",
-              label: `Sold (${applications.filter((a) => a.status === "sold").length})`,
-            },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              className={`rounded-md px-2 py-1 text-[11px] font-medium whitespace-nowrap transition-colors ${
-                statusFilter === tab.key
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-              onClick={() => setStatusFilter(tab.key)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Status Filters ToggleGroup */}
+        <ToggleGroup
+          value={[statusFilter]}
+          onValueChange={(val) => {
+            if (val && val[0]) setStatusFilter(val[0])
+          }}
+          className="flex flex-wrap"
+        >
+          <ToggleGroupItem value="all" className="h-7 px-2.5 text-xs">
+            All ({applications.length})
+          </ToggleGroupItem>
+          <ToggleGroupItem value="pending" className="h-7 px-2.5 text-xs">
+            Pending ({applications.filter((a) => a.status === "pending").length}
+            )
+          </ToggleGroupItem>
+          <ToggleGroupItem value="allotted" className="h-7 px-2.5 text-xs">
+            Allotted (
+            {applications.filter((a) => a.status === "allotted").length})
+          </ToggleGroupItem>
+          <ToggleGroupItem value="not_allotted" className="h-7 px-2.5 text-xs">
+            Not Allotted (
+            {applications.filter((a) => a.status === "not_allotted").length})
+          </ToggleGroupItem>
+          <ToggleGroupItem value="sold" className="h-7 px-2.5 text-xs">
+            Sold ({applications.filter((a) => a.status === "sold").length})
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       {filteredApps.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 text-center border rounded-md border-dashed">
-          <Layers className="size-6 text-muted-foreground/50 mb-1" />
-          <p className="text-xs font-medium text-foreground">
-            No matching applications found
-          </p>
-          <p className="text-[11px] text-muted-foreground">
-            {search || statusFilter !== "all"
-              ? "Try clearing your filters"
-              : "Click 'Add Applications' above to record applications"}
-          </p>
-        </div>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Layers />
+            </EmptyMedia>
+            <EmptyTitle>No matching applications</EmptyTitle>
+            <EmptyDescription>
+              {search || statusFilter !== "all"
+                ? "Try clearing your filters"
+                : "Click 'Add Applications' above to record applications"}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
-        <div className="rounded-md border overflow-hidden">
+        <div className="overflow-hidden rounded-none border">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30">
                 <TableHead className="text-xs">Account</TableHead>
                 <TableHead className="text-xs">Bank Account</TableHead>
-                <TableHead className="text-xs text-center w-[70px]">
+                <TableHead className="w-[70px] text-center text-xs">
                   Lots
                 </TableHead>
-                <TableHead className="text-xs text-right">Shares</TableHead>
-                <TableHead className="text-xs text-right">Applied / Cost</TableHead>
-                <TableHead className="text-xs text-right">Profit (You)</TableHead>
-                <TableHead className="text-xs text-center w-[100px]">
+                <TableHead className="text-right text-xs">Shares</TableHead>
+                <TableHead className="text-right text-xs">
+                  Applied / Cost
+                </TableHead>
+                <TableHead className="text-right text-xs">
+                  Profit (You)
+                </TableHead>
+                <TableHead className="w-[100px] text-center text-xs">
                   Status
                 </TableHead>
-                <TableHead className="text-xs hidden md:table-cell">
+                <TableHead className="hidden text-xs md:table-cell">
                   Date
                 </TableHead>
                 <TableHead className="w-[40px]"></TableHead>
@@ -262,15 +271,15 @@ export function ApplicationTable({
 
                 return (
                   <TableRow key={app.id}>
-                    <TableCell className="font-medium text-xs">
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                    <TableCell className="text-xs font-medium">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span>{account?.name || "Unknown Account"}</span>
                         {account && (
                           <Badge
                             variant={
                               account.type === "my" ? "secondary" : "default"
                             }
-                            className="text-[9px] py-0 px-1 font-normal"
+                            className="px-1 py-0 text-[9px] font-normal"
                           >
                             {account.type === "my"
                               ? "My"
@@ -279,7 +288,7 @@ export function ApplicationTable({
                         )}
                       </div>
                       {app.notes && (
-                        <span className="text-[10px] text-muted-foreground block line-clamp-1">
+                        <span className="line-clamp-1 block text-[10px] text-muted-foreground">
                           {app.notes}
                         </span>
                       )}
@@ -289,11 +298,11 @@ export function ApplicationTable({
                       {bank ? formatBankAccount(bank) : "—"}
                     </TableCell>
 
-                    <TableCell className="text-center font-medium text-xs">
+                    <TableCell className="text-center text-xs font-medium">
                       <span>{app.lotsApplied}</span>
                       {(app.status === "allotted" || app.status === "sold") &&
                         app.allottedLots !== undefined && (
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block">
+                          <span className="block text-[10px] text-success">
                             ({app.allottedLots} alltd)
                           </span>
                         )}
@@ -303,16 +312,16 @@ export function ApplicationTable({
                       <span>{app.sharesApplied}</span>
                       {(app.status === "allotted" || app.status === "sold") &&
                         app.allottedShares !== undefined && (
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block font-medium">
+                          <span className="block text-[10px] font-medium text-success">
                             {app.allottedShares} alltd
                           </span>
                         )}
                     </TableCell>
 
-                    <TableCell className="text-right font-medium text-xs text-foreground">
+                    <TableCell className="text-right text-xs font-medium text-foreground">
                       <span>{formatCurrency(app.amountApplied)}</span>
                       {app.status === "sold" && app.salePrice && (
-                        <span className="text-[10px] text-muted-foreground block">
+                        <span className="block text-[10px] text-muted-foreground">
                           Sold @ ₹{app.salePrice}
                         </span>
                       )}
@@ -324,7 +333,7 @@ export function ApplicationTable({
                           <span
                             className={`font-bold ${
                               profit.realizedYourProfit > 0
-                                ? "text-emerald-600 dark:text-emerald-400"
+                                ? "text-success"
                                 : profit.realizedYourProfit < 0
                                   ? "text-destructive"
                                   : "text-foreground"
@@ -334,13 +343,16 @@ export function ApplicationTable({
                           </span>
                           {account?.type === "other" &&
                             profit.realizedProfitShared > 0 && (
-                              <span className="text-[9px] text-amber-600 dark:text-amber-400 block">
-                                (+{formatCurrency(profit.realizedProfitShared)} shr)
+                              <span className="block text-[9px] text-warning-foreground">
+                                (+{formatCurrency(profit.realizedProfitShared)}{" "}
+                                shr)
                               </span>
                             )}
                         </div>
                       ) : (
-                        <span className="text-muted-foreground text-[11px]">—</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          —
+                        </span>
                       )}
                     </TableCell>
 
@@ -348,7 +360,7 @@ export function ApplicationTable({
                       {getStatusBadge(app.status)}
                     </TableCell>
 
-                    <TableCell className="text-xs text-muted-foreground hidden md:table-cell">
+                    <TableCell className="hidden text-xs text-muted-foreground md:table-cell">
                       <span className="flex items-center gap-1">
                         <Calendar className="size-3" />
                         {formatDate(app.applicationDate)}
@@ -366,29 +378,40 @@ export function ApplicationTable({
                             />
                           }
                         >
-                          <MoreVertical className="size-3.5" />
+                          <MoreVertical />
                           <span className="sr-only">Actions</span>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-36">
-                          {(app.status === "allotted" ||
-                            app.status === "sold") && (
-                            <DropdownMenuItem onClick={() => onRecordSale(app)}>
-                              <TrendingUp className="mr-2 size-3.5 text-emerald-600 dark:text-emerald-400" />
-                              {app.status === "sold" ? "Edit Sale" : "Record Sale"}
+                          <DropdownMenuGroup>
+                            {(app.status === "allotted" ||
+                              app.status === "sold") && (
+                              <DropdownMenuItem
+                                onClick={() => onRecordSale(app)}
+                              >
+                                <TrendingUp
+                                  data-icon="inline-start"
+                                  className="text-success"
+                                />
+                                {app.status === "sold"
+                                  ? "Edit Sale"
+                                  : "Record Sale"}
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => onEdit(app)}>
+                              <Edit2 data-icon="inline-start" />
+                              Edit
                             </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onClick={() => onEdit(app)}>
-                            <Edit2 className="mr-2 size-3.5" />
-                            Edit
-                          </DropdownMenuItem>
+                          </DropdownMenuGroup>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => setAppToDelete(app)}
-                          >
-                            <Trash2 className="mr-2 size-3.5" />
-                            Delete
-                          </DropdownMenuItem>
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() => setAppToDelete(app)}
+                            >
+                              <Trash2 data-icon="inline-start" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -399,8 +422,8 @@ export function ApplicationTable({
           </Table>
 
           {/* Table Summary Footer */}
-          <div className="flex items-center justify-between border-t bg-muted/40 px-4 py-2.5 text-xs">
-            <span className="text-muted-foreground font-medium">
+          <div className="flex items-center justify-between border-t border-border/50 bg-muted/40 px-4 py-2.5 text-xs">
+            <span className="font-medium text-muted-foreground">
               Total: {applications.length} Applications ({totalLots} Lots)
             </span>
             <div className="flex items-center gap-2">

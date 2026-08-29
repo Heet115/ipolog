@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { Loader2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -10,9 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
+import { Spinner } from "@/components/ui/spinner"
 import { toast } from "@/components/ui/toast"
 import {
   createApplicationAccount,
@@ -37,12 +40,14 @@ export function AccountDialog({
 }: AccountDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-lg md:max-w-xl">
         <DialogHeader>
-          <DialogTitle>
-            {accountToEdit ? "Edit Application Account" : "Add Application Account"}
+          <DialogTitle className="max-w-md truncate">
+            {accountToEdit
+              ? "Edit Application Account"
+              : "Add Application Account"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs break-words">
             {accountToEdit
               ? "Update application account details and profit share."
               : "Create an account label to associate with IPO applications."}
@@ -81,12 +86,10 @@ function AccountForm({
 
   const [name, setName] = useState(accountToEdit?.name ?? "")
   const [type, setType] = useState<AccountType>(accountToEdit?.type ?? "my")
-  const [profitSharePercent, setProfitSharePercent] = useState<number>(
-    accountToEdit?.type === "other"
-      ? accountToEdit.profitSharePercent
-      : accountToEdit?.type === "my"
-        ? 0
-        : 40
+  const [profitSharePercent, setProfitSharePercent] = useState<string>(
+    accountToEdit?.profitSharePercent !== undefined
+      ? String(accountToEdit.profitSharePercent)
+      : "40"
   )
   const [notes, setNotes] = useState(accountToEdit?.notes ?? "")
   const [loading, setLoading] = useState(false)
@@ -95,9 +98,9 @@ function AccountForm({
   const handleTypeChange = (newType: AccountType) => {
     setType(newType)
     if (newType === "my") {
-      setProfitSharePercent(0)
-    } else if (profitSharePercent === 0) {
-      setProfitSharePercent(40)
+      setProfitSharePercent("0")
+    } else if (profitSharePercent === "0" || !profitSharePercent) {
+      setProfitSharePercent("40")
     }
   }
 
@@ -109,15 +112,14 @@ function AccountForm({
       return
     }
 
+    let parsedPercent: number | undefined
     if (type === "other") {
-      if (
-        profitSharePercent === undefined ||
-        profitSharePercent < 0 ||
-        profitSharePercent > 100
-      ) {
+      const parsed = parseFloat(profitSharePercent)
+      if (isNaN(parsed) || parsed < 0 || parsed > 100) {
         setError("Profit share percentage must be between 0 and 100.")
         return
       }
+      parsedPercent = parsed
     }
 
     setError(null)
@@ -128,168 +130,154 @@ function AccountForm({
         await updateApplicationAccount(userId, accountToEdit.id, {
           name: name.trim(),
           type,
-          profitSharePercent: type === "my" ? 0 : Number(profitSharePercent),
+          profitSharePercent: type === "my" ? undefined : parsedPercent,
           notes: notes.trim(),
         })
         toast.add({
-          title: "Account updated",
+          title: "Account updated successfully",
           type: "success",
         })
       } else {
         await createApplicationAccount(userId, {
           name: name.trim(),
           type,
-          profitSharePercent: type === "my" ? 0 : Number(profitSharePercent),
+          profitSharePercent: type === "my" ? undefined : parsedPercent,
           notes: notes.trim(),
         })
         toast.add({
-          title: "Account created",
+          title: "Account created successfully",
           type: "success",
         })
       }
       onSuccess()
     } catch (err: unknown) {
       console.error(err)
-      setError("Failed to save application account. Please try again.")
+      setError("Failed to save account. Please try again.")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
-      <div className="space-y-1">
-        <label
-          htmlFor="account-name"
-          className="text-xs font-medium text-foreground"
-        >
-          Account Name *
-        </label>
-        <Input
-          id="account-name"
-          placeholder="e.g. My Account 1, Other Account 1"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          disabled={loading}
-          required
-          autoFocus
-        />
-      </div>
-
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium text-foreground">
-          Account Type *
-        </label>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            className={`flex flex-col items-start rounded-md border p-2.5 text-left transition-all ${
-              type === "my"
-                ? "border-primary bg-primary/5 ring-1 ring-primary"
-                : "border-border bg-card hover:bg-muted/50"
-            }`}
-            onClick={() => handleTypeChange("my")}
+      <FieldGroup>
+        {/* Account Name */}
+        <Field>
+          <FieldLabel htmlFor="account-name">
+            Account Name <span className="text-destructive">*</span>
+          </FieldLabel>
+          <Input
+            id="account-name"
+            placeholder="e.g. My Account 1, Rahul Demat, Family 2..."
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
             disabled={loading}
-          >
-            <span className="text-xs font-semibold text-foreground">
-              My Account
-            </span>
-            <span className="mt-0.5 text-[11px] text-muted-foreground">
-              Your account (0% share)
-            </span>
-          </button>
+          />
+        </Field>
 
-          <button
-            type="button"
-            className={`flex flex-col items-start rounded-md border p-2.5 text-left transition-all ${
-              type === "other"
-                ? "border-primary bg-primary/5 ring-1 ring-primary"
-                : "border-border bg-card hover:bg-muted/50"
-            }`}
-            onClick={() => handleTypeChange("other")}
-            disabled={loading}
+        {/* Account Type (ToggleGroup) */}
+        <Field>
+          <FieldLabel>
+            Account Ownership <span className="text-destructive">*</span>
+          </FieldLabel>
+          <ToggleGroup
+            value={[type]}
+            onValueChange={(val) => {
+              if (val && val[0]) handleTypeChange(val[0] as AccountType)
+            }}
+            className="grid w-full grid-cols-2"
           >
-            <span className="text-xs font-semibold text-foreground">
-              Other Account
-            </span>
-            <span className="mt-0.5 text-[11px] text-muted-foreground">
-              Shared profit (default 40%)
-            </span>
-          </button>
-        </div>
-      </div>
+            <ToggleGroupItem
+              value="my"
+              className="py-1.5 text-xs font-semibold"
+            >
+              My Account (100% to You)
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="other"
+              className="py-1.5 text-xs font-semibold"
+            >
+              Other / Family (Profit Shared)
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </Field>
 
-      {type === "other" && (
-        <div className="space-y-1 rounded-md border bg-muted/30 p-2.5">
-          <label
-            htmlFor="profit-share"
-            className="text-xs font-medium text-foreground"
-          >
-            Profit Share % *
-          </label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="profit-share"
-              type="number"
-              min="0"
-              max="100"
-              step="1"
-              value={profitSharePercent}
-              onChange={(e) => setProfitSharePercent(Number(e.target.value))}
-              disabled={loading}
-              required
-            />
-            <span className="text-xs font-medium text-muted-foreground">%</span>
+        {/* Profit Sharing Percentage (shown for "Other" accounts) */}
+        {type === "other" && (
+          <div className="flex flex-col gap-1.5 rounded-none border bg-muted/30 p-3">
+            <Field>
+              <div className="flex items-center justify-between">
+                <FieldLabel htmlFor="profit-share-pct">
+                  Account Owner&apos;s Profit Share (%)
+                </FieldLabel>
+                <span className="text-xs font-bold text-warning-foreground">
+                  {profitSharePercent || "0"}%
+                </span>
+              </div>
+              <Input
+                id="profit-share-pct"
+                type="number"
+                min="0"
+                max="100"
+                step="0.5"
+                placeholder="Default: 40"
+                value={profitSharePercent}
+                onChange={(e) => setProfitSharePercent(e.target.value)}
+                disabled={loading}
+                className="bg-background"
+              />
+              <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                When this account is allotted and shares are sold at a profit,{" "}
+                <strong>{profitSharePercent || "0"}%</strong> goes to the
+                account owner and{" "}
+                <strong>{100 - (parseFloat(profitSharePercent) || 0)}%</strong>{" "}
+                is retained by you. (₹0 deduction on loss/break-even).
+              </p>
+            </Field>
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            Percentage of profit shared with this account. Default is 40%.
-          </p>
-        </div>
-      )}
+        )}
 
-      <div className="space-y-1">
-        <label
-          htmlFor="account-notes"
-          className="text-xs font-medium text-foreground"
-        >
-          Notes (Optional)
-        </label>
-        <Textarea
-          id="account-notes"
-          placeholder="e.g. Special profit sharing agreement or reminder notes"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          disabled={loading}
-          rows={2}
-        />
-      </div>
+        {/* Notes */}
+        <Field>
+          <FieldLabel htmlFor="account-notes">Notes (Optional)</FieldLabel>
+          <Textarea
+            id="account-notes"
+            placeholder="e.g. Zerodha DP ID: 12081600..."
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            disabled={loading}
+            className="resize-none"
+          />
+        </Field>
+      </FieldGroup>
 
-      <DialogFooter className="gap-2 sm:gap-0">
+      <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={loading}
+          size="sm"
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2 className="mr-1.5 size-3.5 animate-spin" />
-              Saving...
-            </>
-          ) : isEditing ? (
-            "Save Changes"
-          ) : (
-            "Create Account"
-          )}
+        <Button type="submit" disabled={loading} size="sm">
+          {loading && <Spinner data-icon="inline-start" />}
+          {loading
+            ? isEditing
+              ? "Updating..."
+              : "Creating..."
+            : isEditing
+              ? "Save Changes"
+              : "Create Account"}
         </Button>
       </DialogFooter>
     </form>

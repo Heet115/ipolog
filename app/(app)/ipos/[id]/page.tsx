@@ -12,20 +12,30 @@ import {
   Trash2,
   FileText,
   Plus,
-  Loader2,
   Layers,
-  Banknote,
-  Lock,
-  CheckCircle2,
   RefreshCw,
   TrendingUp,
   DollarSign,
   Download,
+  Check,
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +49,7 @@ import {
 import { toast } from "@/components/ui/toast"
 import { IpoDialog } from "@/components/ipo/ipo-dialog"
 import { IpoPriceDialog } from "@/components/ipo/ipo-price-dialog"
+import { IpoDetailSkeleton } from "@/components/ipo/ipo-detail-skeleton"
 import { BulkApplicationDialog } from "@/components/applications/bulk-application-dialog"
 import { BulkAllotmentDialog } from "@/components/applications/bulk-allotment-dialog"
 import { BulkSaleDialog } from "@/components/applications/bulk-sale-dialog"
@@ -56,12 +67,7 @@ import {
   calculateIpoMoneySummary,
   calculateIpoProfitSummary,
 } from "@/lib/calculations/financials"
-import type {
-  Ipo,
-  Application,
-  ApplicationAccount,
-  BankAccount,
-} from "@/types"
+import type { Ipo, Application, ApplicationAccount, BankAccount } from "@/types"
 
 export default function IpoDetailPage() {
   const params = useParams()
@@ -77,7 +83,7 @@ export default function IpoDetailPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
 
-  // Dialogs
+  // Dialog states
   const [editIpoOpen, setEditIpoOpen] = useState(false)
   const [priceDialogOpen, setPriceDialogOpen] = useState(false)
   const [deleteIpoOpen, setDeleteIpoOpen] = useState(false)
@@ -108,6 +114,9 @@ export default function IpoDetailPage() {
       }
     } catch (err) {
       console.error("Failed to load IPO details:", err)
+      setNotFound(true)
+    } finally {
+      setLoading(false)
     }
   }, [user, ipoId])
 
@@ -137,6 +146,7 @@ export default function IpoDetailPage() {
       .catch((err) => {
         console.error("Failed to load IPO details:", err)
         if (!ignore) {
+          setNotFound(true)
           setLoading(false)
         }
       })
@@ -158,7 +168,7 @@ export default function IpoDetailPage() {
     } catch (err) {
       console.error(err)
       toast.add({
-        title: "Failed to update archive state",
+        title: "Failed to update IPO archive state",
         type: "error",
       })
     }
@@ -185,16 +195,12 @@ export default function IpoDetailPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex min-h-[350px] items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      </div>
-    )
+    return <IpoDetailSkeleton />
   }
 
   if (notFound || !ipo) {
     return (
-      <div className="space-y-4">
+      <div className="flex flex-col gap-4">
         <Link
           href="/ipos"
           className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
@@ -202,32 +208,28 @@ export default function IpoDetailPage() {
           <ArrowLeft className="size-3.5" />
           Back to My IPOs
         </Link>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <FileText className="mb-3 size-8 text-muted-foreground/50" />
-            <h2 className="text-sm font-semibold text-foreground">
-              IPO not found
-            </h2>
-            <p className="mt-1 text-xs text-muted-foreground">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <FileText className="size-6 text-muted-foreground" />
+            </EmptyMedia>
+            <EmptyTitle>IPO not found</EmptyTitle>
+            <EmptyDescription>
               The requested IPO could not be found or may have been deleted.
-            </p>
-            <Button
-              size="sm"
-              variant="outline"
-              className="mt-4"
-              render={<Link href="/ipos" />}
-            >
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button size="sm" variant="outline" render={<Link href="/ipos" />}>
               Back to My IPOs
             </Button>
-          </CardContent>
-        </Card>
+          </EmptyContent>
+        </Empty>
       </div>
     )
   }
 
   const statusInfo = getIpoStatus(ipo)
   const minAmount = ipo.issuePrice * ipo.lotSize
-
   const accountsMap = new Map(accounts.map((a) => [a.id, a]))
 
   // Financial and profit summaries
@@ -242,51 +244,64 @@ export default function IpoDetailPage() {
     (a) => a.status === "allotted" || a.status === "sold"
   )
 
+  // Timeline milestones
+  const isListed = statusInfo.status === "listed"
+  const isAllotmentOut = isListed || statusInfo.status === "allotment_pending"
+  const isClosed = isAllotmentOut || statusInfo.status === "closed"
+  const isOpened = isClosed || statusInfo.status === "open"
+
+  const timelineSteps = [
+    { label: "Bidding Opens", date: ipo.openDate, done: isOpened },
+    { label: "Bidding Closes", date: ipo.closeDate, done: isClosed },
+    { label: "Allotment", date: ipo.allotmentDate, done: isAllotmentOut },
+    { label: "Listing Day", date: ipo.listingDate, done: isListed },
+  ]
+
   return (
-    <div className="space-y-6">
-      {/* Top Breadcrumb & Actions */}
+    <div className="flex flex-col gap-6">
+      {/* Top Breadcrumb & Quick Actions Bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Link
           href="/ipos"
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-3.5" />
           Back to My IPOs
         </Link>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="xs"
             onClick={() => setPriceDialogOpen(true)}
-            className="text-xs"
+            className="h-7 text-xs"
           >
-            <DollarSign className="mr-1.5 size-3 text-emerald-600 dark:text-emerald-400" />
+            <DollarSign data-icon="inline-start" />
             Market Prices
           </Button>
           <Button
             variant="outline"
             size="xs"
             onClick={() => setEditIpoOpen(true)}
-            className="text-xs"
+            className="h-7 text-xs"
           >
-            <Edit2 className="mr-1.5 size-3" />
+            <Edit2 data-icon="inline-start" />
             Edit IPO
           </Button>
           <Button
             variant="outline"
             size="xs"
             onClick={handleToggleArchive}
-            className="text-xs"
+            className="h-7 text-xs"
           >
             {ipo.archived ? (
               <>
-                <ArchiveRestore className="mr-1.5 size-3" />
+                <ArchiveRestore data-icon="inline-start" />
                 Restore
               </>
             ) : (
               <>
-                <Archive className="mr-1.5 size-3" />
+                <Archive data-icon="inline-start" />
                 Archive
               </>
             )}
@@ -295,116 +310,129 @@ export default function IpoDetailPage() {
             variant="destructive"
             size="xs"
             onClick={() => setDeleteIpoOpen(true)}
-            className="text-xs"
+            className="h-7 text-xs"
           >
-            <Trash2 className="mr-1.5 size-3" />
+            <Trash2 data-icon="inline-start" />
             Delete
           </Button>
         </div>
       </div>
 
-      {/* Main IPO Header Card */}
-      <Card>
-        <CardContent className="p-4 sm:p-6 space-y-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl font-bold text-foreground">
+      {/* Main IPO Header Hero Card */}
+      <Card className="rounded-none border border-border/70 bg-card">
+        <CardContent className="flex flex-col gap-5 p-4 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-col gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl font-bold text-foreground sm:text-2xl">
                   {ipo.name}
                 </h1>
                 <Badge
                   variant={ipo.type === "sme" ? "secondary" : "outline"}
-                  className="text-xs uppercase"
+                  className="px-1.5 py-0 font-mono text-[10px] uppercase"
                 >
                   {ipo.type}
                 </Badge>
-                <Badge variant={statusInfo.variant} className="text-xs">
+                <Badge
+                  variant={statusInfo.variant}
+                  className="px-1.5 py-0 text-[10px] font-normal"
+                >
                   {statusInfo.label}
                 </Badge>
                 {ipo.archived && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge
+                    variant="outline"
+                    className="px-1.5 py-0 font-mono text-[10px]"
+                  >
                     Archived
                   </Badge>
                 )}
               </div>
               {ipo.companyName && (
-                <p className="text-xs text-muted-foreground">
+                <p className="font-mono text-xs text-muted-foreground">
                   {ipo.companyName}
                 </p>
               )}
             </div>
 
             {/* Price Highlights */}
-            <div className="flex items-center gap-4 sm:text-right flex-wrap">
+            <div className="flex flex-wrap items-center gap-4 sm:text-right">
               <div>
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                <span className="block text-[10px] tracking-wider text-muted-foreground uppercase">
                   Issue Price
                 </span>
-                <span className="text-lg font-bold text-foreground">
+                <span className="font-mono text-lg font-bold text-foreground sm:text-xl">
                   {formatCurrency(ipo.issuePrice)}
                 </span>
-                <span className="text-xs text-muted-foreground block">
-                  {ipo.lotSize} shares / lot
+                <span className="block font-mono text-[11px] text-muted-foreground">
+                  {ipo.lotSize} sh / lot
                 </span>
               </div>
 
               {ipo.listingPrice && (
-                <div className="border-l pl-4">
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                <div className="border-l border-border/60 pl-4">
+                  <span className="block text-[10px] tracking-wider text-muted-foreground uppercase">
                     Listing Price
                   </span>
-                  <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-mono text-lg font-bold text-success sm:text-xl">
                     {formatCurrency(ipo.listingPrice)}
                   </span>
-                  <span className="text-[10px] text-muted-foreground block">
-                    {(((ipo.listingPrice - ipo.issuePrice) / ipo.issuePrice) * 100).toFixed(1)}% Gain
+                  <span className="block font-mono text-[11px] text-success">
+                    +
+                    {(
+                      ((ipo.listingPrice - ipo.issuePrice) / ipo.issuePrice) *
+                      100
+                    ).toFixed(1)}
+                    % Gain
                   </span>
                 </div>
               )}
 
               {ipo.currentPrice && (
-                <div className="border-l pl-4">
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground block">
+                <div className="border-l border-border/60 pl-4">
+                  <span className="block text-[10px] tracking-wider text-muted-foreground uppercase">
                     Current (CMP)
                   </span>
-                  <span className="text-lg font-bold text-foreground">
+                  <span className="font-mono text-lg font-bold text-foreground sm:text-xl">
                     {formatCurrency(ipo.currentPrice)}
                   </span>
-                  <span className="text-[10px] text-muted-foreground block">
-                    {(((ipo.currentPrice - ipo.issuePrice) / ipo.issuePrice) * 100).toFixed(1)}% vs Issue
+                  <span className="block font-mono text-[11px] text-muted-foreground">
+                    {(
+                      ((ipo.currentPrice - ipo.issuePrice) / ipo.issuePrice) *
+                      100
+                    ).toFixed(1)}
+                    % vs Issue
                   </span>
                 </div>
               )}
             </div>
           </div>
 
-          <Separator />
-
-          {/* Quick specs grid */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 text-xs">
+          {/* Quick Specs Grid */}
+          <div className="grid grid-cols-2 gap-3 rounded-none border border-border/50 bg-muted/40 p-3 text-xs sm:grid-cols-4">
             <div>
-              <span className="text-muted-foreground block text-[11px]">
+              <span className="block text-[11px] text-muted-foreground">
                 Lot Size
               </span>
-              <span className="font-semibold text-foreground">
+              <span className="font-mono font-semibold text-foreground">
                 {ipo.lotSize} shares
               </span>
             </div>
 
             <div>
-              <span className="text-muted-foreground block text-[11px]">
-                1 Lot Investment
+              <span className="block text-[11px] text-muted-foreground">
+                1 Lot Mandate
               </span>
-              <span className="font-semibold text-foreground">
+              <span className="font-mono font-bold text-foreground">
                 {formatCurrency(minAmount)}
               </span>
             </div>
 
             <div>
-              <span className="text-muted-foreground block text-[11px]">
+              <span className="block text-[11px] text-muted-foreground">
                 Price Band
               </span>
-              <span className="font-semibold text-foreground">
+              <span className="font-mono font-semibold text-foreground">
                 {ipo.priceBandMin && ipo.priceBandMax
                   ? `₹${ipo.priceBandMin} - ₹${ipo.priceBandMax}`
                   : "Fixed Price"}
@@ -412,162 +440,140 @@ export default function IpoDetailPage() {
             </div>
 
             <div>
-              <span className="text-muted-foreground block text-[11px]">
-                IPO Type
+              <span className="block text-[11px] text-muted-foreground">
+                Category
               </span>
               <span className="font-semibold text-foreground capitalize">
-                {ipo.type === "mainboard" ? "Mainboard IPO" : "SME IPO"}
+                {ipo.type === "mainboard" ? "Mainboard Issue" : "SME Issue"}
               </span>
             </div>
           </div>
 
-          {/* Dates Row */}
+          {/* Timeline Milestones */}
           {(ipo.openDate ||
             ipo.closeDate ||
             ipo.allotmentDate ||
             ipo.listingDate) && (
-            <div className="rounded-md bg-muted/40 p-3">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 text-xs">
-                <div>
-                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    <Calendar className="size-3" /> Open Date
-                  </span>
-                  <span className="font-medium text-foreground">
-                    {formatDate(ipo.openDate)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    <Calendar className="size-3" /> Close Date
-                  </span>
-                  <span className="font-medium text-foreground">
-                    {formatDate(ipo.closeDate)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    <Calendar className="size-3" /> Allotment Date
-                  </span>
-                  <span className="font-medium text-foreground">
-                    {formatDate(ipo.allotmentDate)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    <Calendar className="size-3" /> Listing Date
-                  </span>
-                  <span className="font-medium text-foreground">
-                    {formatDate(ipo.listingDate)}
-                  </span>
-                </div>
+            <div className="rounded-none border border-border/40 bg-muted/20 p-3">
+              <span className="mb-2 block text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+                Timeline & Milestones
+              </span>
+              <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+                {timelineSteps.map((step, idx) => (
+                  <div key={idx} className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                      {step.done ? (
+                        <Check className="size-3 shrink-0 text-success" />
+                      ) : (
+                        <Calendar className="size-3 shrink-0" />
+                      )}
+                      <span>{step.label}</span>
+                    </div>
+                    <span className="pl-4.5 font-mono text-[11px] font-semibold text-foreground">
+                      {formatDate(step.date)}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Notes */}
           {ipo.notes && (
-            <div className="text-xs text-muted-foreground bg-muted/20 p-2.5 rounded-md border">
+            <p className="rounded-none border border-border/40 bg-muted/30 p-2.5 text-xs text-muted-foreground">
               <strong className="text-foreground">Notes: </strong>
               {ipo.notes}
-            </div>
+            </p>
           )}
         </CardContent>
       </Card>
 
       {/* 4-Metric Money State Cards */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {/* Total Applied */}
-        <Card>
-          <CardContent className="p-3.5 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-muted-foreground">
-                Total Applied
-              </span>
-              <Layers className="size-3.5 text-muted-foreground" />
-            </div>
-            <p className="text-lg font-bold text-foreground">
+        <Card className="rounded-none border border-border/60">
+          <CardContent className="flex flex-col gap-1 p-3.5">
+            <span className="text-[11px] font-medium text-muted-foreground">
+              Total Applied
+            </span>
+            <p className="font-mono text-lg font-bold text-foreground">
               {formatCurrency(moneySummary.totalApplied)}
             </p>
-            <p className="text-[10px] text-muted-foreground">
-              {moneySummary.applicationsCount} Applications ({moneySummary.totalLotsApplied} Lots)
-            </p>
+            <span className="truncate text-[10px] text-muted-foreground">
+              {moneySummary.applicationsCount} Applications (
+              {moneySummary.totalLotsApplied} Lots)
+            </span>
           </CardContent>
         </Card>
 
         {/* Currently Blocked */}
-        <Card className={moneySummary.blockedAmount > 0 ? "border-amber-500/30 bg-amber-500/5" : ""}>
-          <CardContent className="p-3.5 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-muted-foreground">
-                Currently Blocked
-              </span>
-              <Lock className="size-3.5 text-muted-foreground" />
-            </div>
-            <p className="text-lg font-bold text-foreground">
+        <Card className="rounded-none border border-border/60">
+          <CardContent className="flex flex-col gap-1 p-3.5">
+            <span className="text-[11px] font-medium text-muted-foreground">
+              Currently Blocked
+            </span>
+            <p className="font-mono text-lg font-bold text-foreground">
               {formatCurrency(moneySummary.blockedAmount)}
             </p>
-            <p className="text-[10px] text-muted-foreground">
-              {moneySummary.pendingCount} Pending Applications
-            </p>
+            <span className="truncate text-[10px] text-muted-foreground">
+              {moneySummary.pendingCount} Pending Mandates
+            </span>
           </CardContent>
         </Card>
 
-        {/* Invested */}
-        <Card className={moneySummary.investedAmount > 0 ? "border-emerald-500/30 bg-emerald-500/5" : ""}>
-          <CardContent className="p-3.5 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-muted-foreground">
-                Total Invested
-              </span>
-              <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <p className="text-lg font-bold text-foreground">
+        {/* Total Invested */}
+        <Card className="rounded-none border border-border/60">
+          <CardContent className="flex flex-col gap-1 p-3.5">
+            <span className="text-[11px] font-medium text-muted-foreground">
+              Total Invested
+            </span>
+            <p className="font-mono text-lg font-bold text-foreground">
               {formatCurrency(moneySummary.investedAmount)}
             </p>
-            <p className="text-[10px] text-muted-foreground">
-              {moneySummary.allottedCount + moneySummary.soldCount} Allotted ({moneySummary.totalAllottedShares} Shares)
-            </p>
+            <span className="truncate text-[10px] text-muted-foreground">
+              {moneySummary.allottedCount + moneySummary.soldCount} Allotted (
+              {moneySummary.totalAllottedShares} Shares)
+            </span>
           </CardContent>
         </Card>
 
         {/* Expected Refund */}
-        <Card>
-          <CardContent className="p-3.5 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] text-muted-foreground">
-                Expected Refund
-              </span>
-              <Banknote className="size-3.5 text-muted-foreground" />
-            </div>
-            <p className="text-lg font-bold text-foreground">
+        <Card className="rounded-none border border-border/60">
+          <CardContent className="flex flex-col gap-1 p-3.5">
+            <span className="text-[11px] font-medium text-muted-foreground">
+              Expected Refund
+            </span>
+            <p className="font-mono text-lg font-bold text-foreground">
               {formatCurrency(moneySummary.refundExpected)}
             </p>
-            <p className="text-[10px] text-muted-foreground">
-              {moneySummary.notAllottedCount} Not Allotted Applications
-            </p>
+            <span className="truncate text-[10px] text-muted-foreground">
+              {moneySummary.notAllottedCount} Unallotted Applications
+            </span>
           </CardContent>
         </Card>
       </div>
 
-      {/* Profit Summary Section (Shows whenever there are sales or unrealized gains) */}
+      {/* Profit & Return Summary (shown when P&L exists) */}
       {profitSummary.hasAnyProfit && (
-        <Card className="border-emerald-500/40 bg-emerald-500/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <TrendingUp className="size-4 text-emerald-600 dark:text-emerald-400" />
-              Profit & Return Summary
+        <Card className="rounded-none border border-border/70 bg-card">
+          <CardHeader className="border-b border-border/60 p-4 pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-bold">
+              <TrendingUp className="size-4 text-success" />
+              Profit & Return Realization
             </CardTitle>
+            <CardDescription className="text-xs">
+              Realized profits and profit-sharing distributions for this IPO
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-md bg-card/60 p-3 border">
-                <span className="text-[11px] text-muted-foreground block">
-                  Your Net Profit (Realized)
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="flex flex-col gap-0.5 rounded-none border border-border/50 bg-muted/30 p-3">
+                <span className="block text-[10px] tracking-wider text-muted-foreground uppercase">
+                  Your Net Profit
                 </span>
                 <span
-                  className={`text-lg font-bold ${
+                  className={`font-mono text-lg font-bold ${
                     profitSummary.totalRealizedYourProfit > 0
-                      ? "text-emerald-600 dark:text-emerald-400"
+                      ? "text-success"
                       : profitSummary.totalRealizedYourProfit < 0
                         ? "text-destructive"
                         : "text-foreground"
@@ -575,44 +581,44 @@ export default function IpoDetailPage() {
                 >
                   {formatCurrency(profitSummary.totalRealizedYourProfit)}
                 </span>
-                <span className="text-[10px] text-muted-foreground block">
+                <span className="block text-[10px] text-muted-foreground">
                   After profit sharing deductions
                 </span>
               </div>
 
-              <div className="rounded-md bg-card/60 p-3 border">
-                <span className="text-[11px] text-muted-foreground block">
+              <div className="flex flex-col gap-0.5 rounded-none border border-border/50 bg-muted/30 p-3">
+                <span className="block text-[10px] tracking-wider text-muted-foreground uppercase">
                   Profit Shared (Others)
                 </span>
-                <span className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                <span className="font-mono text-lg font-bold text-warning-foreground">
                   {formatCurrency(profitSummary.totalRealizedProfitShared)}
                 </span>
-                <span className="text-[10px] text-muted-foreground block">
-                  Distributed to Other Accounts
+                <span className="block text-[10px] text-muted-foreground">
+                  To account owners
                 </span>
               </div>
 
-              <div className="rounded-md bg-card/60 p-3 border">
-                <span className="text-[11px] text-muted-foreground block">
+              <div className="flex flex-col gap-0.5 rounded-none border border-border/50 bg-muted/30 p-3">
+                <span className="block text-[10px] tracking-wider text-muted-foreground uppercase">
                   Total Gross Profit
                 </span>
-                <span className="text-lg font-bold text-foreground">
+                <span className="font-mono text-lg font-bold text-foreground">
                   {formatCurrency(profitSummary.totalRealizedGrossProfit)}
                 </span>
-                <span className="text-[10px] text-muted-foreground block">
-                  Total IPO realized profit
+                <span className="block text-[10px] text-muted-foreground">
+                  Total realized return
                 </span>
               </div>
 
-              <div className="rounded-md bg-card/60 p-3 border">
-                <span className="text-[11px] text-muted-foreground block">
+              <div className="flex flex-col gap-0.5 rounded-none border border-border/50 bg-muted/30 p-3">
+                <span className="block text-[10px] tracking-wider text-muted-foreground uppercase">
                   Unrealized Gain (CMP)
                 </span>
-                <span className="text-lg font-bold text-foreground">
+                <span className="font-mono text-lg font-bold text-foreground">
                   {formatCurrency(profitSummary.totalUnrealizedYourProfit)}
                 </span>
-                <span className="text-[10px] text-muted-foreground block">
-                  On unsold allotted shares
+                <span className="block text-[10px] text-muted-foreground">
+                  On unsold shares
                 </span>
               </div>
             </div>
@@ -620,22 +626,23 @@ export default function IpoDetailPage() {
         </Card>
       )}
 
-      {/* Applications Section */}
-      <Card>
-        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-3">
+      {/* Applications Workspace Card */}
+      <Card className="rounded-none border border-border/70">
+        <CardHeader className="flex flex-col gap-2 border-b border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle className="text-sm font-semibold">
+            <CardTitle className="text-sm font-bold">
               Applications ({applications.length})
             </CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Manage accounts, allotments, and sales for this IPO
-            </p>
+            <CardDescription className="text-xs">
+              Manage accounts, allotments, and listing sales for this IPO
+            </CardDescription>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             {applications.length > 0 && (
               <Button
                 variant="outline"
-                size="sm"
+                size="xs"
+                className="h-7 text-xs"
                 onClick={() => {
                   exportIpoApplicationsCsv(
                     ipo,
@@ -649,57 +656,62 @@ export default function IpoDetailPage() {
                   })
                 }}
               >
-                <Download className="mr-1.5 size-3.5" />
+                <Download data-icon="inline-start" />
                 Export CSV
               </Button>
             )}
             {hasAllottedApps && (
               <Button
                 variant="outline"
-                size="sm"
+                size="xs"
+                className="h-7 text-xs"
                 onClick={() => setBulkSaleOpen(true)}
-                className="text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/10"
               >
-                <TrendingUp className="mr-1.5 size-3.5" />
-                Record Bulk Sale
+                <TrendingUp data-icon="inline-start" />
+                Record Sale
               </Button>
             )}
             {applications.length > 0 && (
               <Button
                 variant="outline"
-                size="sm"
+                size="xs"
+                className="h-7 text-xs"
                 onClick={() => setAllotmentOpen(true)}
               >
-                <RefreshCw className="mr-1.5 size-3.5" />
+                <RefreshCw data-icon="inline-start" />
                 Update Allotment
               </Button>
             )}
-            <Button size="sm" onClick={() => setBulkAddOpen(true)}>
-              <Plus className="mr-1.5 size-3.5" />
+            <Button
+              size="xs"
+              className="h-7 text-xs"
+              onClick={() => setBulkAddOpen(true)}
+            >
+              <Plus data-icon="inline-start" />
               Add Applications
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4">
           {applications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <Layers className="mb-2 size-8 text-muted-foreground/50" />
-              <p className="text-xs font-medium text-foreground">
-                No applications recorded yet
-              </p>
-              <p className="mt-1 max-w-sm text-xs text-muted-foreground">
-                Quickly select your application accounts, assign bank accounts,
-                and record applications all at once.
-              </p>
-              <Button
-                size="sm"
-                className="mt-4"
-                onClick={() => setBulkAddOpen(true)}
-              >
-                <Plus className="mr-1.5 size-3.5" />
-                Add Applications
-              </Button>
-            </div>
+            <Empty className="py-8">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Layers className="size-6 text-muted-foreground" />
+                </EmptyMedia>
+                <EmptyTitle>No applications recorded yet</EmptyTitle>
+                <EmptyDescription>
+                  Apply across multiple family & investor accounts in a single
+                  batch.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button size="sm" onClick={() => setBulkAddOpen(true)}>
+                  <Plus data-icon="inline-start" />
+                  Add First Applications
+                </Button>
+              </EmptyContent>
+            </Empty>
           ) : (
             <ApplicationTable
               applications={applications}
@@ -715,108 +727,15 @@ export default function IpoDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Edit IPO Dialog */}
-      {user && (
-        <IpoDialog
-          open={editIpoOpen}
-          onOpenChange={setEditIpoOpen}
-          userId={user.uid}
-          ipoToEdit={ipo}
-          onSuccess={reloadData}
-        />
-      )}
-
-      {/* Market Prices Dialog */}
-      {user && (
-        <IpoPriceDialog
-          open={priceDialogOpen}
-          onOpenChange={setPriceDialogOpen}
-          userId={user.uid}
-          ipo={ipo}
-          onSuccess={reloadData}
-        />
-      )}
-
-      {/* Bulk Add Applications Dialog */}
-      {user && (
-        <BulkApplicationDialog
-          open={bulkAddOpen}
-          onOpenChange={setBulkAddOpen}
-          userId={user.uid}
-          ipo={ipo}
-          existingApplications={applications}
-          accounts={accounts}
-          bankAccounts={bankAccounts}
-          onSuccess={reloadData}
-        />
-      )}
-
-      {/* Bulk Allotment Update Dialog */}
-      {user && (
-        <BulkAllotmentDialog
-          open={allotmentOpen}
-          onOpenChange={setAllotmentOpen}
-          userId={user.uid}
-          ipo={ipo}
-          applications={applications}
-          accounts={accounts}
-          bankAccounts={bankAccounts}
-          onSuccess={reloadData}
-        />
-      )}
-
-      {/* Bulk Sale Dialog */}
-      {user && (
-        <BulkSaleDialog
-          open={bulkSaleOpen}
-          onOpenChange={setBulkSaleOpen}
-          userId={user.uid}
-          ipo={ipo}
-          applications={applications}
-          accounts={accounts}
-          onSuccess={reloadData}
-        />
-      )}
-
-      {/* Single Record Sale Dialog */}
-      {user && (
-        <RecordSaleDialog
-          open={Boolean(appToSell)}
-          onOpenChange={(open) => !open && setAppToSell(null)}
-          userId={user.uid}
-          ipo={ipo}
-          application={appToSell}
-          account={accounts.find((a) => a.id === appToSell?.accountId)}
-          onSuccess={reloadData}
-        />
-      )}
-
-      {/* Edit Single Application Dialog */}
-      {user && (
-        <EditApplicationDialog
-          open={Boolean(appToEdit)}
-          onOpenChange={(open) => !open && setAppToEdit(null)}
-          userId={user.uid}
-          ipo={ipo}
-          application={appToEdit}
-          account={accounts.find((a) => a.id === appToEdit?.accountId)}
-          bankAccounts={bankAccounts}
-          onSuccess={reloadData}
-        />
-      )}
-
       {/* Delete Confirmation Alert Dialog */}
-      <AlertDialog
-        open={deleteIpoOpen}
-        onOpenChange={setDeleteIpoOpen}
-      >
+      <AlertDialog open={deleteIpoOpen} onOpenChange={setDeleteIpoOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete IPO?</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to permanently delete{" "}
               <strong>{ipo.name}</strong>? All linked application records will
-              be removed.
+              also be removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -831,6 +750,80 @@ export default function IpoDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal Workflows */}
+      {user && (
+        <>
+          <IpoDialog
+            open={editIpoOpen}
+            onOpenChange={setEditIpoOpen}
+            userId={user.uid}
+            ipoToEdit={ipo}
+            onSuccess={() => reloadData()}
+          />
+          <IpoPriceDialog
+            open={priceDialogOpen}
+            onOpenChange={setPriceDialogOpen}
+            userId={user.uid}
+            ipo={ipo}
+            onSuccess={() => reloadData()}
+          />
+          <BulkApplicationDialog
+            open={bulkAddOpen}
+            onOpenChange={setBulkAddOpen}
+            userId={user.uid}
+            ipo={ipo}
+            existingApplications={applications}
+            accounts={accounts}
+            bankAccounts={bankAccounts}
+            onSuccess={() => reloadData()}
+          />
+          <BulkAllotmentDialog
+            open={allotmentOpen}
+            onOpenChange={setAllotmentOpen}
+            userId={user.uid}
+            ipo={ipo}
+            applications={applications}
+            accounts={accounts}
+            bankAccounts={bankAccounts}
+            onSuccess={() => reloadData()}
+          />
+          <BulkSaleDialog
+            open={bulkSaleOpen}
+            onOpenChange={setBulkSaleOpen}
+            userId={user.uid}
+            ipo={ipo}
+            applications={applications}
+            accounts={accounts}
+            onSuccess={() => reloadData()}
+          />
+          <RecordSaleDialog
+            open={Boolean(appToSell)}
+            onOpenChange={(open) => !open && setAppToSell(null)}
+            userId={user.uid}
+            ipo={ipo}
+            application={appToSell}
+            account={accounts.find((a) => a.id === appToSell?.accountId)}
+            onSuccess={() => {
+              setAppToSell(null)
+              reloadData()
+            }}
+          />
+          <EditApplicationDialog
+            open={Boolean(appToEdit)}
+            onOpenChange={(open) => !open && setAppToEdit(null)}
+            userId={user.uid}
+            ipo={ipo}
+            application={appToEdit}
+            account={accounts.find((a) => a.id === appToEdit?.accountId)}
+            bankAccounts={bankAccounts}
+            onSuccess={() => {
+              setAppToEdit(null)
+              reloadData()
+            }}
+          />
+        </>
+      )}
     </div>
   )
 }

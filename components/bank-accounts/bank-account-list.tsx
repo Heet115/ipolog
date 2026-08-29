@@ -9,8 +9,6 @@ import {
   Trash2,
   Landmark,
   Search,
-  Lock,
-  CheckCircle2,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -19,10 +17,18 @@ import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -90,7 +96,9 @@ export function BankAccountList({
     try {
       await archiveBankAccount(userId, bank.id, !bank.archived)
       toast.add({
-        title: bank.archived ? "Bank account restored" : "Bank account archived",
+        title: bank.archived
+          ? "Bank account restored"
+          : "Bank account archived",
         type: "success",
       })
       onRefresh()
@@ -126,16 +134,16 @@ export function BankAccountList({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Search & Archived Toggle */}
+    <div className="flex flex-col gap-6">
+      {/* Controls Bar: Search & Archive Toggle */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search bank accounts..."
+            placeholder="Search bank name, nickname, last 4 digits..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8"
+            className="h-8 bg-background pl-8 text-xs"
           />
         </div>
 
@@ -144,7 +152,7 @@ export function BankAccountList({
             variant="outline"
             size="xs"
             onClick={() => setShowArchived(!showArchived)}
-            className="text-xs"
+            className="h-8 self-start text-xs sm:self-auto"
           >
             {showArchived
               ? "Hide Archived"
@@ -154,21 +162,21 @@ export function BankAccountList({
       </div>
 
       {filteredAccounts.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <Landmark className="mb-3 size-8 text-muted-foreground/50" />
-            <p className="text-xs font-medium text-foreground">
-              No matching bank accounts found
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Landmark className="size-6 text-muted-foreground" />
+            </EmptyMedia>
+            <EmptyTitle>No bank accounts match your search</EmptyTitle>
+            <EmptyDescription>
               {search
-                ? "Try clearing your search query"
-                : "Add your first bank account to get started"}
-            </p>
-          </CardContent>
-        </Card>
+                ? "Try a different search term"
+                : "Add bank accounts to easily assign funding accounts to applications"}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredAccounts.map((bank) => {
             const summary = calculateBankMoneySummary(
               bank.id,
@@ -200,9 +208,10 @@ export function BankAccountList({
             <AlertDialogTitle>Delete Bank Account?</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to permanently delete{" "}
-              <strong>{bankToDelete?.bankName}</strong>
-              {bankToDelete?.last4 ? ` (•${bankToDelete.last4})` : ""}? This
-              action cannot be undone.
+              <strong>
+                {bankToDelete?.nickname || bankToDelete?.bankName}
+              </strong>
+              ? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -236,40 +245,37 @@ function BankAccountCard({
 }) {
   return (
     <Card
-      className={`group relative overflow-hidden transition-all hover:border-foreground/20 ${
-        bank.archived ? "opacity-60 bg-muted/20" : ""
+      className={`group relative overflow-hidden rounded-none border border-border/70 transition-all hover:border-foreground/30 ${
+        bank.archived ? "bg-muted/20 opacity-60" : "bg-card"
       }`}
     >
-      <CardContent className="flex flex-col justify-between p-3.5 space-y-3">
+      <CardContent className="flex h-full flex-col justify-between gap-3.5 p-4">
         {/* Top Header */}
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-              <Landmark className="size-4" />
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="truncate text-sm font-bold text-foreground">
+                {bank.nickname || bank.bankName}
+              </span>
+              {bank.archived && (
+                <Badge
+                  variant="outline"
+                  className="px-1 py-0 font-mono text-[10px]"
+                >
+                  Archived
+                </Badge>
+              )}
             </div>
 
-            <div className="space-y-0.5 min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-xs text-foreground truncate">
-                  {bank.nickname || bank.bankName}
+            <div className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
+              {bank.nickname && (
+                <span className="truncate">{bank.bankName}</span>
+              )}
+              {bank.last4 && (
+                <span>
+                  {bank.nickname ? `• ••${bank.last4}` : `••${bank.last4}`}
                 </span>
-                {bank.archived && (
-                  <Badge variant="outline" className="text-[10px] py-0 px-1.5">
-                    Archived
-                  </Badge>
-                )}
-              </div>
-
-              <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                {bank.nickname && (
-                  <span className="truncate">{bank.bankName}</span>
-                )}
-                {bank.last4 && (
-                  <span className="font-mono">
-                    {bank.nickname ? `• ${bank.last4}` : `•${bank.last4}`}
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           </div>
 
@@ -279,7 +285,7 @@ function BankAccountCard({
                 <Button
                   variant="ghost"
                   size="icon-xs"
-                  className="text-muted-foreground hover:text-foreground"
+                  className="size-7 text-muted-foreground hover:text-foreground"
                 />
               }
             >
@@ -287,45 +293,46 @@ function BankAccountCard({
               <span className="sr-only">Bank actions</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-36">
-              <DropdownMenuItem onClick={onEdit}>
-                <Edit2 className="mr-2 size-3.5" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onToggleArchive}>
-                {bank.archived ? (
-                  <>
-                    <ArchiveRestore className="mr-2 size-3.5" />
-                    Restore
-                  </>
-                ) : (
-                  <>
-                    <Archive className="mr-2 size-3.5" />
-                    Archive
-                  </>
-                )}
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={onEdit}>
+                  <Edit2 data-icon="inline-start" />
+                  Edit Details
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onToggleArchive}>
+                  {bank.archived ? (
+                    <>
+                      <ArchiveRestore data-icon="inline-start" />
+                      Restore
+                    </>
+                  ) : (
+                    <>
+                      <Archive data-icon="inline-start" />
+                      Archive
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={onDelete}
-              >
-                <Trash2 className="mr-2 size-3.5" />
-                Delete
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                  <Trash2 data-icon="inline-start" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
-        {/* Money State Summary (Section 15 of spec) */}
-        <div className="grid grid-cols-2 gap-2 rounded-md bg-muted/40 p-2.5 text-xs">
+        {/* Money State Summary Grid */}
+        <div className="grid grid-cols-2 gap-2 rounded-none border border-border/50 bg-muted/40 p-2.5 text-xs">
           <div>
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-              <Lock className="size-2.5" /> Blocked Money
+            <span className="block text-[10px] text-muted-foreground">
+              Blocked Funds
             </span>
             <span
-              className={`font-semibold text-xs ${
+              className={`font-mono text-xs font-bold ${
                 summary.blockedAmount > 0
-                  ? "text-amber-600 dark:text-amber-400"
+                  ? "text-warning-foreground"
                   : "text-foreground"
               }`}
             >
@@ -334,40 +341,41 @@ function BankAccountCard({
           </div>
 
           <div>
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-              <CheckCircle2 className="size-2.5" /> Invested
+            <span className="block text-[10px] text-muted-foreground">
+              Invested Capital
             </span>
-            <span className="font-semibold text-xs text-foreground">
+            <span className="font-mono text-xs font-bold text-foreground">
               {formatCurrency(summary.investedAmount)}
             </span>
           </div>
 
-          <div className="col-span-2 pt-1 border-t border-border/50 flex justify-between items-center text-[11px]">
-            <span className="text-muted-foreground">Total Applied:</span>
-            <span className="font-medium text-foreground">
-              {formatCurrency(summary.totalApplied)} ({summary.totalApplicationsCount} apps)
+          <div className="col-span-2 flex items-center justify-between border-t border-border/50 pt-1 text-[11px]">
+            <span className="text-muted-foreground">Total Processed:</span>
+            <span className="font-mono font-semibold text-foreground">
+              {formatCurrency(summary.totalApplied)} (
+              {summary.totalApplicationsCount} apps)
             </span>
           </div>
         </div>
 
         {/* Related IPOs */}
         {summary.relatedIpos.length > 0 && (
-          <div className="space-y-1 pt-1">
-            <span className="text-[10px] text-muted-foreground block">
-              Related IPOs ({summary.relatedIpos.length})
+          <div className="flex flex-col gap-1">
+            <span className="block text-[10px] text-muted-foreground">
+              Active Applications in:
             </span>
             <div className="flex flex-wrap gap-1">
               {summary.relatedIpos.slice(0, 3).map((ipo) => (
                 <Badge
                   key={ipo.id}
                   variant="outline"
-                  className="text-[9px] py-0 px-1 font-normal"
+                  className="px-1 py-0 font-mono text-[9px] font-normal"
                 >
                   {ipo.name}
                 </Badge>
               ))}
               {summary.relatedIpos.length > 3 && (
-                <span className="text-[10px] text-muted-foreground self-center">
+                <span className="self-center text-[10px] text-muted-foreground">
                   +{summary.relatedIpos.length - 3} more
                 </span>
               )}
@@ -376,7 +384,7 @@ function BankAccountCard({
         )}
 
         {bank.notes && (
-          <p className="text-[11px] text-muted-foreground line-clamp-2 bg-muted/30 p-1.5 rounded">
+          <p className="line-clamp-2 rounded-none border border-border/40 bg-muted/30 p-2 text-[11px] text-muted-foreground">
             {bank.notes}
           </p>
         )}
