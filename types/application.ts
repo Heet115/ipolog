@@ -2,6 +2,13 @@ import { Timestamp } from "firebase/firestore"
 
 export type ApplicationStatus = "pending" | "allotted" | "not_allotted" | "sold"
 
+export type ApplicationCategory =
+  | "retail"
+  | "shni"
+  | "bhni"
+  | "shareholder"
+  | "employee"
+
 export interface Application {
   id: string
   userId: string
@@ -11,6 +18,8 @@ export interface Application {
   bankAccountId: string
 
   applicationDate: Timestamp
+
+  category?: ApplicationCategory
 
   lotsApplied: number
   sharesApplied: number

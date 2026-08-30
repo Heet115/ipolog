@@ -45,12 +45,19 @@ import {
   calculateAmountApplied,
 } from "@/lib/calculations/financials"
 import { formatCurrency, formatBankAccount } from "@/lib/utils/ipo"
+import {
+  CATEGORY_CONFIG,
+  ALL_CATEGORIES,
+  getCategoryMinLots,
+  validateCategoryLots,
+} from "@/lib/calculations/categories"
 import type {
   Ipo,
   Application,
   ApplicationAccount,
   BankAccount,
   ApplicationStatus,
+  ApplicationCategory,
 } from "@/types"
 
 interface EditApplicationDialogProps {
@@ -124,6 +131,9 @@ function EditApplicationForm({
   onSuccess: () => void
 }) {
   const [bankAccountId, setBankAccountId] = useState(application.bankAccountId)
+  const [category, setCategory] = useState<ApplicationCategory>(
+    application.category || "retail"
+  )
   const [lotsApplied, setLotsApplied] = useState(
     String(application.lotsApplied)
   )
@@ -149,10 +159,24 @@ function EditApplicationForm({
     ipo.lotSize,
     ipo.issuePrice
   )
+  const categoryValidation = validateCategoryLots(
+    category,
+    numLots,
+    ipo.lotSize,
+    ipo.issuePrice
+  )
 
   const activeBanks = bankAccounts.filter(
     (b) => !b.archived || b.id === application.bankAccountId
   )
+
+  const handleCategoryChange = (newCat: ApplicationCategory) => {
+    setCategory(newCat)
+    const minLots = getCategoryMinLots(newCat, ipo.lotSize, ipo.issuePrice)
+    if (numLots < minLots) {
+      setLotsApplied(String(minLots))
+    }
+  }
 
   const handleDelete = async () => {
     setDeleting(true)
@@ -205,6 +229,7 @@ function EditApplicationForm({
           : undefined
       await updateApplication(userId, application.id, {
         bankAccountId,
+        category,
         lotsApplied: numLots,
         sharesApplied,
         amountApplied,
@@ -240,32 +265,63 @@ function EditApplicationForm({
         )}
 
         <FieldGroup>
-          {/* Bank Account Selection (Select) */}
-          <Field>
-            <FieldLabel>
-              Bank Account <span className="text-destructive">*</span>
-            </FieldLabel>
-            <Select
-              value={bankAccountId}
-              onValueChange={(val) => val && setBankAccountId(val)}
-            >
-              <SelectTrigger className="h-8 w-full bg-background text-xs">
-                <SelectValue placeholder="Select bank">
-                  {(val) => {
-                    const b = activeBanks.find((acc) => acc.id === val)
-                    return b ? formatBankAccount(b) : "Select bank"
-                  }}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {activeBanks.map((b) => (
-                  <SelectItem key={b.id} value={b.id}>
-                    {formatBankAccount(b)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
+          {/* Quota Category & Bank Account */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field>
+              <FieldLabel>Quota Category</FieldLabel>
+              <Select
+                value={category}
+                onValueChange={(val) =>
+                  val && handleCategoryChange(val as ApplicationCategory)
+                }
+              >
+                <SelectTrigger className="h-8 w-full bg-background text-xs">
+                  <SelectValue>
+                    {CATEGORY_CONFIG[category].label}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {ALL_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      <div className="flex items-center justify-between gap-2 w-full">
+                        <span>{CATEGORY_CONFIG[cat].label}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          ({CATEGORY_CONFIG[cat].amountLimitText})
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            {/* Bank Account Selection (Select) */}
+            <Field>
+              <FieldLabel>
+                Bank Account <span className="text-destructive">*</span>
+              </FieldLabel>
+              <Select
+                value={bankAccountId}
+                onValueChange={(val) => val && setBankAccountId(val)}
+              >
+                <SelectTrigger className="h-8 w-full bg-background text-xs">
+                  <SelectValue placeholder="Select bank">
+                    {(val) => {
+                      const b = activeBanks.find((acc) => acc.id === val)
+                      return b ? formatBankAccount(b) : "Select bank"
+                    }}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {activeBanks.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {formatBankAccount(b)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
 
           {/* Lots Applied & Real-time calculation */}
           <div className="grid gap-3 sm:grid-cols-2">
@@ -283,12 +339,17 @@ function EditApplicationForm({
                 required
                 disabled={loading}
               />
+              {!categoryValidation.isValid && (
+                <span className="text-[10px] text-destructive font-medium mt-1 block">
+                  ⚠️ {categoryValidation.warning}
+                </span>
+              )}
             </Field>
 
-            <div className="flex flex-col justify-end">
+            <div className="flex flex-col justify-start">
               <div className="rounded-none border bg-muted/40 p-2 text-xs">
                 <span className="block text-[10px] text-muted-foreground">
-                  Applied Amount:
+                  Applied Amount ({CATEGORY_CONFIG[category].shortLabel}):
                 </span>
                 <span className="font-mono font-bold text-foreground">
                   {formatCurrency(amountApplied)}{" "}

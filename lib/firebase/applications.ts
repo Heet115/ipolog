@@ -14,12 +14,14 @@ import {
   type Timestamp,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase/firebase"
-import type { Application, ApplicationStatus } from "@/types"
+import type { Application, ApplicationStatus, ApplicationCategory } from "@/types"
+import { inferCategoryFromAmount } from "@/lib/calculations/categories"
 
 function docToApplication(
   docSnap: QueryDocumentSnapshot<DocumentData>
 ): Application {
   const data = docSnap.data()
+  const amountApplied = data.amountApplied != null ? Number(data.amountApplied) : 0
   return {
     id: docSnap.id,
     userId: data.userId,
@@ -27,9 +29,12 @@ function docToApplication(
     accountId: data.accountId,
     bankAccountId: data.bankAccountId,
     applicationDate: data.applicationDate,
+    category:
+      (data.category as ApplicationCategory) ||
+      (amountApplied > 0 ? inferCategoryFromAmount(amountApplied) : "retail"),
     lotsApplied: data.lotsApplied != null ? Number(data.lotsApplied) : 1,
     sharesApplied: data.sharesApplied != null ? Number(data.sharesApplied) : 0,
-    amountApplied: data.amountApplied != null ? Number(data.amountApplied) : 0,
+    amountApplied,
     status: (data.status as ApplicationStatus) || "pending",
     allottedLots:
       data.allottedLots !== undefined ? Number(data.allottedLots) : undefined,
@@ -88,6 +93,7 @@ export async function createApplicationsBatch(
     ipoId: string
     accountId: string
     bankAccountId: string
+    category?: ApplicationCategory
     lotsApplied: number
     sharesApplied: number
     amountApplied: number
@@ -110,6 +116,11 @@ export async function createApplicationsBatch(
       ipoId: app.ipoId,
       accountId: app.accountId,
       bankAccountId: app.bankAccountId,
+      category:
+        app.category ||
+        (app.amountApplied > 0
+          ? inferCategoryFromAmount(app.amountApplied)
+          : "retail"),
       lotsApplied: app.lotsApplied,
       sharesApplied: app.sharesApplied,
       amountApplied: app.amountApplied,
@@ -139,6 +150,7 @@ export async function updateApplication(
     updatedAt: serverTimestamp(),
   }
 
+  if (data.category !== undefined) payload.category = data.category
   if (data.bankAccountId !== undefined)
     payload.bankAccountId = data.bankAccountId
   if (data.lotsApplied !== undefined)

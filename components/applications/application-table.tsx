@@ -35,6 +35,10 @@ import { toast } from "@/components/ui/toast"
 import { deleteApplication } from "@/lib/firebase/applications"
 import { calculateApplicationProfit } from "@/lib/calculations/financials"
 import { formatCurrency, formatBankAccount, formatDate } from "@/lib/utils/ipo"
+import {
+  CATEGORY_CONFIG,
+  inferCategoryFromAmount,
+} from "@/lib/calculations/categories"
 import type {
   Ipo,
   Application,
@@ -241,10 +245,34 @@ export function ApplicationTable({
       cell: (app) => {
         const bank = bankMap.get(app.bankAccountId)
         return (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground truncate max-w-[200px]">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground truncate max-w-[180px]">
             <Landmark className="size-3 shrink-0" />
             <span className="truncate">{bank ? formatBankAccount(bank) : "—"}</span>
           </div>
+        )
+      },
+    },
+    {
+      id: "category",
+      header: "Quota",
+      align: "center",
+      sortable: true,
+      sortFn: (a, b) => {
+        const catA = a.category || inferCategoryFromAmount(a.amountApplied)
+        const catB = b.category || inferCategoryFromAmount(b.amountApplied)
+        return catA.localeCompare(catB)
+      },
+      cell: (app) => {
+        const cat = app.category || inferCategoryFromAmount(app.amountApplied)
+        const meta = CATEGORY_CONFIG[cat]
+        return (
+          <Badge
+            variant={meta.badgeVariant}
+            className="px-1.5 py-0 text-[10px] font-mono"
+            title={`${meta.label} (${meta.amountLimitText})`}
+          >
+            {meta.shortLabel}
+          </Badge>
         )
       },
     },
@@ -406,6 +434,11 @@ export function ApplicationTable({
           (app) => bankMap.get(app.bankAccountId)?.bankName,
           (app) => bankMap.get(app.bankAccountId)?.nickname,
           (app) => bankMap.get(app.bankAccountId)?.last4,
+          (app) => {
+            const cat =
+              app.category || inferCategoryFromAmount(app.amountApplied)
+            return `${CATEGORY_CONFIG[cat]?.label} ${CATEGORY_CONFIG[cat]?.shortLabel}`
+          },
           (app) => app.notes,
         ]}
         filterPills={filterPills}

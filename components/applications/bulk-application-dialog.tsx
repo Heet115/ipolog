@@ -47,7 +47,19 @@ import {
   calculateAmountApplied,
 } from "@/lib/calculations/financials"
 import { formatCurrency, formatBankAccount } from "@/lib/utils/ipo"
-import type { Ipo, ApplicationAccount, BankAccount, Application } from "@/types"
+import {
+  CATEGORY_CONFIG,
+  ALL_CATEGORIES,
+  getCategoryMinLots,
+  validateCategoryLots,
+} from "@/lib/calculations/categories"
+import type {
+  Ipo,
+  ApplicationAccount,
+  BankAccount,
+  Application,
+  ApplicationCategory,
+} from "@/types"
 
 interface BulkApplicationDialogProps {
   open: boolean
@@ -64,6 +76,7 @@ interface AccountConfig {
   accountId: string
   bankAccountId: string
   lots: number
+  category: ApplicationCategory
 }
 
 export function BulkApplicationDialog({
@@ -118,6 +131,8 @@ function BulkApplicationForm({
 }) {
   const [step, setStep] = useState<1 | 2>(1)
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([])
+  const [defaultCategory, setDefaultCategory] =
+    useState<ApplicationCategory>("retail")
   const [defaultBankId, setDefaultBankId] = useState<string>(
     bankAccounts.find((b) => !b.archived)?.id || ""
   )
@@ -125,12 +140,16 @@ function BulkApplicationForm({
   const [accountConfigs, setAccountConfigs] = useState<
     Record<string, AccountConfig>
   >({})
-  const [sortColumn, setSortColumn] = useState<"account" | "bank" | "lots" | "amount" | null>(null)
+  const [sortColumn, setSortColumn] = useState<
+    "account" | "bank" | "category" | "lots" | "amount" | null
+  >(null)
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const toggleSort = (col: "account" | "bank" | "lots" | "amount") => {
+  const toggleSort = (
+    col: "account" | "bank" | "category" | "lots" | "amount"
+  ) => {
     if (sortColumn !== col) {
       setSortColumn(col)
       setSortDirection("asc")
@@ -178,6 +197,7 @@ function BulkApplicationForm({
             accountId,
             bankAccountId: defaultBankId,
             lots: defaultLots,
+            category: defaultCategory,
           },
         }))
         return [...prev, accountId]
@@ -200,6 +220,7 @@ function BulkApplicationForm({
               accountId: id,
               bankAccountId: defaultBankId,
               lots: defaultLots,
+              category: defaultCategory,
             }
           }
         }
@@ -224,6 +245,7 @@ function BulkApplicationForm({
               accountId: id,
               bankAccountId: defaultBankId,
               lots: defaultLots,
+              category: defaultCategory,
             }
           }
         }
@@ -247,6 +269,7 @@ function BulkApplicationForm({
             accountId: id,
             bankAccountId: defaultBankId,
             lots: defaultLots,
+            category: defaultCategory,
           }
         }
       }
@@ -259,6 +282,25 @@ function BulkApplicationForm({
     setAccountConfigs({})
   }
 
+  const applyGlobalCategory = (cat: ApplicationCategory) => {
+    setDefaultCategory(cat)
+    const recommendedLots = getCategoryMinLots(cat, ipo.lotSize, ipo.issuePrice)
+    setDefaultLots(recommendedLots)
+
+    setAccountConfigs((prev) => {
+      const updated: Record<string, AccountConfig> = {}
+      for (const id of selectedAccountIds) {
+        updated[id] = {
+          accountId: id,
+          bankAccountId: prev[id]?.bankAccountId || defaultBankId,
+          lots: recommendedLots,
+          category: cat,
+        }
+      }
+      return updated
+    })
+  }
+
   const applyGlobalBank = (bankId: string) => {
     setDefaultBankId(bankId)
     setAccountConfigs((prev) => {
@@ -268,6 +310,7 @@ function BulkApplicationForm({
           accountId: id,
           bankAccountId: bankId,
           lots: prev[id]?.lots || defaultLots,
+          category: prev[id]?.category || defaultCategory,
         }
       }
       return updated
@@ -284,6 +327,7 @@ function BulkApplicationForm({
           accountId: id,
           bankAccountId: prev[id]?.bankAccountId || defaultBankId,
           lots: safeLots,
+          category: prev[id]?.category || defaultCategory,
         }
       }
       return updated
@@ -297,8 +341,28 @@ function BulkApplicationForm({
         accountId,
         bankAccountId: bankId,
         lots: prev[accountId]?.lots || defaultLots,
+        category: prev[accountId]?.category || defaultCategory,
       },
     }))
+  }
+
+  const updateIndividualCategory = (
+    accountId: string,
+    cat: ApplicationCategory
+  ) => {
+    const minLots = getCategoryMinLots(cat, ipo.lotSize, ipo.issuePrice)
+    setAccountConfigs((prev) => {
+      const currentLots = prev[accountId]?.lots || defaultLots
+      return {
+        ...prev,
+        [accountId]: {
+          accountId,
+          bankAccountId: prev[accountId]?.bankAccountId || defaultBankId,
+          lots: Math.max(currentLots, minLots),
+          category: cat,
+        },
+      }
+    })
   }
 
   const updateIndividualLots = (accountId: string, lots: number) => {
@@ -309,6 +373,7 @@ function BulkApplicationForm({
         accountId,
         bankAccountId: prev[accountId]?.bankAccountId || defaultBankId,
         lots: safeLots,
+        category: prev[accountId]?.category || defaultCategory,
       },
     }))
   }
@@ -350,6 +415,7 @@ function BulkApplicationForm({
         const cfg = accountConfigs[accountId]
         const lots = cfg?.lots || 1
         const bankAccountId = cfg?.bankAccountId || defaultBankId
+        const category = cfg?.category || defaultCategory
 
         const sharesApplied = calculateSharesApplied(lots, ipo.lotSize)
         const amountApplied = calculateAmountApplied(
@@ -362,6 +428,7 @@ function BulkApplicationForm({
           ipoId: ipo.id,
           accountId,
           bankAccountId,
+          category,
           lotsApplied: lots,
           sharesApplied,
           amountApplied,
@@ -407,6 +474,10 @@ function BulkApplicationForm({
         const bankA = bankAccountMap.get(cfgA?.bankAccountId || defaultBankId)
         const bankB = bankAccountMap.get(cfgB?.bankAccountId || defaultBankId)
         res = (bankA?.bankName || "").localeCompare(bankB?.bankName || "")
+      } else if (sortColumn === "category") {
+        const catA = cfgA?.category || defaultCategory
+        const catB = cfgB?.category || defaultCategory
+        res = catA.localeCompare(catB)
       } else if (sortColumn === "lots") {
         const lotsA = cfgA?.lots || defaultLots
         const lotsB = cfgB?.lots || defaultLots
@@ -420,7 +491,21 @@ function BulkApplicationForm({
       return sortDirection === "asc" ? res : -res
     })
     return list
-  }, [selectedAccountIds, sortColumn, sortDirection, accountMap, accountConfigs, bankAccountMap, defaultBankId, defaultLots])
+  }, [
+    selectedAccountIds,
+    sortColumn,
+    sortDirection,
+    accountMap,
+    accountConfigs,
+    bankAccountMap,
+    defaultBankId,
+    defaultLots,
+    defaultCategory,
+  ])
+
+  const minShniLots = getCategoryMinLots("shni", ipo.lotSize, ipo.issuePrice)
+  const minBhniLots = getCategoryMinLots("bhni", ipo.lotSize, ipo.issuePrice)
+  const oneLotAmount = ipo.lotSize * ipo.issuePrice
 
   return (
     <div className="flex flex-col gap-4">
@@ -435,8 +520,8 @@ function BulkApplicationForm({
         </div>
         <DialogDescription>
           {step === 1
-            ? "Select accounts to apply with. Already applied accounts are disabled to prevent duplicates."
-            : "Assign lot sizes and funding bank accounts, review live totals, and confirm."}
+            ? "Select accounts to apply with. You can set default bidding category (Retail, sHNI, bHNI) and banks."
+            : "Assign lot sizes, quota category, and funding bank accounts, review live totals, and confirm."}
         </DialogDescription>
       </DialogHeader>
 
@@ -456,7 +541,44 @@ function BulkApplicationForm({
             </div>
           ) : (
             <>
-              {/* Quick Actions Bar */}
+              {/* Category & Quick Actions Bar */}
+              <div className="flex flex-col gap-2 rounded-none border bg-muted/30 p-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                    <span>Default Quota:</span>
+                    <Select
+                      value={defaultCategory}
+                      onValueChange={(val) =>
+                        val && applyGlobalCategory(val as ApplicationCategory)
+                      }
+                    >
+                      <SelectTrigger className="h-7 w-40 bg-background text-xs">
+                        <SelectValue>
+                          {CATEGORY_CONFIG[defaultCategory].label}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ALL_CATEGORIES.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            <div className="flex items-center justify-between gap-2 w-full">
+                              <span>{CATEGORY_CONFIG[cat].label}</span>
+                              <span className="text-[10px] text-muted-foreground">
+                                ({CATEGORY_CONFIG[cat].amountLimitText})
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {defaultLots} lot{defaultLots > 1 ? "s" : ""} •{" "}
+                    {formatCurrency(defaultLots * oneLotAmount)} / app
+                  </span>
+                </div>
+              </div>
+
+              {/* Selection Toolbar */}
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2 text-xs">
                 <span className="font-semibold text-foreground">
                   Selected: {selectedAccountIds.length} of{" "}
@@ -532,12 +654,17 @@ function BulkApplicationForm({
                                 toggleAccountSelection(account.id)
                               }
                             />
-                            <span
-                              className="truncate text-xs font-semibold text-foreground"
-                              title={account.name}
-                            >
-                              {account.name}
-                            </span>
+                            <div className="min-w-0 flex-1">
+                              <span
+                                className="block truncate text-xs font-semibold text-foreground"
+                                title={account.name}
+                              >
+                                {account.name}
+                              </span>
+                              <span className="block truncate text-[10px] text-muted-foreground">
+                                Self Account
+                              </span>
+                            </div>
                           </div>
                           {alreadyApplied && (
                             <Badge
@@ -629,7 +756,7 @@ function BulkApplicationForm({
               disabled={selectedAccountIds.length === 0}
               size="sm"
             >
-              Next: Assign Banks & Lots
+              Next: Assign Banks, Quota & Lots
               <ArrowRight data-icon="inline-end" />
             </Button>
           </DialogFooter>
@@ -640,7 +767,32 @@ function BulkApplicationForm({
       {step === 2 && (
         <div className="flex flex-col gap-4">
           {/* Global Defaults Bar */}
-          <div className="grid grid-cols-1 gap-3 rounded-none border bg-muted/40 p-3 text-xs sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 rounded-none border bg-muted/40 p-3 text-xs sm:grid-cols-3">
+            <div className="flex min-w-0 flex-col gap-1">
+              <label className="block truncate text-[11px] font-semibold text-muted-foreground">
+                Apply Quota to All
+              </label>
+              <Select
+                value={defaultCategory}
+                onValueChange={(val) =>
+                  val && applyGlobalCategory(val as ApplicationCategory)
+                }
+              >
+                <SelectTrigger className="h-8 w-full bg-background text-xs">
+                  <SelectValue>
+                    {CATEGORY_CONFIG[defaultCategory].label}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {ALL_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {CATEGORY_CONFIG[cat].label} ({CATEGORY_CONFIG[cat].amountLimitText})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex min-w-0 flex-col gap-1">
               <label className="block truncate text-[11px] font-semibold text-muted-foreground">
                 Apply Bank to All
@@ -699,12 +851,44 @@ function BulkApplicationForm({
             </div>
           </div>
 
+          {/* Quick Presets Bar */}
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+            <span className="font-semibold text-muted-foreground">Quick Presets:</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              className="h-6 px-2 text-[10px]"
+              onClick={() => applyGlobalCategory("retail")}
+            >
+              1-Lot Retail ({formatCurrency(oneLotAmount)})
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              className="h-6 px-2 text-[10px]"
+              onClick={() => applyGlobalCategory("shni")}
+            >
+              Min sHNI ({minShniLots} lots • {formatCurrency(minShniLots * oneLotAmount)})
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              className="h-6 px-2 text-[10px]"
+              onClick={() => applyGlobalCategory("bhni")}
+            >
+              Min bHNI ({minBhniLots} lots • {formatCurrency(minBhniLots * oneLotAmount)})
+            </Button>
+          </div>
+
           {/* Detailed Applications Table */}
           <div className="max-h-[300px] min-w-0 overflow-x-auto overflow-y-auto rounded-none border border-border/80">
-            <Table className="min-w-[600px]">
+            <Table className="min-w-[700px]">
               <TableHeader>
                 <TableRow className="bg-muted/30 border-b border-border/70">
-                  <TableHead className="min-w-[180px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                  <TableHead className="min-w-[170px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
                     <button
                       type="button"
                       onClick={() => toggleSort("account")}
@@ -722,7 +906,7 @@ function BulkApplicationForm({
                       )}
                     </button>
                   </TableHead>
-                  <TableHead className="min-w-[200px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                  <TableHead className="min-w-[180px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
                     <button
                       type="button"
                       onClick={() => toggleSort("bank")}
@@ -730,6 +914,24 @@ function BulkApplicationForm({
                     >
                       Bank Account
                       {sortColumn === "bank" ? (
+                        sortDirection === "asc" ? (
+                          <ArrowUp className="size-3 text-foreground" />
+                        ) : (
+                          <ArrowDown className="size-3 text-foreground" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
+                      )}
+                    </button>
+                  </TableHead>
+                  <TableHead className="w-[120px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                    <button
+                      type="button"
+                      onClick={() => toggleSort("category")}
+                      className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                    >
+                      Quota
+                      {sortColumn === "category" ? (
                         sortDirection === "asc" ? (
                           <ArrowUp className="size-3 text-foreground" />
                         ) : (
@@ -787,8 +989,15 @@ function BulkApplicationForm({
                   const cfg = accountConfigs[accountId]
                   const lots = cfg?.lots || defaultLots
                   const bankId = cfg?.bankAccountId || defaultBankId
+                  const cat = cfg?.category || defaultCategory
                   const shares = calculateSharesApplied(lots, ipo.lotSize)
                   const amount = calculateAmountApplied(
+                    lots,
+                    ipo.lotSize,
+                    ipo.issuePrice
+                  )
+                  const validation = validateCategoryLots(
+                    cat,
                     lots,
                     ipo.lotSize,
                     ipo.issuePrice
@@ -797,7 +1006,7 @@ function BulkApplicationForm({
                   return (
                     <TableRow key={accountId}>
                       <TableCell className="text-xs font-medium">
-                        <div className="flex max-w-[220px] min-w-0 items-center gap-1.5">
+                        <div className="flex max-w-[190px] min-w-0 items-center gap-1.5">
                           <span
                             className="block truncate font-semibold text-foreground"
                             title={account?.name}
@@ -843,19 +1052,60 @@ function BulkApplicationForm({
                       </TableCell>
 
                       <TableCell>
-                        <Input
-                          type="number"
-                          min={1}
-                          step={1}
-                          value={lots}
-                          onChange={(e) =>
-                            updateIndividualLots(
+                        <Select
+                          value={cat}
+                          onValueChange={(val) =>
+                            val &&
+                            updateIndividualCategory(
                               accountId,
-                              Number(e.target.value)
+                              val as ApplicationCategory
                             )
                           }
-                          className="h-7 w-16 px-1.5 text-center text-xs font-bold"
-                        />
+                        >
+                          <SelectTrigger className="h-7 w-28 truncate bg-background text-xs">
+                            <SelectValue>
+                              <Badge
+                                variant={CATEGORY_CONFIG[cat].badgeVariant}
+                                className="px-1 py-0 text-[9px] font-mono"
+                              >
+                                {CATEGORY_CONFIG[cat].shortLabel}
+                              </Badge>
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ALL_CATEGORIES.map((c) => (
+                              <SelectItem key={c} value={c}>
+                                {CATEGORY_CONFIG[c].label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="flex flex-col items-center">
+                          <Input
+                            type="number"
+                            min={1}
+                            step={1}
+                            value={lots}
+                            onChange={(e) =>
+                              updateIndividualLots(
+                                accountId,
+                                Number(e.target.value)
+                              )
+                            }
+                            className="h-7 w-16 px-1.5 text-center text-xs font-bold"
+                          />
+                          {!validation.isValid && (
+                            <span
+                              className="text-[9px] text-destructive font-medium truncate max-w-[80px]"
+                              title={validation.warning}
+                            >
+                              ⚠️ Out of range
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
 
                       <TableCell className="text-right font-mono text-xs text-muted-foreground">

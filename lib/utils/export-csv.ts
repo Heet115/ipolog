@@ -1,4 +1,8 @@
 import { calculateApplicationProfit } from "@/lib/calculations/financials"
+import {
+  CATEGORY_CONFIG,
+  inferCategoryFromAmount,
+} from "@/lib/calculations/categories"
 import { formatBankAccount, formatDate } from "@/lib/utils/ipo"
 import type { Ipo, Application, ApplicationAccount, BankAccount } from "@/types"
 
@@ -55,6 +59,7 @@ export function exportIpoApplicationsCsv(
     "Account Type",
     "Profit Share %",
     "Bank Account",
+    "Quota Category",
     "Lots Applied",
     "Shares Applied",
     "Amount Applied (INR)",
@@ -79,11 +84,16 @@ export function exportIpoApplicationsCsv(
     const bank = bankMap.get(app.bankAccountId)
     const profit = calculateApplicationProfit(app, ipo, account)
 
+    const cat =
+      app.category || inferCategoryFromAmount(app.amountApplied)
+    const catLabel = CATEGORY_CONFIG[cat]?.label || cat
+
     const row = [
       account?.name || "Unknown Account",
       account?.type === "my" ? "My Account" : "Other Account",
       account?.type === "my" ? "0%" : `${account?.profitSharePercent ?? 40}%`,
       bank ? formatBankAccount(bank) : "—",
+      catLabel,
       String(app.lotsApplied || 0),
       String(app.sharesApplied || 0),
       String(app.amountApplied || 0),
@@ -134,6 +144,7 @@ export function exportPortfolioSummaryCsv(
     "Account Type",
     "Profit Share %",
     "Bank Account",
+    "Quota Category",
     "Lots Applied",
     "Shares Applied",
     "Amount Applied (INR)",
@@ -171,6 +182,10 @@ export function exportPortfolioSummaryCsv(
           unrealizedYourProfit: 0,
         }
 
+    const cat =
+      app.category || inferCategoryFromAmount(app.amountApplied)
+    const catLabel = CATEGORY_CONFIG[cat]?.label || cat
+
     const row = [
       ipo?.name || "Unknown IPO",
       ipo?.type === "sme" ? "SME" : "Mainboard",
@@ -179,6 +194,7 @@ export function exportPortfolioSummaryCsv(
       account?.type === "my" ? "My Account" : "Other Account",
       account?.type === "my" ? "0%" : `${account?.profitSharePercent ?? 40}%`,
       bank ? formatBankAccount(bank) : "—",
+      catLabel,
       String(app.lotsApplied || 0),
       String(app.sharesApplied || 0),
       String(app.amountApplied || 0),
