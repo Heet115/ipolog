@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   addDoc,
   updateDoc,
@@ -109,8 +110,15 @@ export async function updateApplicationAccount(
   if (data.name !== undefined) updatePayload.name = data.name.trim()
   if (data.type !== undefined) updatePayload.type = data.type
   if (data.profitSharePercent !== undefined) {
+    // Determine the effective type: use the incoming type if provided,
+    // otherwise read the current type from Firestore to enforce the rule.
+    let effectiveType = data.type
+    if (effectiveType === undefined) {
+      const snap = await getDoc(accountRef)
+      effectiveType = snap.exists() ? snap.data()?.type : undefined
+    }
     updatePayload.profitSharePercent =
-      data.type === "my" ? 0 : data.profitSharePercent
+      effectiveType === "my" ? 0 : data.profitSharePercent
   }
   if (data.notes !== undefined) updatePayload.notes = data.notes.trim()
   if (data.archived !== undefined) updatePayload.archived = data.archived

@@ -119,20 +119,18 @@ export function dateToInputValue(
 }
 
 /**
- * Converts a YYYY-MM-DD input value to a Firestore Timestamp.
+ * Converts a YYYY-MM-DD input value or ISO date string to a Firestore Timestamp.
  */
 export function inputValueToTimestamp(val: string): Timestamp | undefined {
   if (!val) return undefined
-  const parts = val.split("-")
+  const cleanVal = val.trim().slice(0, 10)
+  const parts = cleanVal.split("-")
   if (parts.length !== 3) return undefined
-  const date = new Date(
-    Number(parts[0]),
-    Number(parts[1]) - 1,
-    Number(parts[2]),
-    12,
-    0,
-    0
-  )
+  const year = Number(parts[0])
+  const month = Number(parts[1])
+  const day = Number(parts[2])
+  if (isNaN(year) || isNaN(month) || isNaN(day)) return undefined
+  const date = new Date(year, month - 1, day, 12, 0, 0)
   return Timestamp.fromDate(date)
 }
 
@@ -145,16 +143,14 @@ export function formatIsoDate(
 ): string {
   if (!isoDate) return "—"
   try {
-    const parts = isoDate.split("-")
+    const cleanVal = isoDate.trim().slice(0, 10)
+    const parts = cleanVal.split("-")
     if (parts.length < 3) return isoDate
-    const date = new Date(
-      Number(parts[0]),
-      Number(parts[1]) - 1,
-      Number(parts[2]),
-      12,
-      0,
-      0
-    )
+    const year = Number(parts[0])
+    const month = Number(parts[1])
+    const day = Number(parts[2])
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return isoDate
+    const date = new Date(year, month - 1, day, 12, 0, 0)
     return new Intl.DateTimeFormat("en-IN", {
       day: "numeric",
       month: "short",

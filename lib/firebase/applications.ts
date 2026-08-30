@@ -27,9 +27,9 @@ function docToApplication(
     accountId: data.accountId,
     bankAccountId: data.bankAccountId,
     applicationDate: data.applicationDate,
-    lotsApplied: Number(data.lotsApplied) || 1,
-    sharesApplied: Number(data.sharesApplied) || 0,
-    amountApplied: Number(data.amountApplied) || 0,
+    lotsApplied: data.lotsApplied != null ? Number(data.lotsApplied) : 1,
+    sharesApplied: data.sharesApplied != null ? Number(data.sharesApplied) : 0,
+    amountApplied: data.amountApplied != null ? Number(data.amountApplied) : 0,
     status: (data.status as ApplicationStatus) || "pending",
     allottedLots:
       data.allottedLots !== undefined ? Number(data.allottedLots) : undefined,

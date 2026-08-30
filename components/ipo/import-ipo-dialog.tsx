@@ -12,6 +12,9 @@ import {
   Layers,
   IndianRupee,
   AlertCircle,
+  CircleDot,
+  Lock,
+  TrendingUp,
 } from "lucide-react"
 import {
   Dialog,
@@ -299,27 +302,29 @@ export function ImportIpoDialog({
 
           {/* Status Tabs */}
           <div className="flex items-center gap-1">
-            {(["open", "upcoming", "closed", "listed"] as const).map(
-              (tabStatus) => (
+            {[
+              { id: "open" as const, label: "Open Now", icon: CircleDot },
+              { id: "upcoming" as const, label: "Upcoming", icon: Calendar },
+              { id: "closed" as const, label: "Closed", icon: Lock },
+              { id: "listed" as const, label: "Listed", icon: TrendingUp },
+            ].map((tab) => {
+              const Icon = tab.icon
+              const isActive = status === tab.id
+              return (
                 <button
-                  key={tabStatus}
-                  onClick={() => setStatus(tabStatus)}
-                  className={`rounded-none px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-colors ${
-                    status === tabStatus
+                  key={tab.id}
+                  onClick={() => setStatus(tab.id)}
+                  className={`inline-flex items-center gap-1.5 rounded-none px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                    isActive
                       ? "border-b-2 border-primary bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
-                  {tabStatus === "open"
-                    ? "🟢 Open Now"
-                    : tabStatus === "upcoming"
-                      ? "📅 Upcoming"
-                      : tabStatus === "closed"
-                        ? "🔒 Closed"
-                        : "📈 Listed"}
+                  <Icon className="size-3.5" />
+                  {tab.label}
                 </button>
               )
-            )}
+            })}
           </div>
         </div>
 
@@ -421,10 +426,7 @@ export function ImportIpoDialog({
                           {ipo.type === "mainboard" ? "Mainboard" : "SME"}
                         </Badge>
                         {ipo.status === "open" && (
-                          <Badge
-                            variant="default"
-                            className="bg-emerald-600 text-[10px] text-white dark:bg-emerald-600 hover:bg-emerald-600"
-                          >
+                          <Badge variant="default" className="text-[10px]">
                             Open
                           </Badge>
                         )}
@@ -474,7 +476,7 @@ export function ImportIpoDialog({
                         {/* Subscription */}
                         {ipo.totalSubscription &&
                           parseFloat(ipo.totalSubscription) > 0 && (
-                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                            <span className="font-semibold font-mono text-primary">
                               Sub: {ipo.totalSubscription}x
                             </span>
                           )}
@@ -489,7 +491,7 @@ export function ImportIpoDialog({
                             variant="secondary"
                             className="flex items-center gap-1 text-xs font-medium"
                           >
-                            <Check className="size-3 text-emerald-600" />
+                            <Check className="size-3 text-primary" />
                             Already in My IPOs
                           </Badge>
                           {existing && (

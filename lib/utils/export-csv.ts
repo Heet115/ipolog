@@ -63,9 +63,11 @@ export function exportIpoApplicationsCsv(
     "Allotted Shares",
     "Sale Price (INR)",
     "Shares Sold",
-    "Gross Profit (INR)",
-    "Shared Profit (INR)",
-    "Your Net Profit (INR)",
+    "Realized Gross Profit (INR)",
+    "Realized Shared Profit (INR)",
+    "Realized Your Profit (INR)",
+    "Unrealized Gross Profit (INR)",
+    "Unrealized Your Profit (INR)",
     "Application Date",
     "Notes",
   ]
@@ -90,9 +92,11 @@ export function exportIpoApplicationsCsv(
       String(app.allottedShares || 0),
       app.salePrice ? String(app.salePrice) : "",
       app.sharesSold ? String(app.sharesSold) : "",
-      profit.hasRealized ? profit.realizedGrossProfit.toFixed(2) : "",
-      profit.hasRealized ? profit.realizedProfitShared.toFixed(2) : "",
-      profit.hasRealized ? profit.realizedYourProfit.toFixed(2) : "",
+      profit.hasRealized ? profit.realizedGrossProfit.toFixed(2) : "0.00",
+      profit.hasRealized ? profit.realizedProfitShared.toFixed(2) : "0.00",
+      profit.hasRealized ? profit.realizedYourProfit.toFixed(2) : "0.00",
+      profit.hasUnrealized ? profit.unrealizedGrossProfit.toFixed(2) : "0.00",
+      profit.hasUnrealized ? profit.unrealizedYourProfit.toFixed(2) : "0.00",
       formatDate(app.applicationDate),
       app.notes || "",
     ]
@@ -139,8 +143,10 @@ export function exportPortfolioSummaryCsv(
     "Sale Price (INR)",
     "Shares Sold",
     "Realized Gross Profit (INR)",
-    "Profit Shared (INR)",
-    "Your Net Profit (INR)",
+    "Realized Shared Profit (INR)",
+    "Realized Your Profit (INR)",
+    "Unrealized Gross Profit (INR)",
+    "Unrealized Your Profit (INR)",
     "Application Date",
     "Notes",
   ]
@@ -156,9 +162,13 @@ export function exportPortfolioSummaryCsv(
       ? calculateApplicationProfit(app, ipo, account)
       : {
           hasRealized: false,
+          hasUnrealized: false,
           realizedGrossProfit: 0,
           realizedProfitShared: 0,
           realizedYourProfit: 0,
+          unrealizedGrossProfit: 0,
+          unrealizedProfitShared: 0,
+          unrealizedYourProfit: 0,
         }
 
     const row = [
@@ -177,9 +187,11 @@ export function exportPortfolioSummaryCsv(
       String(app.allottedShares || 0),
       app.salePrice ? String(app.salePrice) : "",
       app.sharesSold ? String(app.sharesSold) : "",
-      profit.hasRealized ? profit.realizedGrossProfit.toFixed(2) : "",
-      profit.hasRealized ? profit.realizedProfitShared.toFixed(2) : "",
-      profit.hasRealized ? profit.realizedYourProfit.toFixed(2) : "",
+      profit.hasRealized ? profit.realizedGrossProfit.toFixed(2) : "0.00",
+      profit.hasRealized ? profit.realizedProfitShared.toFixed(2) : "0.00",
+      profit.hasRealized ? profit.realizedYourProfit.toFixed(2) : "0.00",
+      profit.hasUnrealized ? profit.unrealizedGrossProfit.toFixed(2) : "0.00",
+      profit.hasUnrealized ? profit.unrealizedYourProfit.toFixed(2) : "0.00",
       formatDate(app.applicationDate),
       app.notes || "",
     ]

@@ -122,8 +122,14 @@ export default function DashboardPage() {
       )
     })
 
-  // Recent applications
-  const recentApps = [...applications].slice(0, 6)
+  // Recent applications (most recent first)
+  const recentApps = [...applications]
+    .sort((a, b) => {
+      const aTime = a.applicationDate?.seconds ?? 0
+      const bTime = b.applicationDate?.seconds ?? 0
+      return bTime - aTime
+    })
+    .slice(0, 6)
 
   // Empty state if nothing is tracked yet
   if (ipos.length === 0 && accounts.length === 0 && bankAccounts.length === 0) {

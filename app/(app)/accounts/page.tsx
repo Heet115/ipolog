@@ -14,6 +14,7 @@ import {
 import { AccountDialog } from "@/components/accounts/account-dialog"
 import { AccountList } from "@/components/accounts/account-list"
 import { AccountListSkeleton } from "@/components/accounts/account-skeleton"
+import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/lib/firebase/auth-context"
 import { getApplicationAccounts } from "@/lib/firebase/accounts"
 import { getApplications } from "@/lib/firebase/applications"
@@ -45,6 +46,11 @@ export default function AccountsPage() {
       setIpos(iposData)
     } catch (err) {
       console.error("Failed to load application accounts:", err)
+      toast.add({
+        title: "Failed to refresh accounts",
+        description: "Could not load the latest accounts data. Please try again.",
+        type: "error",
+      })
     }
   }, [user])
 

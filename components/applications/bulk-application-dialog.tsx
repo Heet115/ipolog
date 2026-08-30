@@ -150,6 +150,15 @@ function BulkApplicationForm({
   const otherAccounts = activeAccounts.filter((a) => a.type === "other")
   const activeBankAccounts = bankAccounts.filter((b) => !b.archived)
 
+  const accountMap = useMemo(
+    () => new Map(accounts.map((a) => [a.id, a])),
+    [accounts]
+  )
+  const bankAccountMap = useMemo(
+    () => new Map(bankAccounts.map((b) => [b.id, b])),
+    [bankAccounts]
+  )
+
   const toggleAccountSelection = (accountId: string) => {
     if (appliedAccountIds.has(accountId)) return
 
@@ -386,8 +395,8 @@ function BulkApplicationForm({
 
     const list = [...selectedAccountIds]
     list.sort((idA, idB) => {
-      const accA = accounts.find((a) => a.id === idA)
-      const accB = accounts.find((a) => a.id === idB)
+      const accA = accountMap.get(idA)
+      const accB = accountMap.get(idB)
       const cfgA = accountConfigs[idA]
       const cfgB = accountConfigs[idB]
 
@@ -395,8 +404,8 @@ function BulkApplicationForm({
       if (sortColumn === "account") {
         res = (accA?.name || "").localeCompare(accB?.name || "")
       } else if (sortColumn === "bank") {
-        const bankA = bankAccounts.find((b) => b.id === (cfgA?.bankAccountId || defaultBankId))
-        const bankB = bankAccounts.find((b) => b.id === (cfgB?.bankAccountId || defaultBankId))
+        const bankA = bankAccountMap.get(cfgA?.bankAccountId || defaultBankId)
+        const bankB = bankAccountMap.get(cfgB?.bankAccountId || defaultBankId)
         res = (bankA?.bankName || "").localeCompare(bankB?.bankName || "")
       } else if (sortColumn === "lots") {
         const lotsA = cfgA?.lots || defaultLots
@@ -411,7 +420,7 @@ function BulkApplicationForm({
       return sortDirection === "asc" ? res : -res
     })
     return list
-  }, [selectedAccountIds, sortColumn, sortDirection, accounts, accountConfigs, bankAccounts, defaultBankId, defaultLots])
+  }, [selectedAccountIds, sortColumn, sortDirection, accountMap, accountConfigs, bankAccountMap, defaultBankId, defaultLots])
 
   return (
     <div className="flex flex-col gap-4">
@@ -774,7 +783,7 @@ function BulkApplicationForm({
               </TableHeader>
               <TableBody>
                 {sortedSelectedAccountIds.map((accountId) => {
-                  const account = accounts.find((a) => a.id === accountId)
+                  const account = accountMap.get(accountId)
                   const cfg = accountConfigs[accountId]
                   const lots = cfg?.lots || defaultLots
                   const bankId = cfg?.bankAccountId || defaultBankId

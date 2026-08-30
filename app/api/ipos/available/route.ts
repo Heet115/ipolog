@@ -31,6 +31,30 @@ export async function GET(request: NextRequest) {
     const result = await upstoxProvider.getIPOs(params)
 
     let ipos = result.ipos
+    let totalRecords = result.totalRecords
+
+    // If a search query is provided and there are multiple pages, fetch remaining pages to search across all records
+    if (queryParam && result.totalPages > 1 && params.pageNumber === 1) {
+      const maxExtraPages = Math.min(result.totalPages - 1, 4)
+      const remainingPages = Array.from(
+        { length: maxExtraPages },
+        (_, i) => i + 2
+      )
+      const additionalResults = await Promise.allSettled(
+        remainingPages.map((pageNum) =>
+          upstoxProvider.getIPOs({
+            ...params,
+            pageNumber: pageNum,
+          })
+        )
+      )
+      for (const extraRes of additionalResults) {
+        if (extraRes.status === "fulfilled" && extraRes.value.ipos) {
+          ipos = ipos.concat(extraRes.value.ipos)
+        }
+      }
+    }
+
     if (queryParam) {
       ipos = ipos.filter((ipo) => {
         const nameMatch = ipo.name.toLowerCase().includes(queryParam)
@@ -39,6 +63,7 @@ export async function GET(request: NextRequest) {
         const isinMatch = ipo.isin?.toLowerCase().includes(queryParam)
         return Boolean(nameMatch || symbolMatch || companyMatch || isinMatch)
       })
+      totalRecords = ipos.length
     }
 
     return NextResponse.json({
@@ -46,8 +71,8 @@ export async function GET(request: NextRequest) {
       data: ipos,
       meta: {
         page: result.pageNumber,
-        totalPages: result.totalPages,
-        totalRecords: result.totalRecords,
+        totalPages: queryParam ? 1 : result.totalPages,
+        totalRecords,
       },
     })
   } catch (error: unknown) {

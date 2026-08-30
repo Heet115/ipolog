@@ -859,31 +859,35 @@ export default function IpoDetailPage() {
             accounts={accounts}
             onSuccess={() => reloadData()}
           />
-          <RecordSaleDialog
-            open={Boolean(appToSell)}
-            onOpenChange={(open) => !open && setAppToSell(null)}
-            userId={user.uid}
-            ipo={ipo}
-            application={appToSell}
-            account={accounts.find((a) => a.id === appToSell?.accountId)}
-            onSuccess={() => {
-              setAppToSell(null)
-              reloadData()
-            }}
-          />
-          <EditApplicationDialog
-            open={Boolean(appToEdit)}
-            onOpenChange={(open) => !open && setAppToEdit(null)}
-            userId={user.uid}
-            ipo={ipo}
-            application={appToEdit}
-            account={accounts.find((a) => a.id === appToEdit?.accountId)}
-            bankAccounts={bankAccounts}
-            onSuccess={() => {
-              setAppToEdit(null)
-              reloadData()
-            }}
-          />
+          {appToSell && (
+            <RecordSaleDialog
+              open={true}
+              onOpenChange={(open) => !open && setAppToSell(null)}
+              userId={user.uid}
+              ipo={ipo}
+              application={appToSell}
+              account={accounts.find((a) => a.id === appToSell.accountId)}
+              onSuccess={() => {
+                setAppToSell(null)
+                reloadData()
+              }}
+            />
+          )}
+          {appToEdit && (
+            <EditApplicationDialog
+              open={true}
+              onOpenChange={(open) => !open && setAppToEdit(null)}
+              userId={user.uid}
+              ipo={ipo}
+              application={appToEdit}
+              account={accounts.find((a) => a.id === appToEdit.accountId)}
+              bankAccounts={bankAccounts}
+              onSuccess={() => {
+                setAppToEdit(null)
+                reloadData()
+              }}
+            />
+          )}
         </>
       )}
     </div>

@@ -31,12 +31,27 @@ export function normalizeIpoStatus(
 }
 
 /**
+ * Helper to safely parse numeric values from API responses.
+ */
+function parseNumeric(val: unknown): number {
+  if (typeof val === "number" && !isNaN(val)) return val
+  if (typeof val === "string") {
+    const parsed = parseFloat(val)
+    if (!isNaN(parsed)) return parsed
+  }
+  return 0
+}
+
+/**
  * Derives a clean company name from the IPO name.
- * e.g. "Autofurnish IPO" -> "Autofurnish" or "Hero Fincorp Limited IPO" -> "Hero Fincorp Limited"
+ * e.g. "Autofurnish IPO" -> "Autofurnish", "Yaashvi Jewellers - SME IPO" -> "Yaashvi Jewellers"
  */
 export function deriveCompanyName(name: string): string {
   if (!name) return ""
-  return name.replace(/\s+IPO\s*$/i, "").trim()
+  return name
+    .replace(/\s*\((?:SME\s+)?IPO\)\s*$/i, "")
+    .replace(/\s*[-–—]?\s*(?:SME\s+)?IPO\s*$/i, "")
+    .trim()
 }
 
 /**
@@ -45,14 +60,15 @@ export function deriveCompanyName(name: string): string {
 export function normalizeUpstoxListItem(
   item: UpstoxIpoListItem
 ): ExternalIPO {
-  const minPrice = typeof item.minimum_price === "number" ? item.minimum_price : 0
-  const maxPrice = typeof item.maximum_price === "number" ? item.maximum_price : 0
+  const minPrice = parseNumeric(item.minimum_price)
+  const maxPrice = parseNumeric(item.maximum_price)
   const issuePrice = maxPrice > 0 ? maxPrice : minPrice > 0 ? minPrice : 0
+  const issueSize = parseNumeric(item.issue_size)
 
   return {
     externalId: item.id,
     provider: "upstox",
-    symbol: item.symbol || undefined,
+    symbol: item.symbol?.trim() || undefined,
     name: item.name,
     companyName: deriveCompanyName(item.name),
     type: normalizeIpoType(item.issue_type),
@@ -60,16 +76,13 @@ export function normalizeUpstoxListItem(
     priceBandMin: minPrice > 0 ? minPrice : undefined,
     priceBandMax: maxPrice > 0 ? maxPrice : undefined,
     lotSize: 1, // Full lot size is available in detailed view /v2/ipos/{id}
-    issueSize:
-      typeof item.issue_size === "number" && item.issue_size > 0
-        ? item.issue_size
-        : undefined,
+    issueSize: issueSize > 0 ? issueSize : undefined,
     status: normalizeIpoStatus(item.status),
-    isin: item.isin || undefined,
+    isin: item.isin?.trim() || undefined,
     openDate: item.bidding_start_date || undefined,
     closeDate: item.bidding_end_date || undefined,
     totalSubscription: item.total_subscription || undefined,
-    industry: item.industry || undefined,
+    industry: item.industry?.trim() || undefined,
     raw: item as unknown as Record<string, unknown>,
   }
 }
@@ -80,19 +93,22 @@ export function normalizeUpstoxListItem(
 export function normalizeUpstoxDetail(
   detail: UpstoxIpoDetail
 ): ExternalIPO {
-  const minPrice =
-    typeof detail.minimum_price === "number" ? detail.minimum_price : 0
-  const maxPrice =
-    typeof detail.maximum_price === "number" ? detail.maximum_price : 0
-  const cutoffPrice =
-    typeof detail.cut_off_price === "number" ? detail.cut_off_price : 0
+  const minPrice = parseNumeric(detail.minimum_price)
+  const maxPrice = parseNumeric(detail.maximum_price)
+  const cutoffPrice = parseNumeric(detail.cut_off_price)
   const issuePrice =
-    maxPrice > 0 ? maxPrice : minPrice > 0 ? minPrice : cutoffPrice > 0 ? cutoffPrice : 0
+    maxPrice > 0
+      ? maxPrice
+      : minPrice > 0
+        ? minPrice
+        : cutoffPrice > 0
+          ? cutoffPrice
+          : 0
 
   const openDate =
     detail.timeline?.application_start_date ||
-    detail.timeline?.pre_apply_start_date ||
     detail.bidding_start_date ||
+    detail.timeline?.pre_apply_start_date ||
     undefined
 
   const closeDate =
@@ -107,15 +123,15 @@ export function normalizeUpstoxDetail(
 
   const listingDate = detail.timeline?.listing_date || undefined
 
-  const lotSize =
-    typeof detail.lot_size === "number" && detail.lot_size > 0
-      ? detail.lot_size
-      : 1
+  const parsedLotSize = parseNumeric(detail.lot_size)
+  const lotSize = parsedLotSize > 0 ? parsedLotSize : 1
+  const issueSize = parseNumeric(detail.issue_size)
+  const listingPrice = parseNumeric(detail.listing_price)
 
   return {
     externalId: detail.id,
     provider: "upstox",
-    symbol: detail.symbol || undefined,
+    symbol: detail.symbol?.trim() || undefined,
     name: detail.name,
     companyName: deriveCompanyName(detail.name),
     type: normalizeIpoType(detail.issue_type),
@@ -123,25 +139,19 @@ export function normalizeUpstoxDetail(
     priceBandMin: minPrice > 0 ? minPrice : undefined,
     priceBandMax: maxPrice > 0 ? maxPrice : undefined,
     lotSize,
-    issueSize:
-      typeof detail.issue_size === "number" && detail.issue_size > 0
-        ? detail.issue_size
-        : undefined,
+    issueSize: issueSize > 0 ? issueSize : undefined,
     status: normalizeIpoStatus(detail.status),
-    isin: detail.isin || undefined,
+    isin: detail.isin?.trim() || undefined,
     openDate,
     closeDate,
     allotmentDate,
     listingDate,
-    listingPrice:
-      typeof detail.listing_price === "number" && detail.listing_price > 0
-        ? detail.listing_price
-        : undefined,
+    listingPrice: listingPrice > 0 ? listingPrice : undefined,
     totalSubscription: detail.total_subscription || undefined,
-    industry: detail.industry || undefined,
-    registrarName: detail.registrar_info?.name || undefined,
-    rhpUrl: detail.rhp_url || undefined,
-    drhpUrl: detail.drhp_url || undefined,
+    industry: detail.industry?.trim() || undefined,
+    registrarName: detail.registrar_info?.name?.trim() || undefined,
+    rhpUrl: detail.rhp_url?.trim() || undefined,
+    drhpUrl: detail.drhp_url?.trim() || undefined,
     raw: detail as unknown as Record<string, unknown>,
   }
 }

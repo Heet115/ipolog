@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useCallback } from "react"
 import Link from "next/link"
 import {
   MoreVertical,
@@ -87,10 +87,13 @@ export function IpoList({
   const [deleting, setDeleting] = useState(false)
 
   // Map application counts per IPO
-  const appCountMap = new Map<string, number>()
-  for (const app of applications) {
-    appCountMap.set(app.ipoId, (appCountMap.get(app.ipoId) || 0) + 1)
-  }
+  const appCountMap = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const app of applications) {
+      map.set(app.ipoId, (map.get(app.ipoId) || 0) + 1)
+    }
+    return map
+  }, [applications])
 
   const filteredIpos = ipos.filter((ipo) => {
     // Archived filter logic
@@ -126,7 +129,7 @@ export function IpoList({
 
   const archivedCount = ipos.filter((i) => i.archived).length
 
-  const handleToggleArchive = async (ipo: Ipo) => {
+  const handleToggleArchive = useCallback(async (ipo: Ipo) => {
     try {
       await archiveIpo(userId, ipo.id, !ipo.archived)
       toast.add({
@@ -141,7 +144,7 @@ export function IpoList({
         type: "error",
       })
     }
-  }
+  }, [userId, onRefresh])
 
   const handleDelete = async () => {
     if (!ipoToDelete) return
@@ -166,7 +169,8 @@ export function IpoList({
   }
 
   // Table Columns for Table View
-  const tableColumns: DataTableColumn<Ipo>[] = [
+  const tableColumns: DataTableColumn<Ipo>[] = useMemo(
+    () => [
     {
       id: "name",
       header: "IPO / Company",
@@ -358,7 +362,7 @@ export function IpoList({
         </DropdownMenu>
       ),
     },
-  ]
+  ], [appCountMap, onEdit, handleToggleArchive])
 
   return (
     <div className="flex flex-col gap-5">

@@ -27,16 +27,16 @@ function docToIpo(docSnap: DocumentSnapshot<DocumentData>): Ipo {
     symbol: data.symbol || undefined,
     type: (data.type as IpoType) || "mainboard",
     issuePrice: Number(data.issuePrice) || 0,
-    priceBandMin: data.priceBandMin ? Number(data.priceBandMin) : undefined,
-    priceBandMax: data.priceBandMax ? Number(data.priceBandMax) : undefined,
+    priceBandMin: data.priceBandMin != null ? Number(data.priceBandMin) : undefined,
+    priceBandMax: data.priceBandMax != null ? Number(data.priceBandMax) : undefined,
     lotSize: Number(data.lotSize) || 1,
-    issueSize: data.issueSize ? Number(data.issueSize) : undefined,
+    issueSize: data.issueSize != null ? Number(data.issueSize) : undefined,
     openDate: data.openDate || undefined,
     closeDate: data.closeDate || undefined,
     allotmentDate: data.allotmentDate || undefined,
     listingDate: data.listingDate || undefined,
-    listingPrice: data.listingPrice ? Number(data.listingPrice) : undefined,
-    currentPrice: data.currentPrice ? Number(data.currentPrice) : undefined,
+    listingPrice: data.listingPrice != null ? Number(data.listingPrice) : undefined,
+    currentPrice: data.currentPrice != null ? Number(data.currentPrice) : undefined,
     isin: data.isin || undefined,
     source: data.source || "manual",
     provider: data.provider || undefined,
@@ -222,10 +222,10 @@ export async function updateIpo(
   if (data.archived !== undefined) payload.archived = data.archived
 
   if (data.priceBandMin !== undefined) {
-    payload.priceBandMin = data.priceBandMin ? Number(data.priceBandMin) : null
+    payload.priceBandMin = data.priceBandMin != null ? Number(data.priceBandMin) : null
   }
   if (data.priceBandMax !== undefined) {
-    payload.priceBandMax = data.priceBandMax ? Number(data.priceBandMax) : null
+    payload.priceBandMax = data.priceBandMax != null ? Number(data.priceBandMax) : null
   }
   if (data.openDate !== undefined) payload.openDate = data.openDate
   if (data.closeDate !== undefined) payload.closeDate = data.closeDate
@@ -284,10 +284,10 @@ export async function syncIpoPublicData(
     payload.issueSize = Number(data.issueSize)
   }
   if (data.priceBandMin !== undefined) {
-    payload.priceBandMin = data.priceBandMin ? Number(data.priceBandMin) : null
+    payload.priceBandMin = data.priceBandMin != null ? Number(data.priceBandMin) : null
   }
   if (data.priceBandMax !== undefined) {
-    payload.priceBandMax = data.priceBandMax ? Number(data.priceBandMax) : null
+    payload.priceBandMax = data.priceBandMax != null ? Number(data.priceBandMax) : null
   }
   if (data.openDate !== undefined) payload.openDate = data.openDate
   if (data.closeDate !== undefined) payload.closeDate = data.closeDate
@@ -341,12 +341,12 @@ export async function updateIpoPrices(
   }
 
   if (prices.listingPrice !== undefined) {
-    payload.listingPrice = prices.listingPrice
+    payload.listingPrice = prices.listingPrice != null
       ? Number(prices.listingPrice)
       : null
   }
   if (prices.currentPrice !== undefined) {
-    payload.currentPrice = prices.currentPrice
+    payload.currentPrice = prices.currentPrice != null
       ? Number(prices.currentPrice)
       : null
   }

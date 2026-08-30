@@ -14,6 +14,7 @@ import {
 import { BankAccountDialog } from "@/components/bank-accounts/bank-account-dialog"
 import { BankAccountList } from "@/components/bank-accounts/bank-account-list"
 import { BankListSkeleton } from "@/components/bank-accounts/bank-skeleton"
+import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/lib/firebase/auth-context"
 import { getBankAccounts } from "@/lib/firebase/bank-accounts"
 import { getApplications } from "@/lib/firebase/applications"
@@ -44,6 +45,11 @@ export default function BankAccountsPage() {
       setIpos(iposData)
     } catch (err) {
       console.error("Failed to load bank accounts data:", err)
+      toast.add({
+        title: "Failed to refresh bank accounts",
+        description: "Could not load the latest bank accounts data. Please try again.",
+        type: "error",
+      })
     }
   }, [user])
 

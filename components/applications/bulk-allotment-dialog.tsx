@@ -205,7 +205,7 @@ function BulkAllotmentForm({
   const setAllottedLots = (appId: string, lots: number) => {
     const app = applications.find((a) => a.id === appId)
     const maxLots = app ? app.lotsApplied : 1
-    const clamped = Math.max(1, Math.min(lots, maxLots))
+    const clamped = isNaN(lots) || lots <= 0 ? 0 : Math.min(lots, maxLots)
 
     setRowStates((prev) => ({
       ...prev,
@@ -379,7 +379,7 @@ function BulkAllotmentForm({
         }
 
         const isAllotted = state.status === "allotted"
-        const finalLots = isAllotted ? state.allottedLots : 0
+        const finalLots = isAllotted ? Math.max(1, state.allottedLots) : 0
         const finalShares = isAllotted ? finalLots * ipo.lotSize : 0
 
         return {
@@ -752,13 +752,24 @@ function BulkAllotmentForm({
                             type="number"
                             min={1}
                             max={app.lotsApplied}
-                            value={state.allottedLots}
-                            onChange={(e) =>
-                              setAllottedLots(
-                                app.id,
-                                parseInt(e.target.value, 10) || 1
-                              )
-                            }
+                            value={state.allottedLots === 0 ? "" : state.allottedLots}
+                            onChange={(e) => {
+                              const val = e.target.value
+                              if (val === "") {
+                                setAllottedLots(app.id, 0)
+                              } else {
+                                const parsed = parseInt(val, 10)
+                                setAllottedLots(
+                                  app.id,
+                                  isNaN(parsed) ? 0 : parsed
+                                )
+                              }
+                            }}
+                            onBlur={() => {
+                              if (state.allottedLots <= 0) {
+                                setAllottedLots(app.id, 1)
+                              }
+                            }}
                             className="h-6 w-10 [appearance:textfield] border-0 p-0 text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                           />
                           <button
