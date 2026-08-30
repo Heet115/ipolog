@@ -105,11 +105,11 @@ export default function IposPage() {
             onClick={() => setImportOpen(true)}
           >
             <Download data-icon="inline-start" />
-            Import IPO
+            Import from Upstox
           </Button>
           <Button size="sm" onClick={handleAddClick}>
             <Plus data-icon="inline-start" />
-            Add IPO
+            Add IPO Manually
           </Button>
         </div>
       </div>
@@ -128,7 +128,7 @@ export default function IposPage() {
               to begin recording applications.
             </EmptyDescription>
           </EmptyHeader>
-          <EmptyContent className="flex flex-row items-center gap-2">
+          <EmptyContent className="flex flex-row justify-center items-center gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -139,7 +139,7 @@ export default function IposPage() {
             </Button>
             <Button size="sm" onClick={handleAddClick}>
               <Plus data-icon="inline-start" />
-              Add First IPO
+              Add IPO Manually
             </Button>
           </EmptyContent>
         </Empty>
