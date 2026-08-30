@@ -369,25 +369,25 @@ export function IpoList({
       {/* Controls Bar: Search, Status Filters & View Toggle */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {/* Search Input */}
-        <div className="relative max-w-sm flex-1">
+        <div className="relative w-full sm:max-w-xs md:max-w-sm">
           <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search IPO name, company, notes..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 bg-background pl-8 text-xs"
+            className="h-8 w-full bg-background pl-8 text-xs"
           />
         </div>
 
         {/* Filters Group + View Toggle */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 max-w-full">
           {/* Mainboard vs SME Type Toggle */}
           <ToggleGroup
             value={[typeFilter]}
             onValueChange={(val) => {
               if (val && val[0]) setTypeFilter(val[0] as TypeFilter)
             }}
-            className="h-8"
+            className="h-8 shrink-0"
           >
             <ToggleGroupItem value="all" className="h-7 px-2.5 text-xs">
               All Types
@@ -406,7 +406,7 @@ export function IpoList({
             onValueChange={(val) => {
               if (val && val[0]) setStatusFilter(val[0] as StatusFilter)
             }}
-            className="h-8"
+            className="h-8 shrink-0"
           >
             <ToggleGroupItem value="all" className="h-7 px-2.5 text-xs">
               All ({ipos.filter((i) => !i.archived).length})
@@ -434,7 +434,7 @@ export function IpoList({
           </ToggleGroup>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center rounded-none border border-border bg-background p-0.5 h-8">
+          <div className="flex items-center shrink-0 rounded-none border border-border bg-background p-0.5 h-8">
             <button
               type="button"
               onClick={() => setViewMode("grid")}

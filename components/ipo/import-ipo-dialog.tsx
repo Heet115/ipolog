@@ -226,7 +226,7 @@ export function ImportIpoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90svh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl md:max-w-3xl">
         {/* Header */}
-        <DialogHeader className="border-b px-6 py-4">
+        <DialogHeader className="border-b px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="flex size-8 items-center justify-center rounded-none bg-primary/10 text-primary">
@@ -257,7 +257,7 @@ export function ImportIpoDialog({
         </DialogHeader>
 
         {/* Filter Controls Bar */}
-        <div className="flex flex-col gap-3 border-b bg-muted/20 px-6 py-3">
+        <div className="flex flex-col gap-3 border-b bg-muted/20 px-4 py-3 sm:px-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             {/* Search Input */}
             <div className="relative flex-1">
@@ -301,7 +301,7 @@ export function ImportIpoDialog({
           </div>
 
           {/* Status Tabs */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 max-w-full">
             {[
               { id: "open" as const, label: "Open Now", icon: CircleDot },
               { id: "upcoming" as const, label: "Upcoming", icon: Calendar },
@@ -314,7 +314,7 @@ export function ImportIpoDialog({
                 <button
                   key={tab.id}
                   onClick={() => setStatus(tab.id)}
-                  className={`inline-flex items-center gap-1.5 rounded-none px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-none px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-colors ${
                     isActive
                       ? "border-b-2 border-primary bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -329,7 +329,7 @@ export function ImportIpoDialog({
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="size-4" />

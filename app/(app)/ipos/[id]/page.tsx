@@ -444,7 +444,7 @@ export default function IpoDetailPage() {
               </div>
 
               {ipo.listingPrice && (
-                <div className="border-l border-border/60 pl-4">
+                <div className="border-t border-border/60 pt-2 sm:border-t-0 sm:pt-0 sm:border-l sm:pl-4">
                   <span className="block text-[10px] tracking-wider text-muted-foreground uppercase">
                     Listing Price
                   </span>
@@ -463,7 +463,7 @@ export default function IpoDetailPage() {
               )}
 
               {ipo.currentPrice && (
-                <div className="border-l border-border/60 pl-4">
+                <div className="border-t border-border/60 pt-2 sm:border-t-0 sm:pt-0 sm:border-l sm:pl-4">
                   <span className="block text-[10px] tracking-wider text-muted-foreground uppercase">
                     Current (CMP)
                   </span>

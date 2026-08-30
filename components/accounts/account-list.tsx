@@ -347,17 +347,17 @@ export function AccountList({
     <div className="flex flex-col gap-6">
       {/* Controls Bar: Search, Archive Toggle & View Switcher */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative max-w-sm flex-1">
+        <div className="relative w-full sm:max-w-xs md:max-w-sm">
           <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search account name, notes..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 bg-background pl-8 text-xs"
+            className="h-8 w-full bg-background pl-8 text-xs"
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {archivedCount > 0 && (
             <Button
               variant="outline"

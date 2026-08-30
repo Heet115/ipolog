@@ -442,96 +442,98 @@ export default function DashboardPage() {
                   upcoming IPOs.
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/30">
-                      <TableHead className="text-xs">IPO Name</TableHead>
-                      <TableHead className="text-xs">
-                        Timeline / Status
-                      </TableHead>
-                      <TableHead className="text-right text-xs">
-                        Price / Lot
-                      </TableHead>
-                      <TableHead className="w-20"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {activeIpos.map((ipo) => {
-                      const derived = getIpoStatus(ipo)
-                      const ipoApps = applications.filter(
-                        (a) => a.ipoId === ipo.id
-                      )
+                <div className="overflow-x-auto">
+                  <Table className="min-w-[500px]">
+                    <TableHeader>
+                      <TableRow className="bg-muted/30">
+                        <TableHead className="text-xs">IPO Name</TableHead>
+                        <TableHead className="text-xs">
+                          Timeline / Status
+                        </TableHead>
+                        <TableHead className="text-right text-xs">
+                          Price / Lot
+                        </TableHead>
+                        <TableHead className="w-20"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {activeIpos.map((ipo) => {
+                        const derived = getIpoStatus(ipo)
+                        const ipoApps = applications.filter(
+                          (a) => a.ipoId === ipo.id
+                        )
 
-                      return (
-                        <TableRow key={ipo.id}>
-                          <TableCell className="text-xs font-medium">
-                            <div className="flex items-center gap-2">
-                              <Link
-                                href={`/ipos/${ipo.id}`}
-                                className="font-semibold text-foreground hover:underline"
-                              >
-                                {ipo.name}
-                              </Link>
+                        return (
+                          <TableRow key={ipo.id}>
+                            <TableCell className="text-xs font-medium">
+                              <div className="flex items-center gap-2">
+                                <Link
+                                  href={`/ipos/${ipo.id}`}
+                                  className="font-semibold text-foreground hover:underline"
+                                >
+                                  {ipo.name}
+                                </Link>
+                                <Badge
+                                  variant={
+                                    ipo.type === "sme" ? "outline" : "secondary"
+                                  }
+                                  className="px-1 py-0 font-mono text-[9px] uppercase"
+                                >
+                                  {ipo.type}
+                                </Badge>
+                              </div>
+                              <span className="block text-[10px] text-muted-foreground">
+                                {ipoApps.length > 0
+                                  ? `${ipoApps.length} applications recorded`
+                                  : "No applications yet"}
+                              </span>
+                            </TableCell>
+
+                            <TableCell className="text-xs">
                               <Badge
                                 variant={
-                                  ipo.type === "sme" ? "outline" : "secondary"
+                                  derived.status === "open"
+                                    ? "success"
+                                    : derived.status === "upcoming"
+                                      ? "outline"
+                                      : "secondary"
                                 }
-                                className="px-1 py-0 font-mono text-[9px] uppercase"
+                                className="px-1.5 py-0 text-[10px] font-normal"
                               >
-                                {ipo.type}
+                                {derived.label}
                               </Badge>
-                            </div>
-                            <span className="block text-[10px] text-muted-foreground">
-                              {ipoApps.length > 0
-                                ? `${ipoApps.length} applications recorded`
-                                : "No applications yet"}
-                            </span>
-                          </TableCell>
+                              {ipo.closeDate && (
+                                <span className="mt-0.5 block text-[10px] text-muted-foreground">
+                                  Closes: {formatDate(ipo.closeDate)}
+                                </span>
+                              )}
+                            </TableCell>
 
-                          <TableCell className="text-xs">
-                            <Badge
-                              variant={
-                                derived.status === "open"
-                                  ? "success"
-                                  : derived.status === "upcoming"
-                                    ? "outline"
-                                    : "secondary"
-                              }
-                              className="px-1.5 py-0 text-[10px] font-normal"
-                            >
-                              {derived.label}
-                            </Badge>
-                            {ipo.closeDate && (
-                              <span className="mt-0.5 block text-[10px] text-muted-foreground">
-                                Closes: {formatDate(ipo.closeDate)}
+                            <TableCell className="text-right text-xs">
+                              <span className="font-mono font-semibold text-foreground">
+                                {formatCurrency(ipo.issuePrice)}
                               </span>
-                            )}
-                          </TableCell>
+                              <span className="block text-[10px] text-muted-foreground">
+                                {ipo.lotSize} sh/lot
+                              </span>
+                            </TableCell>
 
-                          <TableCell className="text-right text-xs">
-                            <span className="font-mono font-semibold text-foreground">
-                              {formatCurrency(ipo.issuePrice)}
-                            </span>
-                            <span className="block text-[10px] text-muted-foreground">
-                              {ipo.lotSize} sh/lot
-                            </span>
-                          </TableCell>
-
-                          <TableCell className="text-right">
-                            <Button
-                              variant="outline"
-                              size="xs"
-                              className="h-7 text-xs"
-                              render={<Link href={`/ipos/${ipo.id}`} />}
-                            >
-                              View
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="outline"
+                                size="xs"
+                                className="h-7 text-xs"
+                                render={<Link href={`/ipos/${ipo.id}`} />}
+                              >
+                                View
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -564,83 +566,85 @@ export default function DashboardPage() {
                   accounts.
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/30">
-                      <TableHead className="text-xs">Account / IPO</TableHead>
-                      <TableHead className="w-20 text-center text-xs">
-                        Lots
-                      </TableHead>
-                      <TableHead className="text-right text-xs">
-                        Amount
-                      </TableHead>
-                      <TableHead className="w-24 text-center text-xs">
-                        Status
-                      </TableHead>
-                      <TableHead className="text-right text-xs">
-                        Profit
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentApps.map((app) => {
-                      const account = accountMap.get(app.accountId)
-                      const ipo = ipoMap.get(app.ipoId)
-                      const profit = ipo
-                        ? calculateApplicationProfit(app, ipo, account)
-                        : {
-                            hasRealized: false,
-                            realizedYourProfit: 0,
-                            realizedProfitShared: 0,
-                          }
+                <div className="overflow-x-auto">
+                  <Table className="min-w-[500px]">
+                    <TableHeader>
+                      <TableRow className="bg-muted/30">
+                        <TableHead className="text-xs">Account / IPO</TableHead>
+                        <TableHead className="w-20 text-center text-xs">
+                          Lots
+                        </TableHead>
+                        <TableHead className="text-right text-xs">
+                          Amount
+                        </TableHead>
+                        <TableHead className="w-24 text-center text-xs">
+                          Status
+                        </TableHead>
+                        <TableHead className="text-right text-xs">
+                          Profit
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recentApps.map((app) => {
+                        const account = accountMap.get(app.accountId)
+                        const ipo = ipoMap.get(app.ipoId)
+                        const profit = ipo
+                          ? calculateApplicationProfit(app, ipo, account)
+                          : {
+                              hasRealized: false,
+                              realizedYourProfit: 0,
+                              realizedProfitShared: 0,
+                            }
 
-                      return (
-                        <TableRow key={app.id}>
-                          <TableCell className="text-xs font-medium">
-                            <span className="block font-semibold text-foreground">
-                              {account?.name || "Account"}
-                            </span>
-                            <span className="block text-[10px] text-muted-foreground">
-                              {ipo?.name || "IPO"}
-                            </span>
-                          </TableCell>
-
-                          <TableCell className="text-center font-mono text-xs">
-                            {app.lotsApplied}
-                          </TableCell>
-
-                          <TableCell className="text-right font-mono text-xs font-medium text-foreground">
-                            {formatCurrency(app.amountApplied)}
-                          </TableCell>
-
-                          <TableCell className="text-center">
-                            {getStatusBadge(app.status)}
-                          </TableCell>
-
-                          <TableCell className="text-right font-mono text-xs">
-                            {profit.hasRealized ? (
-                              <span
-                                className={`font-bold ${
-                                  profit.realizedYourProfit > 0
-                                    ? "text-success"
-                                    : profit.realizedYourProfit < 0
-                                      ? "text-destructive"
-                                      : "text-foreground"
-                                }`}
-                              >
-                                {formatCurrency(profit.realizedYourProfit)}
+                        return (
+                          <TableRow key={app.id}>
+                            <TableCell className="text-xs font-medium">
+                              <span className="block font-semibold text-foreground">
+                                {account?.name || "Account"}
                               </span>
-                            ) : (
-                              <span className="text-[11px] text-muted-foreground">
-                                —
+                              <span className="block text-[10px] text-muted-foreground">
+                                {ipo?.name || "IPO"}
                               </span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
+                            </TableCell>
+
+                            <TableCell className="text-center font-mono text-xs">
+                              {app.lotsApplied}
+                            </TableCell>
+
+                            <TableCell className="text-right font-mono text-xs font-medium text-foreground">
+                              {formatCurrency(app.amountApplied)}
+                            </TableCell>
+
+                            <TableCell className="text-center">
+                              {getStatusBadge(app.status)}
+                            </TableCell>
+
+                            <TableCell className="text-right font-mono text-xs">
+                              {profit.hasRealized ? (
+                                <span
+                                  className={`font-bold ${
+                                    profit.realizedYourProfit > 0
+                                      ? "text-success"
+                                      : profit.realizedYourProfit < 0
+                                        ? "text-destructive"
+                                        : "text-foreground"
+                                  }`}
+                                >
+                                  {formatCurrency(profit.realizedYourProfit)}
+                                </span>
+                              ) : (
+                                <span className="text-[11px] text-muted-foreground">
+                                  —
+                                </span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
