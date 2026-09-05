@@ -41,7 +41,7 @@ import {
 import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/lib/firebase/auth-context"
 import { getIpos } from "@/lib/firebase/ipos"
-import { getApplications } from "@/lib/firebase/applications"
+import { getApplications, cleanupOrphanedApplications } from "@/lib/firebase/applications"
 import { getApplicationAccounts } from "@/lib/firebase/accounts"
 import { getBankAccounts } from "@/lib/firebase/bank-accounts"
 import {
@@ -82,8 +82,16 @@ export default function DashboardPage() {
     ])
       .then(([iposData, appsData, accountsData, banksData]) => {
         if (!ignore) {
+          const validIpoIds = new Set(iposData.map((i) => i.id))
+          const validApps = appsData.filter((a) => validIpoIds.has(a.ipoId))
+          if (validApps.length !== appsData.length) {
+            cleanupOrphanedApplications(
+              user.uid,
+              iposData.map((i) => i.id)
+            ).catch(console.error)
+          }
           setIpos(iposData)
-          setApplications(appsData)
+          setApplications(validApps)
           setAccounts(accountsData)
           setBankAccounts(banksData)
           setLoading(false)

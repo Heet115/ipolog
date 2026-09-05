@@ -604,8 +604,9 @@ export default function IpoDetailPage() {
               {formatCurrency(moneySummary.investedAmount)}
             </p>
             <span className="truncate text-[10px] text-muted-foreground">
-              {moneySummary.allottedCount + moneySummary.soldCount} Allotted (
-              {moneySummary.totalAllottedShares} Shares)
+              {moneySummary.soldCount > 0
+                ? `${moneySummary.allottedCount} Holding • ${moneySummary.soldCount} Sold (${moneySummary.totalAllottedShares} Sh Total)`
+                : `${moneySummary.allottedCount} Allotted (${moneySummary.totalAllottedShares} Shares)`}
             </span>
           </CardContent>
         </Card>

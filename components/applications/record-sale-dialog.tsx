@@ -210,7 +210,10 @@ function RecordSaleForm({
         <div className="text-right">
           <span className="block text-muted-foreground">Allotted</span>
           <span className="font-bold text-foreground">
-            {maxShares} shares ({application.allottedLots} lots)
+            {maxShares} shares (
+            {application.allottedLots ??
+              Math.max(1, Math.floor(maxShares / (ipo.lotSize || 1)))}{" "}
+            lots)
           </span>
         </div>
       </div>

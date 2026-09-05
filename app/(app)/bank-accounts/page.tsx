@@ -40,8 +40,9 @@ export default function BankAccountsPage() {
         getApplications(user.uid),
         getIpos(user.uid, true),
       ])
+      const validIpoIds = new Set(iposData.map((i) => i.id))
       setBankAccounts(banksData)
-      setApplications(appsData)
+      setApplications(appsData.filter((a) => validIpoIds.has(a.ipoId)))
       setIpos(iposData)
     } catch (err) {
       console.error("Failed to load bank accounts data:", err)
@@ -64,8 +65,9 @@ export default function BankAccountsPage() {
     ])
       .then(([banksData, appsData, iposData]) => {
         if (!ignore) {
+          const validIpoIds = new Set(iposData.map((i) => i.id))
           setBankAccounts(banksData)
-          setApplications(appsData)
+          setApplications(appsData.filter((a) => validIpoIds.has(a.ipoId)))
           setIpos(iposData)
           setLoading(false)
         }

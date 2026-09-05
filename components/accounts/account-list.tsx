@@ -526,9 +526,43 @@ export function AccountList({
               <strong>{accountToDelete?.name}</strong>? This action cannot be
               undone.
             </AlertDialogDescription>
+            {Boolean(
+              accountToDelete &&
+                applications.some((a) => a.accountId === accountToDelete.id)
+            ) && (
+              <p className="mt-2 rounded-none border border-warning/40 bg-warning/10 p-2.5 text-xs font-medium text-warning-foreground">
+                ⚠️ Warning: This account has{" "}
+                {
+                  applications.filter(
+                    (a) => a.accountId === accountToDelete?.id
+                  ).length
+                }{" "}
+                linked application(s). Deleting it will leave those applications
+                without account metadata. We strongly recommend archiving
+                instead.
+              </p>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            {Boolean(
+              accountToDelete &&
+                applications.some((a) => a.accountId === accountToDelete.id)
+            ) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (accountToDelete) {
+                    await handleToggleArchive(accountToDelete)
+                    setAccountToDelete(null)
+                  }
+                }}
+                disabled={deleting}
+              >
+                Archive Instead
+              </Button>
+            )}
             <AlertDialogAction
               variant="destructive"
               onClick={handleDelete}

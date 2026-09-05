@@ -41,8 +41,9 @@ export default function AccountsPage() {
         getApplications(user.uid),
         getIpos(user.uid, true),
       ])
+      const validIpoIds = new Set(iposData.map((i) => i.id))
       setAccounts(accountsData)
-      setApplications(appsData)
+      setApplications(appsData.filter((a) => validIpoIds.has(a.ipoId)))
       setIpos(iposData)
     } catch (err) {
       console.error("Failed to load application accounts:", err)
@@ -65,8 +66,9 @@ export default function AccountsPage() {
     ])
       .then(([accountsData, appsData, iposData]) => {
         if (!ignore) {
+          const validIpoIds = new Set(iposData.map((i) => i.id))
           setAccounts(accountsData)
-          setApplications(appsData)
+          setApplications(appsData.filter((a) => validIpoIds.has(a.ipoId)))
           setIpos(iposData)
           setLoading(false)
         }

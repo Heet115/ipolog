@@ -39,8 +39,9 @@ export default function IposPage() {
         getIpos(user.uid, true),
         getApplications(user.uid),
       ])
+      const validIpoIds = new Set(iposData.map((i) => i.id))
       setIpos(iposData)
-      setApplications(appsData)
+      setApplications(appsData.filter((a) => validIpoIds.has(a.ipoId)))
     } catch (err) {
       console.error("Failed to load IPOs and applications:", err)
     }
@@ -53,8 +54,9 @@ export default function IposPage() {
     Promise.all([getIpos(user.uid, true), getApplications(user.uid)])
       .then(([iposData, appsData]) => {
         if (!ignore) {
+          const validIpoIds = new Set(iposData.map((i) => i.id))
           setIpos(iposData)
-          setApplications(appsData)
+          setApplications(appsData.filter((a) => validIpoIds.has(a.ipoId)))
           setLoading(false)
         }
       })

@@ -444,9 +444,43 @@ export function BankAccountList({
               </strong>
               ? This action cannot be undone.
             </AlertDialogDescription>
+            {Boolean(
+              bankToDelete &&
+                applications.some((a) => a.bankAccountId === bankToDelete.id)
+            ) && (
+              <p className="mt-2 rounded-none border border-warning/40 bg-warning/10 p-2.5 text-xs font-medium text-warning-foreground">
+                ⚠️ Warning: This bank account is linked to{" "}
+                {
+                  applications.filter(
+                    (a) => a.bankAccountId === bankToDelete?.id
+                  ).length
+                }{" "}
+                application(s). Deleting it will leave those applications
+                without funding bank records. We strongly recommend archiving
+                instead.
+              </p>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            {Boolean(
+              bankToDelete &&
+                applications.some((a) => a.bankAccountId === bankToDelete.id)
+            ) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (bankToDelete) {
+                    await handleToggleArchive(bankToDelete)
+                    setBankToDelete(null)
+                  }
+                }}
+                disabled={deleting}
+              >
+                Archive Instead
+              </Button>
+            )}
             <AlertDialogAction
               variant="destructive"
               onClick={handleDelete}

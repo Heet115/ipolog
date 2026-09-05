@@ -378,7 +378,7 @@ function BulkAllotmentForm({
           }
         }
 
-        const isAllotted = state.status === "allotted"
+        const isAllotted = state.status === "allotted" || state.status === "sold"
         const finalLots = isAllotted ? Math.max(1, state.allottedLots) : 0
         const finalShares = isAllotted ? finalLots * ipo.lotSize : 0
 
@@ -629,9 +629,10 @@ function BulkAllotmentForm({
               const isNotAllotted = state.status === "not_allotted"
               const isPending = state.status === "pending"
 
-              const currentInvested = isAllotted
-                ? state.allottedLots * ipo.lotSize * ipo.issuePrice
-                : 0
+              const currentInvested =
+                isAllotted || isSold
+                  ? state.allottedLots * ipo.lotSize * ipo.issuePrice
+                  : 0
 
               return (
                 <TableRow
@@ -784,6 +785,15 @@ function BulkAllotmentForm({
                           </button>
                         </div>
                         <span className="font-bold text-success text-xs">
+                          {formatCurrency(currentInvested)}
+                        </span>
+                      </div>
+                    ) : isSold ? (
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="font-semibold text-foreground text-xs">
+                          {state.allottedLots} lot{state.allottedLots > 1 ? "s" : ""}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-semibold">
                           {formatCurrency(currentInvested)}
                         </span>
                       </div>

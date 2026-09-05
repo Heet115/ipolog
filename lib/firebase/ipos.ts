@@ -15,6 +15,7 @@ import {
   type Timestamp,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase/firebase"
+import { deleteApplicationsByIpo } from "@/lib/firebase/applications"
 import type { Ipo, IpoType } from "@/types"
 
 function docToIpo(docSnap: DocumentSnapshot<DocumentData>): Ipo {
@@ -317,9 +318,10 @@ export async function archiveIpo(
 }
 
 /**
- * Permanently deletes an IPO document.
+ * Permanently deletes an IPO document and all its associated applications.
  */
 export async function deleteIpo(userId: string, ipoId: string): Promise<void> {
+  await deleteApplicationsByIpo(userId, ipoId)
   const ipoRef = doc(db, "users", userId, "ipos", ipoId)
   await deleteDoc(ipoRef)
 }

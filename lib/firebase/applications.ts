@@ -188,6 +188,58 @@ export async function deleteApplication(
   await deleteDoc(appRef)
 }
 
+/**
+ * Permanently deletes all applications associated with an IPO.
+ */
+export async function deleteApplicationsByIpo(
+  userId: string,
+  ipoId: string
+): Promise<number> {
+  const appsRef = collection(db, "users", userId, "applications")
+  const q = query(appsRef, where("ipoId", "==", ipoId))
+  const snap = await getDocs(q)
+  if (snap.empty) return 0
+
+  const docs = snap.docs
+  for (let i = 0; i < docs.length; i += 450) {
+    const batch = writeBatch(db)
+    const chunk = docs.slice(i, i + 450)
+    chunk.forEach((d) => batch.delete(d.ref))
+    await batch.commit()
+  }
+
+  return docs.length
+}
+
+/**
+ * Cleans up any orphaned applications whose parent IPO has been deleted.
+ */
+export async function cleanupOrphanedApplications(
+  userId: string,
+  existingIpoIds: string[]
+): Promise<number> {
+  const appsRef = collection(db, "users", userId, "applications")
+  const snap = await getDocs(appsRef)
+  if (snap.empty) return 0
+
+  const validSet = new Set(existingIpoIds)
+  const orphanedDocs = snap.docs.filter((d) => {
+    const ipoId = d.data().ipoId
+    return !ipoId || !validSet.has(ipoId)
+  })
+
+  if (orphanedDocs.length === 0) return 0
+
+  for (let i = 0; i < orphanedDocs.length; i += 450) {
+    const batch = writeBatch(db)
+    const chunk = orphanedDocs.slice(i, i + 450)
+    chunk.forEach((d) => batch.delete(d.ref))
+    await batch.commit()
+  }
+
+  return orphanedDocs.length
+}
+
 export interface AllotmentUpdateItem {
   applicationId: string
   status: ApplicationStatus
@@ -213,7 +265,7 @@ export async function updateAllotmentsBatch(
       updatedAt: serverTimestamp(),
     }
 
-    if (item.status === "allotted") {
+    if (item.status === "allotted" || item.status === "sold") {
       payload.allottedLots =
         item.allottedLots !== undefined ? Number(item.allottedLots) : 1
       payload.allottedShares =
