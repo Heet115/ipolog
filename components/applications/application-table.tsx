@@ -10,6 +10,8 @@ import {
   Calendar,
   Landmark,
   MessageSquare,
+  CheckCheck,
+  RotateCcw,
 } from "lucide-react"
 import {
   DataTable,
@@ -37,7 +39,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from "@/components/ui/toast"
-import { deleteApplication } from "@/lib/firebase/applications"
+import {
+  deleteApplication,
+  updateApplicationSettlement,
+} from "@/lib/firebase/applications"
 import { calculateApplicationProfit } from "@/lib/calculations/financials"
 import { formatCurrency, formatBankAccount, formatDate } from "@/lib/utils/ipo"
 import {
@@ -105,6 +110,27 @@ export function ApplicationTable({
     }
   }
 
+  const handleToggleSettlement = async (app: Application) => {
+    const nextStatus = app.settlementStatus === "settled" ? "pending" : "settled"
+    try {
+      await updateApplicationSettlement(userId, app.id, nextStatus)
+      toast.add({
+        title:
+          nextStatus === "settled"
+            ? "Marked as Settled"
+            : "Reverted to Pending Payment",
+        type: "success",
+      })
+      onRefresh()
+    } catch (err) {
+      console.error(err)
+      toast.add({
+        title: "Failed to update settlement status",
+        type: "error",
+      })
+    }
+  }
+
   const getStatusBadge = (status: ApplicationStatus) => {
     switch (status) {
       case "allotted":
@@ -153,6 +179,12 @@ export function ApplicationTable({
     (a) => a.status === "not_allotted"
   ).length
   const soldCount = applications.filter((a) => a.status === "sold").length
+  const unsettledCount = applications.filter(
+    (a) =>
+      a.status === "sold" &&
+      accountMap.get(a.accountId)?.type === "other" &&
+      a.settlementStatus !== "settled"
+  ).length
 
   const filterPills: DataTableFilterPill[] = [
     {
@@ -195,10 +227,31 @@ export function ApplicationTable({
       active: statusFilter === "sold",
       onToggle: () => setStatusFilter(statusFilter === "sold" ? "all" : "sold"),
     },
+    ...(unsettledCount > 0
+      ? [
+          {
+            id: "unsettled",
+            label: "Unsettled",
+            count: unsettledCount,
+            active: statusFilter === "unsettled",
+            onToggle: () =>
+              setStatusFilter(
+                statusFilter === "unsettled" ? "all" : "unsettled"
+              ),
+          },
+        ]
+      : []),
   ]
 
   const filteredApplications = applications.filter((app) => {
     if (statusFilter === "all") return true
+    if (statusFilter === "unsettled") {
+      return (
+        app.status === "sold" &&
+        accountMap.get(app.accountId)?.type === "other" &&
+        app.settlementStatus !== "settled"
+      )
+    }
     return app.status === statusFilter
   })
 
@@ -367,6 +420,9 @@ export function ApplicationTable({
 
         if (app.status === "sold") {
           const profit = calculateApplicationProfit(app, ipo, account)
+          const isOtherAccount = account?.type === "other"
+          const isSettled = app.settlementStatus === "settled"
+
           return (
             <div className="flex flex-col items-end gap-0.5">
               <span className="font-mono text-xs font-bold text-success">
@@ -376,6 +432,24 @@ export function ApplicationTable({
                 <span className="font-mono text-[10px] text-muted-foreground">
                   Shared: {formatCurrency(profit.realizedProfitShared)}
                 </span>
+              )}
+              {isOtherAccount && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleToggleSettlement(app)
+                  }}
+                  className="mt-0.5 inline-flex items-center gap-1 cursor-pointer"
+                  title={isSettled ? "Click to revert to pending" : "Click to mark as settled"}
+                >
+                  <Badge
+                    variant={isSettled ? "success" : "warning"}
+                    className="px-1.5 py-0 text-[9px] font-medium tracking-tight hover:opacity-80 transition-opacity"
+                  >
+                    {isSettled ? "Settled" : "Unsettled"}
+                  </Badge>
+                </button>
               )}
             </div>
           )
@@ -398,6 +472,7 @@ export function ApplicationTable({
       align: "right",
       sortable: false,
       cell: (app) => {
+        const account = accountMap.get(app.accountId)
         const canSettle =
           (app.status === "allotted" || app.status === "sold") &&
           Boolean(onWhatsAppSettlement)
@@ -449,6 +524,24 @@ export function ApplicationTable({
                         className="text-emerald-500"
                       />
                       WhatsApp Settlement
+                    </DropdownMenuItem>
+                  )}
+                  {app.status === "sold" && account?.type === "other" && (
+                    <DropdownMenuItem onClick={() => handleToggleSettlement(app)}>
+                      {app.settlementStatus === "settled" ? (
+                        <>
+                          <RotateCcw data-icon="inline-start" />
+                          Revert to Pending
+                        </>
+                      ) : (
+                        <>
+                          <CheckCheck
+                            data-icon="inline-start"
+                            className="text-emerald-600 dark:text-emerald-400"
+                          />
+                          Mark as Settled
+                        </>
+                      )}
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem onClick={() => onEdit(app)}>

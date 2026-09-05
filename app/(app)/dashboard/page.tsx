@@ -12,6 +12,7 @@ import {
   Plus,
   Download,
   Sparkles,
+  AlertTriangle,
 } from "lucide-react"
 import {
   Card,
@@ -51,6 +52,8 @@ import {
   calculateDashboardMetrics,
   calculateBankMoneySummary,
   calculateApplicationProfit,
+  checkBankAsbaLimits,
+  calculateReceivablesSummary,
 } from "@/lib/calculations/financials"
 import { exportPortfolioSummaryCsv } from "@/lib/utils/export-csv"
 import { formatCurrency, formatDate, getIpoStatus } from "@/lib/utils/ipo"
@@ -119,6 +122,11 @@ export default function DashboardPage() {
   const metrics = calculateDashboardMetrics(ipos, applications, accounts)
   const ipoMap = new Map(ipos.map((i) => [i.id, i]))
   const accountMap = new Map(accounts.map((a) => [a.id, a]))
+  const receivables = calculateReceivablesSummary(
+    applications,
+    ipoMap,
+    accountMap
+  )
 
   // Active IPOs (not archived, upcoming/open/allotment_pending/closed)
   const activeIpos = ipos
@@ -245,8 +253,62 @@ export default function DashboardPage() {
         100
       : 0
 
+  const asbaWarnings = checkBankAsbaLimits(bankAccounts, applications, ipoMap)
+  const exceededWarnings = asbaWarnings.filter((w) => w.isExceeded)
+
   return (
     <div className="flex flex-col gap-6">
+      {/* ASBA Capital Limit Warning Banner */}
+      {exceededWarnings.length > 0 && (
+        <div className="flex flex-col gap-2 rounded-none border border-destructive/60 bg-destructive/10 p-3.5 text-xs text-foreground">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 font-bold text-destructive">
+              <AlertTriangle className="size-4 shrink-0" />
+              <span>
+                ASBA Capital Limit Warning: Blocked funds exceed available balance in {exceededWarnings.length} bank account{exceededWarnings.length > 1 ? "s" : ""}.
+              </span>
+            </div>
+            <Link
+              href="/bank-accounts"
+              className="text-[11px] font-semibold text-primary hover:underline shrink-0"
+            >
+              Manage Bank Accounts →
+            </Link>
+          </div>
+          <div className="flex flex-col gap-1.5 pl-6">
+            {exceededWarnings.map((w) => (
+              <div
+                key={w.bankId}
+                className="flex flex-wrap items-center gap-2 text-[11px]"
+              >
+                <span className="font-bold">
+                  {w.nickname || w.bankName}
+                  {w.last4 ? ` (••${w.last4})` : ""}:
+                </span>
+                <span className="font-mono font-bold text-destructive">
+                  {formatCurrency(w.blockedAmount)} blocked
+                </span>
+                <span className="text-muted-foreground">vs</span>
+                <span className="font-mono font-medium">
+                  {formatCurrency(w.asbaLimit)} limit
+                </span>
+                <Badge
+                  variant="destructive"
+                  className="font-mono text-[9px] px-1.5 py-0 font-semibold"
+                >
+                  Over by {formatCurrency(w.exceededAmount)} ({w.utilizationPercent}%)
+                </Badge>
+                {w.activeIpoNames.length > 0 && (
+                  <span className="text-[10px] text-muted-foreground">
+                    across {w.activeIpoNames.join(", ")}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -361,7 +423,7 @@ export default function DashboardPage() {
       </Card>
 
       {/* 2. Secondary Metrics Row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Card className="rounded-none border border-border/60">
           <CardContent className="flex flex-col gap-1 p-3.5">
             <span className="text-[11px] font-medium text-muted-foreground">
@@ -388,6 +450,49 @@ export default function DashboardPage() {
             <span className="truncate text-[10px] text-muted-foreground">
               Across {accounts.filter((a) => !a.archived).length} active
               accounts
+            </span>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-none border border-border/60">
+          <CardContent className="flex flex-col gap-1 p-3.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-muted-foreground">
+                Pending Receivables
+              </span>
+              {receivables.totalPendingReceivables > 0 && (
+                <Badge
+                  variant="warning"
+                  className="px-1 py-0 font-mono text-[9px] font-semibold"
+                >
+                  Unsettled
+                </Badge>
+              )}
+            </div>
+            <p
+              className={`font-mono text-lg font-bold ${
+                receivables.totalPendingReceivables > 0
+                  ? "text-warning-foreground"
+                  : "text-foreground"
+              }`}
+            >
+              {formatCurrency(receivables.totalPendingReceivables)}
+            </p>
+            <span className="truncate text-[10px] text-muted-foreground">
+              {receivables.totalPendingReceivables > 0 ? (
+                <Link
+                  href="/accounts"
+                  className="inline-flex items-center gap-1 font-medium text-foreground underline underline-offset-2 hover:text-primary"
+                >
+                  <span>
+                    {receivables.pendingAccountsCount} account
+                    {receivables.pendingAccountsCount === 1 ? "" : "s"}
+                  </span>
+                  <ArrowRight className="size-2.5" />
+                </Link>
+              ) : (
+                "All sales settled"
+              )}
             </span>
           </CardContent>
         </Card>
@@ -633,17 +738,33 @@ export default function DashboardPage() {
 
                             <TableCell className="text-right font-mono text-xs">
                               {profit.hasRealized ? (
-                                <span
-                                  className={`font-bold ${
-                                    profit.realizedYourProfit > 0
-                                      ? "text-success"
-                                      : profit.realizedYourProfit < 0
-                                        ? "text-destructive"
-                                        : "text-foreground"
-                                  }`}
-                                >
-                                  {formatCurrency(profit.realizedYourProfit)}
-                                </span>
+                                <div className="flex flex-col items-end gap-0.5">
+                                  <span
+                                    className={`font-bold ${
+                                      profit.realizedYourProfit > 0
+                                        ? "text-success"
+                                        : profit.realizedYourProfit < 0
+                                          ? "text-destructive"
+                                          : "text-foreground"
+                                    }`}
+                                  >
+                                    {formatCurrency(profit.realizedYourProfit)}
+                                  </span>
+                                  {account?.type === "other" && (
+                                    <Badge
+                                      variant={
+                                        app.settlementStatus === "settled"
+                                          ? "success"
+                                          : "warning"
+                                      }
+                                      className="px-1 py-0 font-mono text-[8px]"
+                                    >
+                                      {app.settlementStatus === "settled"
+                                        ? "Settled"
+                                        : "Unsettled"}
+                                    </Badge>
+                                  )}
+                                </div>
                               ) : (
                                 <span className="text-[11px] text-muted-foreground">
                                   —

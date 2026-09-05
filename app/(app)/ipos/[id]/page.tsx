@@ -15,10 +15,10 @@ import {
   Layers,
   RefreshCw,
   TrendingUp,
-  DollarSign,
   Download,
   Check,
   ExternalLink,
+  BadgeIndianRupeeIcon,
 } from "lucide-react"
 import {
   Card,
@@ -386,7 +386,7 @@ export default function IpoDetailPage() {
             onClick={() => setPriceDialogOpen(true)}
             className="h-7 text-xs"
           >
-            <DollarSign data-icon="inline-start" />
+            <BadgeIndianRupeeIcon data-icon="inline-start" />
             Market Prices
           </Button>
           <Button
@@ -979,6 +979,7 @@ export default function IpoDetailPage() {
               ipo={ipo}
               account={accounts.find((a) => a.id === appToSettle.accountId)}
               bankAccounts={bankAccounts}
+              onSuccess={reloadData}
             />
           )}
         </>

@@ -11,11 +11,13 @@ import {
   Search,
   LayoutGrid,
   Table as TableIcon,
+  AlertTriangle,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Progress } from "@/components/ui/progress"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,12 +45,14 @@ import {
 } from "@/components/ui/alert-dialog"
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
 import { toast } from "@/components/ui/toast"
+import { cn } from "@/lib/utils"
 import {
   archiveBankAccount,
   deleteBankAccount,
 } from "@/lib/firebase/bank-accounts"
 import {
   calculateBankMoneySummary,
+  checkBankAsbaLimits,
   type BankMoneySummary,
 } from "@/lib/calculations/financials"
 import { formatCurrency } from "@/lib/utils/ipo"
@@ -145,6 +149,9 @@ export function BankAccountList({
       calculateBankMoneySummary(b.id, applications, ipoMap)
     )
   }
+
+  const asbaWarnings = checkBankAsbaLimits(bankAccounts, applications, ipoMap)
+  const exceededWarnings = asbaWarnings.filter((w) => w.isExceeded)
 
   const tableColumns: DataTableColumn<BankAccount>[] = [
     {
@@ -255,6 +262,52 @@ export function BankAccountList({
       },
     },
     {
+      id: "asbaLimit",
+      header: "ASBA Limit & Status",
+      align: "right",
+      sortable: true,
+      sortFn: (a, b) => (a.asbaLimit || 0) - (b.asbaLimit || 0),
+      cell: (bank) => {
+        const summary = bankSummaryMap.get(bank.id)
+        const blocked = summary?.blockedAmount || 0
+        if (!bank.asbaLimit) {
+          return (
+            <span className="font-mono text-xs text-muted-foreground">—</span>
+          )
+        }
+        const isExceeded = blocked > bank.asbaLimit
+        const isNear = !isExceeded && blocked / bank.asbaLimit >= 0.8
+        const utilPercent = Math.round((blocked / bank.asbaLimit) * 100)
+
+        return (
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="font-mono text-xs font-semibold text-foreground">
+              {formatCurrency(bank.asbaLimit)}
+            </span>
+            {isExceeded ? (
+              <Badge
+                variant="destructive"
+                className="font-mono text-[9px] px-1.5 py-0"
+              >
+                Exceeded by {formatCurrency(blocked - bank.asbaLimit)}
+              </Badge>
+            ) : isNear ? (
+              <Badge
+                variant="warning"
+                className="font-mono text-[9px] px-1.5 py-0"
+              >
+                {utilPercent}% utilized
+              </Badge>
+            ) : (
+              <span className="font-mono text-[10px] text-muted-foreground">
+                {utilPercent}% utilized
+              </span>
+            )}
+          </div>
+        )
+      },
+    },
+    {
       id: "apps",
       header: "Applications",
       align: "center",
@@ -341,6 +394,49 @@ export function BankAccountList({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* ASBA Capital Limit Warning Banner */}
+      {exceededWarnings.length > 0 && (
+        <div className="flex flex-col gap-2 rounded-none border border-destructive/60 bg-destructive/10 p-3.5 text-xs">
+          <div className="flex items-center gap-2 font-bold text-destructive">
+            <AlertTriangle className="size-4 shrink-0" />
+            <span>
+              ASBA Capital Limit Exceeded: Blocked funds exceed available balance across concurrent active IPOs for {exceededWarnings.length} bank account{exceededWarnings.length > 1 ? "s" : ""}.
+            </span>
+          </div>
+          <div className="flex flex-col gap-1.5 pl-6">
+            {exceededWarnings.map((w) => (
+              <div
+                key={w.bankId}
+                className="flex flex-wrap items-center gap-2 text-[11px] text-foreground"
+              >
+                <span className="font-bold">
+                  {w.nickname || w.bankName}
+                  {w.last4 ? ` (••${w.last4})` : ""}:
+                </span>
+                <span className="font-mono font-bold text-destructive">
+                  {formatCurrency(w.blockedAmount)} blocked
+                </span>
+                <span className="text-muted-foreground">vs</span>
+                <span className="font-mono font-medium">
+                  {formatCurrency(w.asbaLimit)} limit
+                </span>
+                <Badge
+                  variant="destructive"
+                  className="font-mono text-[9px] px-1.5 py-0 font-semibold"
+                >
+                  Over by {formatCurrency(w.exceededAmount)} ({w.utilizationPercent}%)
+                </Badge>
+                {w.activeIpoNames.length > 0 && (
+                  <span className="text-[10px] text-muted-foreground">
+                    across {w.activeIpoNames.join(", ")}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Controls Bar: Search, Archive Toggle & View Switcher */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-xs md:max-w-sm">
@@ -521,11 +617,24 @@ function BankAccountCard({
   onToggleArchive: () => void
   onDelete: () => void
 }) {
+  const hasLimit = Boolean(bank.asbaLimit && bank.asbaLimit > 0)
+  const isExceeded = hasLimit && summary.blockedAmount > bank.asbaLimit!
+  const isNear =
+    hasLimit && !isExceeded && summary.blockedAmount / bank.asbaLimit! >= 0.8
+  const utilPercent = hasLimit
+    ? Math.round((summary.blockedAmount / bank.asbaLimit!) * 100)
+    : 0
+
   return (
     <Card
-      className={`flex flex-col justify-between rounded-none border transition-all hover:border-foreground/40 hover:shadow-xs ${
-        bank.archived ? "bg-muted/20 opacity-60" : "bg-card"
-      }`}
+      className={cn(
+        "flex flex-col justify-between rounded-none border transition-all hover:border-foreground/40 hover:shadow-xs",
+        bank.archived
+          ? "bg-muted/20 opacity-60"
+          : isExceeded
+            ? "border-destructive/60 bg-card shadow-xs"
+            : "bg-card"
+      )}
     >
       <CardContent className="flex flex-col gap-3.5 p-4">
         {/* Header: Bank Name + Nickname + Dropdown */}
@@ -620,7 +729,12 @@ function BankAccountCard({
             <span className="block text-[10px] text-muted-foreground">
               Blocked (Active)
             </span>
-            <span className="font-mono font-bold text-foreground">
+            <span
+              className={cn(
+                "font-mono font-bold",
+                isExceeded ? "text-destructive" : "text-foreground"
+              )}
+            >
               {formatCurrency(summary.blockedAmount)}
             </span>
           </div>
@@ -643,6 +757,72 @@ function BankAccountCard({
             {formatCurrency(summary.blockedAmount + summary.investedAmount)}
           </span>
         </div>
+
+        {/* ASBA Capital Limit & Utilization Strip */}
+        {hasLimit && (
+          <div
+            className={cn(
+              "flex flex-col gap-1.5 p-2 rounded-none border text-xs",
+              isExceeded
+                ? "border-destructive/50 bg-destructive/10"
+                : isNear
+                  ? "border-amber-500/50 bg-amber-500/10"
+                  : "border-border/60 bg-muted/20"
+            )}
+          >
+            <div className="flex items-center justify-between text-[11px]">
+              <div className="flex items-center gap-1 font-semibold">
+                {isExceeded && (
+                  <AlertTriangle className="size-3 text-destructive shrink-0" />
+                )}
+                <span
+                  className={
+                    isExceeded ? "text-destructive font-bold" : "text-muted-foreground"
+                  }
+                >
+                  ASBA Capital Limit:
+                </span>
+              </div>
+              <span className="font-mono font-bold text-foreground">
+                {formatCurrency(bank.asbaLimit!)}
+              </span>
+            </div>
+
+            <Progress
+              value={Math.min(utilPercent, 100)}
+              className={cn(
+                "h-1.5 w-full bg-muted/60",
+                isExceeded
+                  ? "[&_[data-slot=progress-indicator]]:bg-destructive"
+                  : isNear
+                    ? "[&_[data-slot=progress-indicator]]:bg-amber-500"
+                    : "[&_[data-slot=progress-indicator]]:bg-primary"
+              )}
+            />
+
+            <div className="flex items-center justify-between text-[10px] font-mono">
+              <span
+                className={cn(
+                  "font-semibold",
+                  isExceeded
+                    ? "text-destructive font-bold"
+                    : isNear
+                      ? "text-amber-500 font-semibold"
+                      : "text-muted-foreground"
+                )}
+              >
+                {isExceeded
+                  ? `Exceeded by ${formatCurrency(summary.blockedAmount - bank.asbaLimit!)} (${utilPercent}%)`
+                  : `${utilPercent}% utilized`}
+              </span>
+              <span className="text-muted-foreground">
+                {isExceeded
+                  ? "₹0 available"
+                  : `${formatCurrency(bank.asbaLimit! - summary.blockedAmount)} available`}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Notes (if any) */}
         {bank.notes && (

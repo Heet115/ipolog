@@ -56,6 +56,8 @@ function docToApplication(
     salePrice:
       data.salePrice !== undefined ? Number(data.salePrice) : undefined,
     saleDate: data.saleDate || undefined,
+    settlementStatus: data.settlementStatus || undefined,
+    settledAt: data.settledAt || undefined,
     notes: data.notes || "",
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
@@ -177,9 +179,53 @@ export async function updateApplication(
     payload.sharesSold = Number(data.sharesSold)
   if (data.salePrice !== undefined) payload.salePrice = Number(data.salePrice)
   if (data.saleDate !== undefined) payload.saleDate = data.saleDate
+  if (data.settlementStatus !== undefined)
+    payload.settlementStatus = data.settlementStatus
+  if (data.settledAt !== undefined) payload.settledAt = data.settledAt
   if (data.notes !== undefined) payload.notes = data.notes.trim()
 
   await updateDoc(appRef, payload)
+}
+
+/**
+ * Updates the settlement status of an individual application.
+ */
+export async function updateApplicationSettlement(
+  userId: string,
+  applicationId: string,
+  settlementStatus: "pending" | "settled"
+): Promise<void> {
+  const appRef = doc(db, "users", userId, "applications", applicationId)
+  await updateDoc(appRef, {
+    settlementStatus,
+    settledAt: settlementStatus === "settled" ? serverTimestamp() : null,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+/**
+ * Batch updates settlement status for multiple applications.
+ */
+export async function updateSettlementsBatch(
+  userId: string,
+  applicationIds: string[],
+  settlementStatus: "pending" | "settled"
+): Promise<void> {
+  if (applicationIds.length === 0) return
+
+  for (let i = 0; i < applicationIds.length; i += 450) {
+    const batch = writeBatch(db)
+    const chunk = applicationIds.slice(i, i + 450)
+    for (const appId of chunk) {
+      const appRef = doc(db, "users", userId, "applications", appId)
+      batch.update(appRef, {
+        settlementStatus,
+        settledAt: settlementStatus === "settled" ? serverTimestamp() : null,
+        updatedAt: serverTimestamp(),
+      })
+    }
+    await batch.commit()
+  }
 }
 
 /**

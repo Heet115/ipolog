@@ -10,6 +10,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  AlertTriangle,
 } from "lucide-react"
 import {
   Dialog,
@@ -177,6 +178,66 @@ function BulkApplicationForm({
     () => new Map(bankAccounts.map((b) => [b.id, b])),
     [bankAccounts]
   )
+
+  // Track potential ASBA limit breaches for bank accounts in this application batch
+  const bankAsbaBreaches = useMemo(() => {
+    const breaches: Array<{
+      bank: BankAccount
+      currentBlocked: number
+      newBlocked: number
+      totalAfter: number
+      limit: number
+      exceededAmount: number
+    }> = []
+
+    const newAmountByBank = new Map<string, number>()
+    for (const id of selectedAccountIds) {
+      const cfg = accountConfigs[id]
+      const lots = cfg?.lots || 1
+      const bankId = cfg?.bankAccountId || defaultBankId
+      if (!bankId) continue
+      const amount = calculateAmountApplied(lots, ipo.lotSize, ipo.issuePrice)
+      newAmountByBank.set(bankId, (newAmountByBank.get(bankId) || 0) + amount)
+    }
+
+    const existingPendingByBank = new Map<string, number>()
+    for (const app of existingApplications) {
+      if (app.status === "pending" && app.bankAccountId) {
+        existingPendingByBank.set(
+          app.bankAccountId,
+          (existingPendingByBank.get(app.bankAccountId) || 0) +
+            (app.amountApplied || 0)
+        )
+      }
+    }
+
+    newAmountByBank.forEach((newAmt, bankId) => {
+      const bank = bankAccountMap.get(bankId)
+      if (!bank || !bank.asbaLimit || bank.asbaLimit <= 0) return
+      const currentBlocked = existingPendingByBank.get(bankId) || 0
+      const totalAfter = currentBlocked + newAmt
+      if (totalAfter > bank.asbaLimit) {
+        breaches.push({
+          bank,
+          currentBlocked,
+          newBlocked: newAmt,
+          totalAfter,
+          limit: bank.asbaLimit,
+          exceededAmount: totalAfter - bank.asbaLimit,
+        })
+      }
+    })
+
+    return breaches
+  }, [
+    selectedAccountIds,
+    accountConfigs,
+    defaultBankId,
+    existingApplications,
+    bankAccountMap,
+    ipo.lotSize,
+    ipo.issuePrice,
+  ])
 
   const toggleAccountSelection = (accountId: string) => {
     if (appliedAccountIds.has(accountId)) return
@@ -887,6 +948,41 @@ function BulkApplicationForm({
               {formatCurrency(minBhniLots * oneLotAmount)})
             </Button>
           </div>
+
+          {/* ASBA Limit Warning for Current Batch */}
+          {bankAsbaBreaches.length > 0 && (
+            <div className="flex flex-col gap-1.5 p-2.5 rounded-none border border-destructive/60 bg-destructive/10 text-xs">
+              <div className="flex items-center gap-1.5 font-bold text-destructive">
+                <AlertTriangle className="size-3.5 shrink-0" />
+                <span>
+                  ASBA Capital Limit Warning: Selected bank account(s) will exceed balance limit
+                </span>
+              </div>
+              <div className="flex flex-col gap-1 text-[11px] text-foreground pl-5">
+                {bankAsbaBreaches.map((b) => (
+                  <div key={b.bank.id} className="flex flex-wrap items-center gap-1.5">
+                    <span className="font-semibold">{formatBankAccount(b.bank)}:</span>
+                    <span>
+                      Total blocked will become{" "}
+                      <span className="font-mono font-bold text-destructive">
+                        {formatCurrency(b.totalAfter)}
+                      </span>
+                    </span>
+                    <span className="text-muted-foreground">vs limit</span>
+                    <span className="font-mono font-semibold">
+                      {formatCurrency(b.limit)}
+                    </span>
+                    <Badge
+                      variant="destructive"
+                      className="text-[9px] px-1 py-0 font-mono"
+                    >
+                      Exceeds by {formatCurrency(b.exceededAmount)}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Detailed Applications Table */}
           <div className="max-h-[300px] min-w-0 overflow-x-auto overflow-y-auto rounded-none border border-border/80">

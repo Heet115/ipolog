@@ -11,6 +11,7 @@ import {
   Search,
   LayoutGrid,
   Table as TableIcon,
+  CheckCheck,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -47,6 +48,7 @@ import {
   archiveApplicationAccount,
   deleteApplicationAccount,
 } from "@/lib/firebase/accounts"
+import { updateSettlementsBatch } from "@/lib/firebase/applications"
 import {
   calculateAccountMoneySummary,
   type AccountMoneySummary,
@@ -133,6 +135,35 @@ export function AccountList({
       })
     } finally {
       setDeleting(false)
+    }
+  }
+
+  const handleSettleAll = async (account: ApplicationAccount) => {
+    const unsettledApps = applications.filter(
+      (a) =>
+        a.accountId === account.id &&
+        a.status === "sold" &&
+        a.settlementStatus !== "settled"
+    )
+    if (unsettledApps.length === 0) return
+
+    try {
+      await updateSettlementsBatch(
+        userId,
+        unsettledApps.map((a) => a.id),
+        "settled"
+      )
+      toast.add({
+        title: `Settled ${unsettledApps.length} application(s) for ${account.name}`,
+        type: "success",
+      })
+      onRefresh()
+    } catch (err) {
+      console.error(err)
+      toast.add({
+        title: "Failed to update settlement status",
+        type: "error",
+      })
     }
   }
 
@@ -289,6 +320,54 @@ export function AccountList({
       },
     },
     {
+      id: "receivables",
+      header: "Pending Receivables",
+      align: "right",
+      sortable: true,
+      sortFn: (a, b) => {
+        const sumA = accountSummaryMap.get(a.id)?.pendingReceivables || 0
+        const sumB = accountSummaryMap.get(b.id)?.pendingReceivables || 0
+        return sumA - sumB
+      },
+      cell: (account) => {
+        if (account.type === "my") {
+          return <span className="text-xs text-muted-foreground">—</span>
+        }
+
+        const summary = accountSummaryMap.get(account.id)
+        const pending = summary?.pendingReceivables || 0
+
+        if (pending <= 0) {
+          return (
+            <Badge
+              variant="outline"
+              className="px-1 py-0 font-mono text-[10px] font-normal text-muted-foreground"
+            >
+              All Settled
+            </Badge>
+          )
+        }
+
+        return (
+          <div className="flex items-center justify-end gap-1.5">
+            <span className="font-mono text-xs font-bold text-warning-foreground">
+              {formatCurrency(pending)}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              className="size-6 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500"
+              title={`Mark all ${summary?.unsettledSoldApplicationsCount} settled`}
+              onClick={() => handleSettleAll(account)}
+            >
+              <CheckCheck className="size-3 text-emerald-600 dark:text-emerald-400" />
+              <span className="sr-only">Settle All</span>
+            </Button>
+          </div>
+        )
+      },
+    },
+    {
       id: "notes",
       header: "Notes",
       cell: (account) => (
@@ -318,12 +397,28 @@ export function AccountList({
             <MoreVertical className="size-3.5" />
             <span className="sr-only">Actions</span>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40 text-xs">
+          <DropdownMenuContent align="end" className="w-44 text-xs">
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => onEdit(account)}>
                 <Edit2 data-icon="inline-start" />
                 Edit Account
               </DropdownMenuItem>
+              {account.type === "other" &&
+                (accountSummaryMap.get(account.id)?.pendingReceivables || 0) >
+                  0 && (
+                  <DropdownMenuItem onClick={() => handleSettleAll(account)}>
+                    <CheckCheck
+                      data-icon="inline-start"
+                      className="text-emerald-600 dark:text-emerald-400"
+                    />
+                    Settle All (
+                    {
+                      accountSummaryMap.get(account.id)
+                        ?.unsettledSoldApplicationsCount
+                    }
+                    )
+                  </DropdownMenuItem>
+                )}
               <DropdownMenuItem onClick={() => handleToggleArchive(account)}>
                 {account.archived ? (
                   <>
@@ -515,6 +610,7 @@ export function AccountList({
                       onEdit={() => onEdit(account)}
                       onToggleArchive={() => handleToggleArchive(account)}
                       onDelete={() => setAccountToDelete(account)}
+                      onSettleAll={() => handleSettleAll(account)}
                     />
                   )
                 })}
@@ -594,12 +690,14 @@ function AccountCard({
   onEdit,
   onToggleArchive,
   onDelete,
+  onSettleAll,
 }: {
   account: ApplicationAccount
   summary: AccountMoneySummary
   onEdit: () => void
   onToggleArchive: () => void
   onDelete: () => void
+  onSettleAll?: () => void
 }) {
   const isMy = account.type === "my"
 
@@ -660,12 +758,21 @@ function AccountCard({
               <MoreVertical className="size-3.5" />
               <span className="sr-only">Actions</span>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40 text-xs">
+            <DropdownMenuContent align="end" className="w-44 text-xs">
               <DropdownMenuGroup>
                 <DropdownMenuItem onClick={onEdit}>
                   <Edit2 data-icon="inline-start" />
                   Edit Account
                 </DropdownMenuItem>
+                {!isMy && summary.pendingReceivables > 0 && onSettleAll && (
+                  <DropdownMenuItem onClick={onSettleAll}>
+                    <CheckCheck
+                      data-icon="inline-start"
+                      className="text-emerald-600 dark:text-emerald-400"
+                    />
+                    Settle All ({summary.unsettledSoldApplicationsCount})
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={onToggleArchive}>
                   {account.archived ? (
                     <>
@@ -745,6 +852,31 @@ function AccountCard({
             </div>
           )}
         </div>
+
+        {/* Pending Settlement Alert & Quick Settle */}
+        {!isMy && summary.pendingReceivables > 0 && (
+          <div className="flex items-center justify-between gap-2 rounded-none border border-warning/40 bg-warning/10 p-2 text-xs">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                Pending Settlement
+              </span>
+              <span className="font-mono font-bold text-foreground">
+                {formatCurrency(summary.pendingReceivables)}
+              </span>
+            </div>
+            {onSettleAll && (
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={onSettleAll}
+                className="h-6 gap-1 border-warning/50 text-[10px] font-semibold hover:bg-warning/20"
+              >
+                <CheckCheck className="size-3 text-emerald-600 dark:text-emerald-400" />
+                Settle All ({summary.unsettledSoldApplicationsCount})
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Notes (if any) */}
         {account.notes && (

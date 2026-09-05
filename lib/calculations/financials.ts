@@ -1,4 +1,5 @@
-import type { Application, Ipo, ApplicationAccount } from "@/types"
+import type { Timestamp } from "firebase/firestore"
+import type { Application, Ipo, ApplicationAccount, BankAccount } from "@/types"
 
 /**
  * Central financial calculations for IPO Tracker.
@@ -402,6 +403,260 @@ export function calculateBankMoneySummary(
   }
 }
 
+export interface BankAsbaWarning {
+  bankId: string
+  bankName: string
+  nickname?: string
+  last4?: string
+  asbaLimit: number
+  blockedAmount: number
+  availableLimit: number
+  exceededAmount: number
+  utilizationPercent: number
+  isExceeded: boolean
+  isNearLimit: boolean
+  activeIposCount: number
+  activeIpoNames: string[]
+}
+
+/**
+ * Calculates ASBA capital utilization and returns warnings for bank accounts approaching or exceeding balance limits.
+ */
+export function checkBankAsbaLimits(
+  bankAccounts: BankAccount[],
+  applications: Application[],
+  ipoMap: Map<string, Ipo>
+): BankAsbaWarning[] {
+  const warnings: BankAsbaWarning[] = []
+
+  const bankBlockedMap = new Map<
+    string,
+    { blockedAmount: number; ipoIds: Set<string> }
+  >()
+
+  for (const app of applications) {
+    if (app.status !== "pending" || !app.bankAccountId) continue
+
+    const entry = bankBlockedMap.get(app.bankAccountId) || {
+      blockedAmount: 0,
+      ipoIds: new Set<string>(),
+    }
+    entry.blockedAmount += app.amountApplied || 0
+    entry.ipoIds.add(app.ipoId)
+    bankBlockedMap.set(app.bankAccountId, entry)
+  }
+
+  for (const bank of bankAccounts) {
+    if (bank.archived || !bank.asbaLimit || bank.asbaLimit <= 0) continue
+
+    const usage = bankBlockedMap.get(bank.id) || {
+      blockedAmount: 0,
+      ipoIds: new Set<string>(),
+    }
+
+    const blocked = usage.blockedAmount
+    const limit = bank.asbaLimit
+    const isExceeded = blocked > limit
+    const utilizationPercent = Math.round((blocked / limit) * 100)
+    const isNearLimit = !isExceeded && utilizationPercent >= 80
+
+    if (isExceeded || isNearLimit) {
+      const activeIpoNames: string[] = []
+      usage.ipoIds.forEach((id) => {
+        const ipo = ipoMap.get(id)
+        if (ipo) activeIpoNames.push(ipo.name)
+      })
+
+      warnings.push({
+        bankId: bank.id,
+        bankName: bank.bankName,
+        nickname: bank.nickname,
+        last4: bank.last4,
+        asbaLimit: limit,
+        blockedAmount: blocked,
+        availableLimit: limit - blocked,
+        exceededAmount: Math.max(0, blocked - limit),
+        utilizationPercent,
+        isExceeded,
+        isNearLimit,
+        activeIposCount: usage.ipoIds.size,
+        activeIpoNames,
+      })
+    }
+  }
+
+  return warnings.sort((a, b) => {
+    if (a.isExceeded && !b.isExceeded) return -1
+    if (!a.isExceeded && b.isExceeded) return 1
+    return b.utilizationPercent - a.utilizationPercent
+  })
+}
+
+export interface AccountReceivableItem {
+  applicationId: string
+  ipoId: string
+  ipoName: string
+  accountId: string
+  accountName: string
+  saleProceeds: number
+  investedAmount: number
+  grossProfit: number
+  ownerProfitShare: number
+  yourProfitShare: number
+  amountToSendUser: number
+  settlementStatus: "pending" | "settled"
+  settledAt?: Timestamp | null
+}
+
+export interface ReceivablesSummary {
+  totalPendingReceivables: number
+  totalPendingProfit: number
+  totalSettledReceivables: number
+  totalSettledProfit: number
+  pendingCount: number
+  settledCount: number
+  pendingAccountsCount: number
+  items: AccountReceivableItem[]
+  byAccount: Map<
+    string,
+    {
+      account: ApplicationAccount
+      pendingAmount: number
+      pendingProfit: number
+      settledAmount: number
+      unsettledCount: number
+      settledCount: number
+      applications: AccountReceivableItem[]
+    }
+  >
+}
+
+/**
+ * Calculates pending and settled receivables across all sold applications for Other Accounts.
+ */
+export function calculateReceivablesSummary(
+  applications: Application[],
+  ipoMap: Map<string, Ipo>,
+  accountMap: Map<string, ApplicationAccount>
+): ReceivablesSummary {
+  let totalPendingReceivables = 0
+  let totalPendingProfit = 0
+  let totalSettledReceivables = 0
+  let totalSettledProfit = 0
+  let pendingCount = 0
+  let settledCount = 0
+
+  const items: AccountReceivableItem[] = []
+  const byAccount = new Map<
+    string,
+    {
+      account: ApplicationAccount
+      pendingAmount: number
+      pendingProfit: number
+      settledAmount: number
+      unsettledCount: number
+      settledCount: number
+      applications: AccountReceivableItem[]
+    }
+  >()
+
+  const pendingAccountsSet = new Set<string>()
+
+  for (const app of applications) {
+    if (app.status !== "sold") continue
+    const account = accountMap.get(app.accountId)
+    if (!account || account.type !== "other") continue
+
+    const ipo = ipoMap.get(app.ipoId)
+    const lotSize = ipo?.lotSize || 1
+    const issuePrice = ipo?.issuePrice || 0
+    const allottedShares =
+      app.allottedShares !== undefined && app.allottedShares >= 0
+        ? app.allottedShares
+        : (app.allottedLots || 1) * lotSize
+    const investedAmount = Math.round(allottedShares * issuePrice)
+
+    const salePrice =
+      app.salePrice !== undefined && app.salePrice !== null
+        ? Number(app.salePrice)
+        : ipo?.currentPrice || ipo?.listingPrice || issuePrice
+    const saleProceeds = Math.round(allottedShares * salePrice)
+    const grossProfit = saleProceeds - investedAmount
+
+    const profitSharePercent = account.profitSharePercent || 0
+    const ownerProfitShare =
+      grossProfit > 0
+        ? Math.round((grossProfit * profitSharePercent) / 100)
+        : 0
+    const yourProfitShare =
+      grossProfit > 0 ? grossProfit - ownerProfitShare : grossProfit
+    const amountToSendUser = saleProceeds - ownerProfitShare
+
+    const isSettled = app.settlementStatus === "settled"
+
+    const item: AccountReceivableItem = {
+      applicationId: app.id,
+      ipoId: app.ipoId,
+      ipoName: ipo?.name || "IPO",
+      accountId: account.id,
+      accountName: account.name,
+      saleProceeds,
+      investedAmount,
+      grossProfit,
+      ownerProfitShare,
+      yourProfitShare,
+      amountToSendUser,
+      settlementStatus: isSettled ? "settled" : "pending",
+      settledAt: app.settledAt,
+    }
+    items.push(item)
+
+    if (isSettled) {
+      settledCount++
+      totalSettledReceivables += amountToSendUser
+      totalSettledProfit += yourProfitShare
+    } else {
+      pendingCount++
+      totalPendingReceivables += amountToSendUser
+      totalPendingProfit += yourProfitShare
+      pendingAccountsSet.add(account.id)
+    }
+
+    const accEntry = byAccount.get(account.id) || {
+      account,
+      pendingAmount: 0,
+      pendingProfit: 0,
+      settledAmount: 0,
+      unsettledCount: 0,
+      settledCount: 0,
+      applications: [],
+    }
+
+    accEntry.applications.push(item)
+    if (isSettled) {
+      accEntry.settledCount++
+      accEntry.settledAmount += amountToSendUser
+    } else {
+      accEntry.unsettledCount++
+      accEntry.pendingAmount += amountToSendUser
+      accEntry.pendingProfit += yourProfitShare
+    }
+    byAccount.set(account.id, accEntry)
+  }
+
+  return {
+    totalPendingReceivables,
+    totalPendingProfit,
+    totalSettledReceivables,
+    totalSettledProfit,
+    pendingCount,
+    settledCount,
+    pendingAccountsCount: pendingAccountsSet.size,
+    items,
+    byAccount,
+  }
+}
+
 export interface AccountMoneySummary {
   totalApplications: number
   pendingCount: number
@@ -413,6 +668,8 @@ export interface AccountMoneySummary {
   totalRealizedGrossProfit: number
   totalRealizedProfitShared: number
   totalRealizedYourProfit: number
+  pendingReceivables: number
+  unsettledSoldApplicationsCount: number
 }
 
 /**
@@ -436,6 +693,9 @@ export function calculateAccountMoneySummary(
   let totalRealizedProfitShared = 0
   let totalRealizedYourProfit = 0
 
+  let pendingReceivables = 0
+  let unsettledSoldApplicationsCount = 0
+
   for (const app of applications) {
     if (app.accountId !== accountId) continue
 
@@ -455,7 +715,10 @@ export function calculateAccountMoneySummary(
       notAllottedCount++
     } else if (app.status === "sold") {
       soldCount++
-      const shares = app.allottedShares ?? 0
+      const shares =
+        app.allottedShares !== undefined && app.allottedShares >= 0
+          ? app.allottedShares
+          : (app.allottedLots || 1) * (ipo?.lotSize || 1)
       totalInvested += calculateInvestment(shares, issuePrice)
 
       if (ipo) {
@@ -463,6 +726,20 @@ export function calculateAccountMoneySummary(
         totalRealizedGrossProfit += profit.realizedGrossProfit
         totalRealizedProfitShared += profit.realizedProfitShared
         totalRealizedYourProfit += profit.realizedYourProfit
+
+        if (account?.type === "other") {
+          const isSettled = app.settlementStatus === "settled"
+          if (!isSettled) {
+            unsettledSoldApplicationsCount++
+            const salePrice =
+              app.salePrice !== undefined && app.salePrice !== null
+                ? Number(app.salePrice)
+                : ipo.currentPrice || ipo.listingPrice || issuePrice
+            const saleProceeds = Math.round(shares * salePrice)
+            const ownerShare = profit.realizedProfitShared
+            pendingReceivables += saleProceeds - ownerShare
+          }
+        }
       }
     }
   }
@@ -478,6 +755,8 @@ export function calculateAccountMoneySummary(
     totalRealizedGrossProfit,
     totalRealizedProfitShared,
     totalRealizedYourProfit,
+    pendingReceivables,
+    unsettledSoldApplicationsCount,
   }
 }
 

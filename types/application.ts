@@ -2,6 +2,8 @@ import { Timestamp } from "firebase/firestore"
 
 export type ApplicationStatus = "pending" | "allotted" | "not_allotted" | "sold"
 
+export type SettlementStatus = "pending" | "settled"
+
 export type ApplicationCategory =
   "retail" | "shni" | "bhni" | "shareholder" | "employee"
 
@@ -33,6 +35,9 @@ export interface Application {
   sharesSold?: number
   salePrice?: number
   saleDate?: Timestamp
+
+  settlementStatus?: SettlementStatus
+  settledAt?: Timestamp
 
   notes?: string
 

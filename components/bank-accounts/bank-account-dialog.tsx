@@ -85,6 +85,9 @@ function BankAccountForm({
   const [nickname, setNickname] = useState(bankAccountToEdit?.nickname ?? "")
   const [last4, setLast4] = useState(bankAccountToEdit?.last4 ?? "")
   const [upiId, setUpiId] = useState(bankAccountToEdit?.upiId ?? "")
+  const [asbaLimit, setAsbaLimit] = useState<string>(
+    bankAccountToEdit?.asbaLimit != null ? String(bankAccountToEdit.asbaLimit) : ""
+  )
   const [notes, setNotes] = useState(bankAccountToEdit?.notes ?? "")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -109,6 +112,15 @@ function BankAccountForm({
       return
     }
 
+    const parsedAsbaLimit = asbaLimit.trim() ? Number(asbaLimit.trim()) : undefined
+    if (
+      parsedAsbaLimit !== undefined &&
+      (isNaN(parsedAsbaLimit) || parsedAsbaLimit < 0)
+    ) {
+      setError("Please enter a valid positive number for ASBA balance limit.")
+      return
+    }
+
     setError(null)
     setLoading(true)
 
@@ -119,6 +131,7 @@ function BankAccountForm({
           nickname: nickname.trim() || undefined,
           last4: last4.trim() || undefined,
           upiId: upiId.trim() || undefined,
+          asbaLimit: parsedAsbaLimit !== undefined ? parsedAsbaLimit : null,
           notes: notes.trim(),
         })
         toast.add({
@@ -131,6 +144,7 @@ function BankAccountForm({
           nickname: nickname.trim() || undefined,
           last4: last4.trim() || undefined,
           upiId: upiId.trim() || undefined,
+          asbaLimit: parsedAsbaLimit,
           notes: notes.trim(),
         })
         toast.add({
@@ -214,6 +228,27 @@ function BankAccountForm({
           <p className="mt-1 text-[11px] text-muted-foreground">
             Account owners will be directed to transfer their IPO sale payout to
             this UPI ID.
+          </p>
+        </Field>
+
+        {/* ASBA Capital / Balance Limit */}
+        <Field>
+          <FieldLabel htmlFor="asba-limit">
+            ASBA Capital / Balance Limit (₹) (Optional)
+          </FieldLabel>
+          <Input
+            id="asba-limit"
+            type="number"
+            min="0"
+            step="1000"
+            placeholder="e.g. 500000"
+            value={asbaLimit}
+            onChange={(e) => setAsbaLimit(e.target.value)}
+            disabled={loading}
+            className="font-mono"
+          />
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Set your bank balance or capital limit. You will be alerted if total blocked funds across concurrent active IPOs exceed this threshold.
           </p>
         </Field>
 
