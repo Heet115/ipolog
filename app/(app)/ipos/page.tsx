@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, FileText, Download } from "lucide-react"
+import { Plus, FileText, Download, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { toast } from "@/components/ui/toast"
 import {
   Empty,
   EmptyHeader,
@@ -19,6 +21,7 @@ import { IpoListSkeleton } from "@/components/ipo/ipo-skeleton"
 import { useAuth } from "@/lib/firebase/auth-context"
 import { getIpos } from "@/lib/firebase/ipos"
 import { getApplications } from "@/lib/firebase/applications"
+import { isIpoSyncStale } from "@/lib/utils/ipo"
 import type { Ipo, Application } from "@/types"
 
 export default function IposPage() {
@@ -31,6 +34,7 @@ export default function IposPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [ipoToEdit, setIpoToEdit] = useState<Ipo | null>(null)
+  const [syncingAll, setSyncingAll] = useState(false)
 
   const reloadData = useCallback(async () => {
     if (!user) return
@@ -46,6 +50,16 @@ export default function IposPage() {
       console.error("Failed to load IPOs and applications:", err)
     }
   }, [user])
+
+  useEffect(() => {
+    const handleAutoRefreshed = () => {
+      reloadData()
+    }
+    window.addEventListener("ipos-auto-refreshed", handleAutoRefreshed)
+    return () => {
+      window.removeEventListener("ipos-auto-refreshed", handleAutoRefreshed)
+    }
+  }, [reloadData])
 
   useEffect(() => {
     let ignore = false
@@ -72,6 +86,41 @@ export default function IposPage() {
     }
   }, [user])
 
+  const handleSyncAll = async () => {
+    if (!user) return
+    setSyncingAll(true)
+    try {
+      const token = await user.getIdToken()
+      const res = await fetch("/api/ipos/auto-refresh", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ force: true }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to refresh IPOs.")
+      }
+      toast.add({
+        title: "Sync Complete",
+        description: `Refreshed ${data.refreshedCount} imported IPO(s).`,
+        type: "success",
+      })
+      reloadData()
+    } catch (err) {
+      toast.add({
+        title: "Sync Failed",
+        description:
+          err instanceof Error ? err.message : "Could not sync IPOs.",
+        type: "error",
+      })
+    } finally {
+      setSyncingAll(false)
+    }
+  }
+
   const handleAddClick = () => {
     setIpoToEdit(null)
     setDialogOpen(true)
@@ -89,18 +138,51 @@ export default function IposPage() {
     }
   }
 
+  const importedCount = ipos.filter((i) => Boolean(i.externalId)).length
+  const staleCount = ipos.filter((i) => isIpoSyncStale(i)).length
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">My IPOs</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-foreground">My IPOs</h1>
+            {importedCount > 0 && (
+              <Badge
+                variant="outline"
+                className="text-[10px] font-mono text-muted-foreground"
+                title="Imported IPOs are refreshed automatically every 24 hours"
+              >
+                Auto-sync: 24h
+              </Badge>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">
             Track and manage IPO applications, allotments, and market
             performance
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {importedCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSyncAll}
+              disabled={syncingAll}
+              className="text-xs"
+            >
+              <RefreshCw
+                className={`size-3.5 ${syncingAll ? "animate-spin" : ""}`}
+                data-icon="inline-start"
+              />
+              {syncingAll
+                ? "Syncing..."
+                : staleCount > 0
+                  ? `Sync Outdated (${staleCount})`
+                  : "Sync All"}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"

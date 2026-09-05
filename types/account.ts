@@ -13,6 +13,9 @@ export interface ApplicationAccount {
   /** Percentage of profit shared. 0 for "my" accounts, default 40 for "other". */
   profitSharePercent: number
 
+  pan?: string
+  dematAccount?: string
+
   notes?: string
 
   archived: boolean

@@ -18,6 +18,7 @@ import {
   DollarSign,
   Download,
   Check,
+  ExternalLink,
 } from "lucide-react"
 import {
   Card,
@@ -50,6 +51,7 @@ import { toast } from "@/components/ui/toast"
 import { IpoDialog } from "@/components/ipo/ipo-dialog"
 import { IpoPriceDialog } from "@/components/ipo/ipo-price-dialog"
 import { IpoDetailSkeleton } from "@/components/ipo/ipo-detail-skeleton"
+import { CheckAllotmentDialog } from "@/components/ipo/check-allotment-dialog"
 import { BulkApplicationDialog } from "@/components/applications/bulk-application-dialog"
 import { BulkAllotmentDialog } from "@/components/applications/bulk-allotment-dialog"
 import { BulkSaleDialog } from "@/components/applications/bulk-sale-dialog"
@@ -61,7 +63,13 @@ import { getIpoById, archiveIpo, deleteIpo } from "@/lib/firebase/ipos"
 import { getApplicationsByIpo } from "@/lib/firebase/applications"
 import { getApplicationAccounts } from "@/lib/firebase/accounts"
 import { getBankAccounts } from "@/lib/firebase/bank-accounts"
-import { getIpoStatus, formatCurrency, formatDate } from "@/lib/utils/ipo"
+import {
+  getIpoStatus,
+  formatCurrency,
+  formatDate,
+  isIpoSyncStale,
+  formatSyncFreshness,
+} from "@/lib/utils/ipo"
 import { exportIpoApplicationsCsv } from "@/lib/utils/export-csv"
 import {
   calculateIpoMoneySummary,
@@ -90,6 +98,7 @@ export default function IpoDetailPage() {
   const [bulkAddOpen, setBulkAddOpen] = useState(false)
   const [allotmentOpen, setAllotmentOpen] = useState(false)
   const [bulkSaleOpen, setBulkSaleOpen] = useState(false)
+  const [checkAllotmentOpen, setCheckAllotmentOpen] = useState(false)
   const [appToSell, setAppToSell] = useState<Application | null>(null)
   const [appToEdit, setAppToEdit] = useState<Application | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -140,6 +149,25 @@ export default function IpoDetailPage() {
             setApplications(appsData)
             setAccounts(accountsData)
             setBankAccounts(banksData)
+
+            // Auto-refresh in background if imported IPO data is older than 24 hours
+            if (ipoData.externalId && isIpoSyncStale(ipoData, 24)) {
+              user.getIdToken().then((token) => {
+                fetch(`/api/ipos/${ipoData.id}/sync`, {
+                  method: "POST",
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                })
+                  .then((res) => res.json())
+                  .then((json) => {
+                    if (json.success && json.ipo && !ignore) {
+                      setIpo(json.ipo)
+                    }
+                  })
+                  .catch(() => {})
+              })
+            }
           }
           setLoading(false)
         }
@@ -156,6 +184,24 @@ export default function IpoDetailPage() {
       ignore = true
     }
   }, [user, ipoId])
+
+  useEffect(() => {
+    const handleAutoRefreshed = (e: Event) => {
+      const customEvent = e as CustomEvent<{
+        refreshedIpos?: Array<{ id: string }>
+      }>
+      if (
+        !customEvent.detail?.refreshedIpos ||
+        customEvent.detail.refreshedIpos.some((item) => item.id === ipoId)
+      ) {
+        reloadData()
+      }
+    }
+    window.addEventListener("ipos-auto-refreshed", handleAutoRefreshed)
+    return () => {
+      window.removeEventListener("ipos-auto-refreshed", handleAutoRefreshed)
+    }
+  }, [ipoId, reloadData])
 
   const handleRefreshData = async () => {
     if (!user || !ipo || !ipo.externalId) return
@@ -326,6 +372,15 @@ export default function IpoDetailPage() {
           <Button
             variant="outline"
             size="xs"
+            onClick={() => setCheckAllotmentOpen(true)}
+            className="h-7 text-xs"
+          >
+            <ExternalLink data-icon="inline-start" />
+            Check Allotment
+          </Button>
+          <Button
+            variant="outline"
+            size="xs"
             onClick={() => setPriceDialogOpen(true)}
             className="h-7 text-xs"
           >
@@ -380,14 +435,6 @@ export default function IpoDetailPage() {
                 <h1 className="text-xl font-bold text-foreground sm:text-2xl">
                   {ipo.name}
                 </h1>
-                {ipo.symbol && (
-                  <Badge
-                    variant="outline"
-                    className="px-1.5 py-0 font-mono text-[10px]"
-                  >
-                    {ipo.symbol}
-                  </Badge>
-                )}
                 <Badge
                   variant={ipo.type === "sme" ? "secondary" : "outline"}
                   className="px-1.5 py-0 font-mono text-[10px] uppercase"
@@ -403,9 +450,17 @@ export default function IpoDetailPage() {
                 {ipo.provider && (
                   <Badge
                     variant="outline"
-                    className="border-primary/40 px-1.5 py-0 font-mono text-[10px] uppercase text-primary"
+                    className="border-primary/40 px-1.5 py-0 font-mono text-[10px] text-primary uppercase"
                   >
                     {ipo.provider}
+                  </Badge>
+                )}
+                {ipo.registrar && (
+                  <Badge
+                    variant="outline"
+                    className="border-primary/40 px-1.5 py-0 font-mono text-[10px] text-primary"
+                  >
+                    Registrar: {ipo.registrar}
                   </Badge>
                 )}
                 {ipo.archived && (
@@ -421,8 +476,11 @@ export default function IpoDetailPage() {
                 <p className="font-mono text-xs text-muted-foreground">
                   {ipo.companyName}
                   {ipo.lastSyncedAt && (
-                    <span className="ml-2 text-[11px] text-muted-foreground/80">
-                      • Last synced: {formatDate(ipo.lastSyncedAt)}
+                    <span
+                      className="ml-2 text-[11px] text-muted-foreground/80"
+                      title={`Last synced: ${formatDate(ipo.lastSyncedAt)}`}
+                    >
+                      • Auto-refreshed ({formatSyncFreshness(ipo.lastSyncedAt)})
                     </span>
                   )}
                 </p>
@@ -444,7 +502,7 @@ export default function IpoDetailPage() {
               </div>
 
               {ipo.listingPrice && (
-                <div className="border-t border-border/60 pt-2 sm:border-t-0 sm:pt-0 sm:border-l sm:pl-4">
+                <div className="border-t border-border/60 pt-2 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
                   <span className="block text-[10px] tracking-wider text-muted-foreground uppercase">
                     Listing Price
                   </span>
@@ -463,7 +521,7 @@ export default function IpoDetailPage() {
               )}
 
               {ipo.currentPrice && (
-                <div className="border-t border-border/60 pt-2 sm:border-t-0 sm:pt-0 sm:border-l sm:pl-4">
+                <div className="border-t border-border/60 pt-2 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
                   <span className="block text-[10px] tracking-wider text-muted-foreground uppercase">
                     Current (CMP)
                   </span>
@@ -739,6 +797,17 @@ export default function IpoDetailPage() {
                 variant="outline"
                 size="xs"
                 className="h-7 text-xs"
+                onClick={() => setCheckAllotmentOpen(true)}
+              >
+                <ExternalLink data-icon="inline-start" />
+                Check Allotment
+              </Button>
+            )}
+            {applications.length > 0 && (
+              <Button
+                variant="outline"
+                size="xs"
+                className="h-7 text-xs"
                 onClick={() => setAllotmentOpen(true)}
               >
                 <RefreshCw data-icon="inline-start" />
@@ -854,6 +923,15 @@ export default function IpoDetailPage() {
           <BulkSaleDialog
             open={bulkSaleOpen}
             onOpenChange={setBulkSaleOpen}
+            userId={user.uid}
+            ipo={ipo}
+            applications={applications}
+            accounts={accounts}
+            onSuccess={() => reloadData()}
+          />
+          <CheckAllotmentDialog
+            open={checkAllotmentOpen}
+            onOpenChange={setCheckAllotmentOpen}
             userId={user.uid}
             ipo={ipo}
             applications={applications}

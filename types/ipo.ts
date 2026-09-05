@@ -35,6 +35,8 @@ export interface Ipo {
   currentPrice?: number
 
   isin?: string
+  registrar?: string
+  registrarUrl?: string
 
   // Source & Sync Metadata
   source?: "manual" | "api"

@@ -110,6 +110,7 @@ export async function POST(
       allotmentDate,
       listingDate,
       listingPrice: externalIpo.listingPrice || existingIpo.listingPrice,
+      registrar: externalIpo.registrarName || existingIpo.registrar,
       lastSyncedAt: Timestamp.now(),
     })
 

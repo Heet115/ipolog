@@ -91,6 +91,10 @@ function AccountForm({
       ? String(accountToEdit.profitSharePercent)
       : "40"
   )
+  const [pan, setPan] = useState(accountToEdit?.pan ?? "")
+  const [dematAccount, setDematAccount] = useState(
+    accountToEdit?.dematAccount ?? ""
+  )
   const [notes, setNotes] = useState(accountToEdit?.notes ?? "")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -109,6 +113,12 @@ function AccountForm({
 
     if (!name.trim()) {
       setError("Please enter an account name.")
+      return
+    }
+
+    const cleanPan = pan.trim().toUpperCase()
+    if (cleanPan && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPan)) {
+      setError("Please enter a valid 10-character PAN number (e.g. ABCDE1234F).")
       return
     }
 
@@ -131,6 +141,8 @@ function AccountForm({
           name: name.trim(),
           type,
           profitSharePercent: type === "my" ? undefined : parsedPercent,
+          pan: cleanPan || null,
+          dematAccount: dematAccount.trim() || null,
           notes: notes.trim(),
         })
         toast.add({
@@ -142,6 +154,8 @@ function AccountForm({
           name: name.trim(),
           type,
           profitSharePercent: type === "my" ? undefined : parsedPercent,
+          pan: cleanPan || undefined,
+          dematAccount: dematAccount.trim() || undefined,
           notes: notes.trim(),
         })
         toast.add({
@@ -244,12 +258,42 @@ function AccountForm({
           </div>
         )}
 
+        {/* PAN & Demat Account Numbers (Optional for 1-Click Allotment Checker) */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="account-pan">PAN Number (Optional)</FieldLabel>
+            <Input
+              id="account-pan"
+              placeholder="e.g. ABCDE1234F"
+              value={pan}
+              onChange={(e) => setPan(e.target.value.toUpperCase())}
+              disabled={loading}
+              maxLength={10}
+              className="font-mono text-xs uppercase"
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="account-demat">
+              Demat / DP ID (Optional)
+            </FieldLabel>
+            <Input
+              id="account-demat"
+              placeholder="e.g. 1208160012345678"
+              value={dematAccount}
+              onChange={(e) => setDematAccount(e.target.value)}
+              disabled={loading}
+              className="font-mono text-xs"
+            />
+          </Field>
+        </div>
+
         {/* Notes */}
         <Field>
           <FieldLabel htmlFor="account-notes">Notes (Optional)</FieldLabel>
           <Textarea
             id="account-notes"
-            placeholder="e.g. Zerodha DP ID: 12081600..."
+            placeholder="e.g. Zerodha account, family member..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={2}

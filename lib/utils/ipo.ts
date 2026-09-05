@@ -161,3 +161,69 @@ export function formatIsoDate(
   }
 }
 
+/**
+ * Checks if an imported IPO's synced data is older than maxAgeHours (defaults to 24h).
+ */
+export function isIpoSyncStale(ipo: Ipo, maxAgeHours = 24): boolean {
+  if (!ipo.externalId) return false
+  if (!ipo.lastSyncedAt) return true
+
+  let lastSyncMillis: number
+  if (ipo.lastSyncedAt instanceof Timestamp) {
+    lastSyncMillis = ipo.lastSyncedAt.toMillis()
+  } else if (
+    typeof ipo.lastSyncedAt === "object" &&
+    ipo.lastSyncedAt !== null &&
+    "toMillis" in ipo.lastSyncedAt &&
+    typeof (ipo.lastSyncedAt as { toMillis: unknown }).toMillis === "function"
+  ) {
+    lastSyncMillis = (ipo.lastSyncedAt as { toMillis: () => number }).toMillis()
+  } else if (
+    typeof ipo.lastSyncedAt === "object" &&
+    ipo.lastSyncedAt !== null &&
+    "seconds" in ipo.lastSyncedAt
+  ) {
+    lastSyncMillis = (ipo.lastSyncedAt as { seconds: number }).seconds * 1000
+  } else {
+    lastSyncMillis = new Date(ipo.lastSyncedAt as unknown as string).getTime()
+  }
+
+  if (isNaN(lastSyncMillis)) return true
+  const ageMillis = Date.now() - lastSyncMillis
+  return ageMillis >= maxAgeHours * 60 * 60 * 1000
+}
+
+/**
+ * Formats relative freshness of last sync (e.g. "Just now", "3h ago", "2d ago").
+ */
+export function formatSyncFreshness(
+  timestamp?: Timestamp | Date | null
+): string {
+  if (!timestamp) return "Never synced"
+  let date: Date
+  if (timestamp instanceof Timestamp) {
+    date = timestamp.toDate()
+  } else if (timestamp instanceof Date) {
+    date = timestamp
+  } else if (
+    typeof timestamp === "object" &&
+    "seconds" in (timestamp as { seconds: number })
+  ) {
+    date = new Date((timestamp as { seconds: number }).seconds * 1000)
+  } else {
+    date = new Date(timestamp as unknown as string)
+  }
+
+  if (isNaN(date.getTime())) return "Unknown"
+  const diffMs = Date.now() - date.getTime()
+  if (diffMs < 0) return "Just now"
+  const diffMins = Math.floor(diffMs / (1000 * 60))
+  if (diffMins < 1) return "Just now"
+  if (diffMins < 60) return `${diffMins}m ago`
+  const diffHours = Math.floor(diffMins / 60)
+  if (diffHours < 24) return `${diffHours}h ago`
+  const diffDays = Math.floor(diffHours / 24)
+  return `${diffDays}d ago`
+}
+
+

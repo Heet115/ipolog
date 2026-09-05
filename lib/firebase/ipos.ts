@@ -39,6 +39,8 @@ function docToIpo(docSnap: DocumentSnapshot<DocumentData>): Ipo {
     listingPrice: data.listingPrice != null ? Number(data.listingPrice) : undefined,
     currentPrice: data.currentPrice != null ? Number(data.currentPrice) : undefined,
     isin: data.isin || undefined,
+    registrar: data.registrar || undefined,
+    registrarUrl: data.registrarUrl || undefined,
     source: data.source || "manual",
     provider: data.provider || undefined,
     externalId: data.externalId || undefined,
@@ -131,6 +133,8 @@ export async function createIpo(
     listingDate?: Timestamp
     listingPrice?: number
     currentPrice?: number
+    registrar?: string
+    registrarUrl?: string
     source?: "manual" | "api"
     provider?: string
     externalId?: string
@@ -156,6 +160,8 @@ export async function createIpo(
 
   if (data.symbol) payload.symbol = data.symbol.trim()
   if (data.isin) payload.isin = data.isin.trim()
+  if (data.registrar) payload.registrar = data.registrar.trim()
+  if (data.registrarUrl) payload.registrarUrl = data.registrarUrl.trim()
   if (data.provider) payload.provider = data.provider
   if (data.externalId) payload.externalId = data.externalId
   if (data.lastSyncedAt) payload.lastSyncedAt = data.lastSyncedAt
@@ -202,6 +208,8 @@ export async function updateIpo(
     closeDate?: Timestamp | null
     allotmentDate?: Timestamp | null
     listingDate?: Timestamp | null
+    registrar?: string | null
+    registrarUrl?: string | null
     notes: string
     archived: boolean
   }>
@@ -221,6 +229,10 @@ export async function updateIpo(
   if (data.lotSize !== undefined) payload.lotSize = Number(data.lotSize)
   if (data.notes !== undefined) payload.notes = data.notes.trim()
   if (data.archived !== undefined) payload.archived = data.archived
+  if (data.registrar !== undefined)
+    payload.registrar = data.registrar?.trim() || null
+  if (data.registrarUrl !== undefined)
+    payload.registrarUrl = data.registrarUrl?.trim() || null
 
   if (data.priceBandMin !== undefined) {
     payload.priceBandMin = data.priceBandMin != null ? Number(data.priceBandMin) : null
@@ -259,6 +271,8 @@ export async function syncIpoPublicData(
     allotmentDate?: Timestamp
     listingDate?: Timestamp
     listingPrice?: number
+    registrar?: string
+    registrarUrl?: string
     lastSyncedAt: Timestamp
   }
 ): Promise<void> {
@@ -274,6 +288,9 @@ export async function syncIpoPublicData(
     payload.companyName = data.companyName.trim()
   if (data.symbol !== undefined) payload.symbol = data.symbol.trim()
   if (data.isin !== undefined) payload.isin = data.isin.trim()
+  if (data.registrar !== undefined) payload.registrar = data.registrar.trim()
+  if (data.registrarUrl !== undefined)
+    payload.registrarUrl = data.registrarUrl.trim()
   if (data.type !== undefined) payload.type = data.type
   if (data.issuePrice !== undefined && !isNaN(data.issuePrice)) {
     payload.issuePrice = Number(data.issuePrice)

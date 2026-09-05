@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
       allotmentDate,
       listingDate,
       listingPrice: externalIpo.listingPrice,
+      registrar: externalIpo.registrarName,
       source: "api",
       provider: "upstox",
       externalId: externalIpo.externalId,

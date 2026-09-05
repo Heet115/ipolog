@@ -18,6 +18,7 @@ export interface Application {
   bankAccountId: string
 
   applicationDate: Timestamp
+  applicationNumber?: string
 
   category?: ApplicationCategory
 

@@ -27,6 +27,8 @@ function docToAccount(
     type: data.type,
     profitSharePercent:
       data.profitSharePercent ?? (data.type === "my" ? 0 : 40),
+    pan: data.pan || undefined,
+    dematAccount: data.dematAccount || undefined,
     notes: data.notes || "",
     archived: Boolean(data.archived),
     createdAt: data.createdAt,
@@ -65,6 +67,8 @@ export async function createApplicationAccount(
     name: string
     type: "my" | "other"
     profitSharePercent?: number
+    pan?: string
+    dematAccount?: string
     notes?: string
   }
 ): Promise<string> {
@@ -73,7 +77,7 @@ export async function createApplicationAccount(
   const profitSharePercent =
     data.type === "my" ? 0 : (data.profitSharePercent ?? 40)
 
-  const docRef = await addDoc(accountsRef, {
+  const payload: Record<string, unknown> = {
     userId,
     name: data.name.trim(),
     type: data.type,
@@ -82,8 +86,12 @@ export async function createApplicationAccount(
     archived: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  })
+  }
 
+  if (data.pan) payload.pan = data.pan.trim().toUpperCase()
+  if (data.dematAccount) payload.dematAccount = data.dematAccount.trim()
+
+  const docRef = await addDoc(accountsRef, payload)
   return docRef.id
 }
 
@@ -97,6 +105,8 @@ export async function updateApplicationAccount(
     name: string
     type: "my" | "other"
     profitSharePercent: number
+    pan: string | null
+    dematAccount: string | null
     notes: string
     archived: boolean
   }>
@@ -109,6 +119,10 @@ export async function updateApplicationAccount(
 
   if (data.name !== undefined) updatePayload.name = data.name.trim()
   if (data.type !== undefined) updatePayload.type = data.type
+  if (data.pan !== undefined)
+    updatePayload.pan = data.pan ? data.pan.trim().toUpperCase() : null
+  if (data.dematAccount !== undefined)
+    updatePayload.dematAccount = data.dematAccount ? data.dematAccount.trim() : null
   if (data.profitSharePercent !== undefined) {
     // Determine the effective type: use the incoming type if provided,
     // otherwise read the current type from Firestore to enforce the rule.

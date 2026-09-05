@@ -28,6 +28,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { toast } from "@/components/ui/toast"
 import { createIpo, updateIpo } from "@/lib/firebase/ipos"
 import { formatCurrency } from "@/lib/utils/ipo"
+import { KNOWN_REGISTRARS, detectRegistrar } from "@/lib/utils/registrars"
 import type { Ipo, IpoType } from "@/types"
 
 interface IpoDialogProps {
@@ -54,7 +55,7 @@ export function IpoDialog({
           </DialogTitle>
           <DialogDescription className="break-words">
             {ipoToEdit
-              ? "Update IPO pricing, lot size, or key dates."
+              ? "Update IPO pricing, lot size, key dates, or registrar."
               : "Record a new IPO to track applications and profit sharing."}
           </DialogDescription>
         </DialogHeader>
@@ -117,6 +118,10 @@ function IpoForm({
   const [listingDate, setListingDate] = useState<Date | undefined>(
     ipoToEdit?.listingDate?.toDate?.() ?? undefined
   )
+  const [registrar, setRegistrar] = useState(ipoToEdit?.registrar ?? "")
+  const [registrarUrl, setRegistrarUrl] = useState(
+    ipoToEdit?.registrarUrl ?? ""
+  )
   const [notes, setNotes] = useState(ipoToEdit?.notes ?? "")
 
   const [loading, setLoading] = useState(false)
@@ -177,6 +182,8 @@ function IpoForm({
             ? Timestamp.fromDate(allotmentDate)
             : null,
           listingDate: listingDate ? Timestamp.fromDate(listingDate) : null,
+          registrar: registrar.trim() || null,
+          registrarUrl: registrarUrl.trim() || null,
           notes: notes.trim(),
         })
         toast.add({
@@ -201,6 +208,8 @@ function IpoForm({
           listingDate: listingDate
             ? Timestamp.fromDate(listingDate)
             : undefined,
+          registrar: registrar.trim() || undefined,
+          registrarUrl: registrarUrl.trim() || undefined,
           notes: notes.trim(),
         })
         toast.add({
@@ -409,6 +418,70 @@ function IpoForm({
                 onDateChange={setListingDate}
                 placeholder="Select listing date"
                 disabled={loading}
+              />
+            </Field>
+          </div>
+        </FieldSet>
+
+        {/* Registrar (For 1-Click Allotment Status Checker) */}
+        <FieldSet className="border-t pt-3">
+          <FieldLegend variant="label">
+            Registrar & Allotment Link (Optional)
+          </FieldLegend>
+          <div className="flex flex-col gap-2.5">
+            <Field>
+              <FieldLabel htmlFor="ipo-registrar">Registrar Name</FieldLabel>
+              <Input
+                id="ipo-registrar"
+                placeholder="e.g. Link Intime, KFintech, Bigshare..."
+                value={registrar}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setRegistrar(val)
+                  const detected = detectRegistrar(val)
+                  if (detected && !registrarUrl) {
+                    setRegistrarUrl(detected.checkUrl)
+                  }
+                }}
+                disabled={loading}
+              />
+            </Field>
+
+            {/* Quick Registrar Presets */}
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-[10px] text-muted-foreground mr-1">
+                Quick select:
+              </span>
+              {KNOWN_REGISTRARS.slice(0, 5).map((reg) => (
+                <button
+                  key={reg.id}
+                  type="button"
+                  onClick={() => {
+                    setRegistrar(reg.name)
+                    setRegistrarUrl(reg.checkUrl)
+                  }}
+                  className={`px-1.5 py-0.5 text-[10px] rounded-none border transition-colors ${
+                    registrar === reg.name
+                      ? "bg-foreground text-background font-bold border-foreground"
+                      : "bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border-border"
+                  }`}
+                >
+                  {reg.name}
+                </button>
+              ))}
+            </div>
+
+            <Field>
+              <FieldLabel htmlFor="ipo-registrar-url">
+                Custom Allotment URL (Optional)
+              </FieldLabel>
+              <Input
+                id="ipo-registrar-url"
+                placeholder="https://linkintime.co.in/initial_offer/public-issues.html"
+                value={registrarUrl}
+                onChange={(e) => setRegistrarUrl(e.target.value)}
+                disabled={loading}
+                className="text-xs font-mono"
               />
             </Field>
           </div>
