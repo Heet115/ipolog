@@ -439,7 +439,7 @@ function IpoForm({
                   const val = e.target.value
                   setRegistrar(val)
                   const detected = detectRegistrar(val)
-                  if (detected && !registrarUrl) {
+                  if (detected) {
                     setRegistrarUrl(detected.checkUrl)
                   }
                 }}
@@ -449,7 +449,7 @@ function IpoForm({
 
             {/* Quick Registrar Presets */}
             <div className="flex flex-wrap items-center gap-1">
-              <span className="text-[10px] text-muted-foreground mr-1">
+              <span className="mr-1 text-[10px] text-muted-foreground">
                 Quick select:
               </span>
               {KNOWN_REGISTRARS.slice(0, 5).map((reg) => (
@@ -460,10 +460,10 @@ function IpoForm({
                     setRegistrar(reg.name)
                     setRegistrarUrl(reg.checkUrl)
                   }}
-                  className={`px-1.5 py-0.5 text-[10px] rounded-none border transition-colors ${
+                  className={`rounded-none border px-1.5 py-0.5 text-[10px] transition-colors ${
                     registrar === reg.name
-                      ? "bg-foreground text-background font-bold border-foreground"
-                      : "bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border-border"
+                      ? "border-foreground bg-foreground font-bold text-background"
+                      : "border-border bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
                   {reg.name}
@@ -477,11 +477,11 @@ function IpoForm({
               </FieldLabel>
               <Input
                 id="ipo-registrar-url"
-                placeholder="https://linkintime.co.in/initial_offer/public-issues.html"
+                placeholder="https://in.mpms.mufg.com/Initial_Offer/public-issues.html"
                 value={registrarUrl}
                 onChange={(e) => setRegistrarUrl(e.target.value)}
                 disabled={loading}
-                className="text-xs font-mono"
+                className="font-mono text-xs"
               />
             </Field>
           </div>

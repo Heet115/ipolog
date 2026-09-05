@@ -90,15 +90,23 @@ export class UpstoxProvider implements IPOProvider {
 
       if (!res.ok) {
         if (res.status === 429) {
-          throw new Error("Upstox API rate limit reached. Please try again later.")
+          throw new Error(
+            "Upstox API rate limit reached. Please try again later."
+          )
         }
         if (res.status === 401 || res.status === 403) {
-          throw new Error("Upstox API authentication error. Please verify your access credentials.")
+          throw new Error(
+            "Upstox API authentication error. Please verify your access credentials."
+          )
         }
         if (res.status >= 500) {
-          throw new Error("Upstox IPO service is temporarily unavailable. Please try again later.")
+          throw new Error(
+            "Upstox IPO service is temporarily unavailable. Please try again later."
+          )
         }
-        const errJson = (await res.json().catch(() => ({}))) as UpstoxApiResponse<unknown>
+        const errJson = (await res
+          .json()
+          .catch(() => ({}))) as UpstoxApiResponse<unknown>
         const errorMsg =
           errJson.errors?.[0]?.message ||
           `Upstox request failed with status ${res.status}`
@@ -135,7 +143,9 @@ export class UpstoxProvider implements IPOProvider {
         }
         throw error
       }
-      throw new Error("An unexpected error occurred while fetching IPOs from Upstox.")
+      throw new Error(
+        "An unexpected error occurred while fetching IPOs from Upstox."
+      )
     }
   }
 
@@ -169,15 +179,23 @@ export class UpstoxProvider implements IPOProvider {
 
       if (!res.ok) {
         if (res.status === 429) {
-          throw new Error("Upstox API rate limit reached. Please try again later.")
+          throw new Error(
+            "Upstox API rate limit reached. Please try again later."
+          )
         }
         if (res.status === 401 || res.status === 403) {
-          throw new Error("Upstox API authentication error. Please verify your access credentials.")
+          throw new Error(
+            "Upstox API authentication error. Please verify your access credentials."
+          )
         }
         if (res.status >= 500) {
-          throw new Error("Upstox IPO service is temporarily unavailable. Please try again later.")
+          throw new Error(
+            "Upstox IPO service is temporarily unavailable. Please try again later."
+          )
         }
-        const errJson = (await res.json().catch(() => ({}))) as UpstoxApiResponse<unknown>
+        const errJson = (await res
+          .json()
+          .catch(() => ({}))) as UpstoxApiResponse<unknown>
         const errorMsg =
           errJson.errors?.[0]?.message ||
           `Upstox request failed with status ${res.status}`
@@ -200,7 +218,9 @@ export class UpstoxProvider implements IPOProvider {
         }
         throw error
       }
-      throw new Error("An unexpected error occurred while fetching IPO details from Upstox.")
+      throw new Error(
+        "An unexpected error occurred while fetching IPO details from Upstox."
+      )
     }
   }
 }

@@ -129,22 +129,25 @@ export function IpoList({
 
   const archivedCount = ipos.filter((i) => i.archived).length
 
-  const handleToggleArchive = useCallback(async (ipo: Ipo) => {
-    try {
-      await archiveIpo(userId, ipo.id, !ipo.archived)
-      toast.add({
-        title: ipo.archived ? "IPO restored" : "IPO archived",
-        type: "success",
-      })
-      onRefresh()
-    } catch (err) {
-      console.error(err)
-      toast.add({
-        title: "Failed to update IPO",
-        type: "error",
-      })
-    }
-  }, [userId, onRefresh])
+  const handleToggleArchive = useCallback(
+    async (ipo: Ipo) => {
+      try {
+        await archiveIpo(userId, ipo.id, !ipo.archived)
+        toast.add({
+          title: ipo.archived ? "IPO restored" : "IPO archived",
+          type: "success",
+        })
+        onRefresh()
+      } catch (err) {
+        console.error(err)
+        toast.add({
+          title: "Failed to update IPO",
+          type: "error",
+        })
+      }
+    },
+    [userId, onRefresh]
+  )
 
   const handleDelete = async () => {
     if (!ipoToDelete) return
@@ -171,198 +174,202 @@ export function IpoList({
   // Table Columns for Table View
   const tableColumns: DataTableColumn<Ipo>[] = useMemo(
     () => [
-    {
-      id: "name",
-      header: "IPO / Company",
-      sortable: true,
-      sortFn: (a, b) => a.name.localeCompare(b.name),
-      cell: (ipo) => (
-        <div className="flex flex-col gap-0.5 min-w-0 max-w-[240px]">
-          <Link
-            href={`/ipos/${ipo.id}`}
-            className="font-bold text-foreground hover:underline truncate block text-xs"
-            title={ipo.name}
+      {
+        id: "name",
+        header: "IPO / Company",
+        sortable: true,
+        sortFn: (a, b) => a.name.localeCompare(b.name),
+        cell: (ipo) => (
+          <div className="flex max-w-[240px] min-w-0 flex-col gap-0.5">
+            <Link
+              href={`/ipos/${ipo.id}`}
+              className="block truncate text-xs font-bold text-foreground hover:underline"
+              title={ipo.name}
+            >
+              {ipo.name}
+            </Link>
+            {ipo.companyName && (
+              <span
+                className="truncate text-[10px] text-muted-foreground"
+                title={ipo.companyName}
+              >
+                {ipo.companyName}
+              </span>
+            )}
+          </div>
+        ),
+      },
+      {
+        id: "type",
+        header: "Type",
+        align: "center",
+        sortable: true,
+        sortFn: (a, b) => a.type.localeCompare(b.type),
+        cell: (ipo) => (
+          <Badge
+            variant={ipo.type === "sme" ? "default" : "secondary"}
+            className="px-1.5 py-0 font-mono text-[9px] uppercase"
           >
-            {ipo.name}
-          </Link>
-          {ipo.companyName && (
-            <span
-              className="text-[10px] text-muted-foreground truncate"
-              title={ipo.companyName}
-            >
-              {ipo.companyName}
-            </span>
-          )}
-        </div>
-      ),
-    },
-    {
-      id: "type",
-      header: "Type",
-      align: "center",
-      sortable: true,
-      sortFn: (a, b) => a.type.localeCompare(b.type),
-      cell: (ipo) => (
-        <Badge
-          variant={ipo.type === "sme" ? "default" : "secondary"}
-          className="text-[9px] uppercase px-1.5 py-0 font-mono"
-        >
-          {ipo.type}
-        </Badge>
-      ),
-    },
-    {
-      id: "price",
-      header: "Price",
-      align: "right",
-      sortable: true,
-      sortFn: (a, b) => a.issuePrice - b.issuePrice,
-      cell: (ipo) => (
-        <span className="font-mono font-bold text-foreground text-xs">
-          {formatCurrency(ipo.issuePrice)}
-        </span>
-      ),
-    },
-    {
-      id: "lot",
-      header: "Lot / 1-Lot Mandate",
-      align: "right",
-      sortable: true,
-      sortFn: (a, b) => a.lotSize * a.issuePrice - b.lotSize * b.issuePrice,
-      cell: (ipo) => (
-        <div className="flex flex-col items-end gap-0.5">
-          <span className="font-mono font-semibold text-xs text-foreground">
-            {formatCurrency(ipo.lotSize * ipo.issuePrice)}
-          </span>
-          <span className="text-[10px] text-muted-foreground font-mono">
-            {ipo.lotSize} shares
-          </span>
-        </div>
-      ),
-    },
-    {
-      id: "dates",
-      header: "Issue Dates",
-      cell: (ipo) => (
-        <div className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
-          <Calendar className="size-3 shrink-0" />
-          <span>
-            {formatDate(ipo.openDate)} – {formatDate(ipo.closeDate)}
-          </span>
-        </div>
-      ),
-    },
-    {
-      id: "status",
-      header: "Status",
-      align: "center",
-      cell: (ipo) => {
-        const { label, variant } = getIpoStatus(ipo)
-        return (
-          <Badge variant={variant} className="text-[10px] px-1.5 py-0">
-            {label}
+            {ipo.type}
           </Badge>
-        )
+        ),
       },
-    },
-    {
-      id: "apps",
-      header: "Apps",
-      align: "center",
-      sortable: true,
-      sortFn: (a, b) => (appCountMap.get(a.id) || 0) - (appCountMap.get(b.id) || 0),
-      cell: (ipo) => {
-        const count = appCountMap.get(ipo.id) || 0
-        return (
-          <span className="font-mono text-xs font-semibold text-foreground">
-            {count}
+      {
+        id: "price",
+        header: "Price",
+        align: "right",
+        sortable: true,
+        sortFn: (a, b) => a.issuePrice - b.issuePrice,
+        cell: (ipo) => (
+          <span className="font-mono text-xs font-bold text-foreground">
+            {formatCurrency(ipo.issuePrice)}
           </span>
-        )
+        ),
       },
-    },
-    {
-      id: "cmp",
-      header: "Market / Gain",
-      align: "right",
-      cell: (ipo) => {
-        const cmp = ipo.currentPrice || ipo.listingPrice
-        if (!cmp) return <span className="text-muted-foreground text-xs">—</span>
-        const gainPct = ((cmp - ipo.issuePrice) / ipo.issuePrice) * 100
-        const isPos = gainPct >= 0
-        return (
+      {
+        id: "lot",
+        header: "Lot / 1-Lot Mandate",
+        align: "right",
+        sortable: true,
+        sortFn: (a, b) => a.lotSize * a.issuePrice - b.lotSize * b.issuePrice,
+        cell: (ipo) => (
           <div className="flex flex-col items-end gap-0.5">
-            <span className="font-mono font-bold text-xs text-foreground">
-              {formatCurrency(cmp)}
+            <span className="font-mono text-xs font-semibold text-foreground">
+              {formatCurrency(ipo.lotSize * ipo.issuePrice)}
             </span>
-            <span
-              className={`text-[10px] font-mono font-semibold ${
-                isPos ? "text-success" : "text-destructive"
-              }`}
-            >
-              {isPos ? "+" : ""}
-              {gainPct.toFixed(1)}%
+            <span className="font-mono text-[10px] text-muted-foreground">
+              {ipo.lotSize} shares
             </span>
           </div>
-        )
+        ),
       },
-    },
-    {
-      id: "actions",
-      header: "",
-      align: "right",
-      cell: (ipo) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                className="size-7 text-muted-foreground hover:text-foreground"
-              />
-            }
-          >
-            <MoreVertical className="size-3.5" />
-            <span className="sr-only">Actions</span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44 text-xs">
-            <DropdownMenuGroup>
-              <DropdownMenuItem render={<Link href={`/ipos/${ipo.id}`} />}>
-                <ExternalLink data-icon="inline-start" />
-                View Workspace
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEdit(ipo)}>
-                <Edit2 data-icon="inline-start" />
-                Edit IPO
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleToggleArchive(ipo)}>
-                {ipo.archived ? (
-                  <>
-                    <ArchiveRestore data-icon="inline-start" />
-                    Restore IPO
-                  </>
-                ) : (
-                  <>
-                    <Archive data-icon="inline-start" />
-                    Archive IPO
-                  </>
-                )}
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => setIpoToDelete(ipo)}
+      {
+        id: "dates",
+        header: "Issue Dates",
+        cell: (ipo) => (
+          <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
+            <Calendar className="size-3 shrink-0" />
+            <span>
+              {formatDate(ipo.openDate)} – {formatDate(ipo.closeDate)}
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: "status",
+        header: "Status",
+        align: "center",
+        cell: (ipo) => {
+          const { label, variant } = getIpoStatus(ipo)
+          return (
+            <Badge variant={variant} className="px-1.5 py-0 text-[10px]">
+              {label}
+            </Badge>
+          )
+        },
+      },
+      {
+        id: "apps",
+        header: "Apps",
+        align: "center",
+        sortable: true,
+        sortFn: (a, b) =>
+          (appCountMap.get(a.id) || 0) - (appCountMap.get(b.id) || 0),
+        cell: (ipo) => {
+          const count = appCountMap.get(ipo.id) || 0
+          return (
+            <span className="font-mono text-xs font-semibold text-foreground">
+              {count}
+            </span>
+          )
+        },
+      },
+      {
+        id: "cmp",
+        header: "Market / Gain",
+        align: "right",
+        cell: (ipo) => {
+          const cmp = ipo.currentPrice || ipo.listingPrice
+          if (!cmp)
+            return <span className="text-xs text-muted-foreground">—</span>
+          const gainPct = ((cmp - ipo.issuePrice) / ipo.issuePrice) * 100
+          const isPos = gainPct >= 0
+          return (
+            <div className="flex flex-col items-end gap-0.5">
+              <span className="font-mono text-xs font-bold text-foreground">
+                {formatCurrency(cmp)}
+              </span>
+              <span
+                className={`font-mono text-[10px] font-semibold ${
+                  isPos ? "text-success" : "text-destructive"
+                }`}
               >
-                <Trash2 data-icon="inline-start" />
-                Delete IPO
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ], [appCountMap, onEdit, handleToggleArchive])
+                {isPos ? "+" : ""}
+                {gainPct.toFixed(1)}%
+              </span>
+            </div>
+          )
+        },
+      },
+      {
+        id: "actions",
+        header: "",
+        align: "right",
+        cell: (ipo) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="size-7 text-muted-foreground hover:text-foreground"
+                />
+              }
+            >
+              <MoreVertical className="size-3.5" />
+              <span className="sr-only">Actions</span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 text-xs">
+              <DropdownMenuGroup>
+                <DropdownMenuItem render={<Link href={`/ipos/${ipo.id}`} />}>
+                  <ExternalLink data-icon="inline-start" />
+                  View Workspace
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEdit(ipo)}>
+                  <Edit2 data-icon="inline-start" />
+                  Edit IPO
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleToggleArchive(ipo)}>
+                  {ipo.archived ? (
+                    <>
+                      <ArchiveRestore data-icon="inline-start" />
+                      Restore IPO
+                    </>
+                  ) : (
+                    <>
+                      <Archive data-icon="inline-start" />
+                      Archive IPO
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => setIpoToDelete(ipo)}
+                >
+                  <Trash2 data-icon="inline-start" />
+                  Delete IPO
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ),
+      },
+    ],
+    [appCountMap, onEdit, handleToggleArchive]
+  )
 
   return (
     <div className="flex flex-col gap-5">
@@ -380,7 +387,7 @@ export function IpoList({
         </div>
 
         {/* Filters Group + View Toggle */}
-        <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1 max-w-full">
+        <div className="flex max-w-full flex-wrap items-center gap-2 overflow-x-auto pb-1">
           {/* Mainboard vs SME Type Toggle */}
           <ToggleGroup
             value={[typeFilter]}
@@ -434,11 +441,11 @@ export function IpoList({
           </ToggleGroup>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center shrink-0 rounded-none border border-border bg-background p-0.5 h-8">
+          <div className="flex h-8 shrink-0 items-center rounded-none border border-border bg-background p-0.5">
             <button
               type="button"
               onClick={() => setViewMode("grid")}
-              className={`px-2 py-1 text-xs font-semibold flex items-center gap-1 transition-all ${
+              className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold transition-all ${
                 viewMode === "grid"
                   ? "bg-foreground text-background"
                   : "text-muted-foreground hover:text-foreground"
@@ -450,7 +457,7 @@ export function IpoList({
             <button
               type="button"
               onClick={() => setViewMode("table")}
-              className={`px-2 py-1 text-xs font-semibold flex items-center gap-1 transition-all ${
+              className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold transition-all ${
                 viewMode === "table"
                   ? "bg-foreground text-background"
                   : "text-muted-foreground hover:text-foreground"
@@ -503,27 +510,30 @@ export function IpoList({
             return (
               <Card
                 key={ipo.id}
-                className={`relative flex flex-col justify-between border transition-all hover:border-foreground/40 hover:shadow-xs rounded-none ${
-                  ipo.archived ? "opacity-60 bg-muted/20" : "bg-card"
+                className={`relative flex flex-col justify-between rounded-none border transition-all hover:border-foreground/40 hover:shadow-xs ${
+                  ipo.archived ? "bg-muted/20 opacity-60" : "bg-card"
                 }`}
               >
                 <CardContent className="flex flex-col gap-4 p-4.5">
                   {/* Top Bar: Badges & Dropdown Action Menu */}
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                      <Badge variant={variant} className="text-[10px] px-1.5 py-0">
+                    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                      <Badge
+                        variant={variant}
+                        className="px-1.5 py-0 text-[10px]"
+                      >
                         {label}
                       </Badge>
                       <Badge
                         variant={ipo.type === "sme" ? "default" : "secondary"}
-                        className="text-[9px] uppercase px-1.5 py-0 font-mono"
+                        className="px-1.5 py-0 font-mono text-[9px] uppercase"
                       >
                         {ipo.type}
                       </Badge>
                       {appCount > 0 && (
                         <Badge
                           variant="outline"
-                          className="text-[10px] px-1.5 py-0 flex items-center gap-1"
+                          className="flex items-center gap-1 px-1.5 py-0 text-[10px]"
                         >
                           <Layers className="size-2.5" />
                           {appCount} {appCount === 1 ? "App" : "Apps"}
@@ -537,7 +547,7 @@ export function IpoList({
                           <Button
                             variant="ghost"
                             size="icon-xs"
-                            className="size-7 -mr-1.5 -mt-1.5 text-muted-foreground hover:text-foreground"
+                            className="-mt-1.5 -mr-1.5 size-7 text-muted-foreground hover:text-foreground"
                           />
                         }
                       >
@@ -592,12 +602,12 @@ export function IpoList({
                       href={`/ipos/${ipo.id}`}
                       className="group flex items-center gap-1.5"
                     >
-                      <h3 className="font-heading text-sm font-bold tracking-tight text-foreground transition-colors group-hover:underline truncate">
+                      <h3 className="truncate font-heading text-sm font-bold tracking-tight text-foreground transition-colors group-hover:underline">
                         {ipo.name}
                       </h3>
                     </Link>
                     {ipo.companyName && (
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="truncate text-xs text-muted-foreground">
                         {ipo.companyName}
                       </p>
                     )}
@@ -606,18 +616,18 @@ export function IpoList({
                   {/* Issue Metrics Strip */}
                   <div className="grid grid-cols-2 gap-2 border-y border-border/50 py-2.5 text-xs">
                     <div>
-                      <span className="text-[10px] text-muted-foreground block">
+                      <span className="block text-[10px] text-muted-foreground">
                         Issue Price
                       </span>
-                      <span className="font-bold text-foreground font-mono">
+                      <span className="font-mono font-bold text-foreground">
                         {formatCurrency(ipo.issuePrice)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-muted-foreground block">
+                      <span className="block text-[10px] text-muted-foreground">
                         1 Lot ({ipo.lotSize} shares)
                       </span>
-                      <span className="font-bold text-foreground font-mono">
+                      <span className="font-mono font-bold text-foreground">
                         {formatCurrency(lotAmount)}
                       </span>
                     </div>
@@ -631,7 +641,7 @@ export function IpoList({
                         <span className="text-[11px] text-muted-foreground">
                           {ipo.currentPrice ? "CMP" : "Listing"}:
                         </span>
-                        <span className="font-bold text-foreground font-mono">
+                        <span className="font-mono font-bold text-foreground">
                           {formatCurrency(cmp)}
                         </span>
                       </div>
@@ -646,7 +656,7 @@ export function IpoList({
                           {gainPercent >= 0 ? "+" : ""}
                           {gainPercent.toFixed(1)}%
                         </span>
-                        <span className="text-[10px] text-muted-foreground block">
+                        <span className="block text-[10px] text-muted-foreground">
                           ({gainPerLot >= 0 ? "+" : ""}
                           {formatCurrency(gainPerLot)}/lot)
                         </span>
@@ -666,7 +676,7 @@ export function IpoList({
                     <Button
                       size="xs"
                       variant="outline"
-                      className="text-xs h-7"
+                      className="h-7 text-xs"
                       render={<Link href={`/ipos/${ipo.id}`} />}
                     >
                       Workspace

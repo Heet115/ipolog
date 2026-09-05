@@ -95,6 +95,9 @@ function AccountForm({
   const [dematAccount, setDematAccount] = useState(
     accountToEdit?.dematAccount ?? ""
   )
+  const [phoneNumber, setPhoneNumber] = useState(
+    accountToEdit?.phoneNumber ?? ""
+  )
   const [notes, setNotes] = useState(accountToEdit?.notes ?? "")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -118,7 +121,9 @@ function AccountForm({
 
     const cleanPan = pan.trim().toUpperCase()
     if (cleanPan && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPan)) {
-      setError("Please enter a valid 10-character PAN number (e.g. ABCDE1234F).")
+      setError(
+        "Please enter a valid 10-character PAN number (e.g. ABCDE1234F)."
+      )
       return
     }
 
@@ -143,6 +148,7 @@ function AccountForm({
           profitSharePercent: type === "my" ? undefined : parsedPercent,
           pan: cleanPan || null,
           dematAccount: dematAccount.trim() || null,
+          phoneNumber: phoneNumber.trim() || null,
           notes: notes.trim(),
         })
         toast.add({
@@ -156,6 +162,7 @@ function AccountForm({
           profitSharePercent: type === "my" ? undefined : parsedPercent,
           pan: cleanPan || undefined,
           dematAccount: dematAccount.trim() || undefined,
+          phoneNumber: phoneNumber.trim() || undefined,
           notes: notes.trim(),
         })
         toast.add({
@@ -287,6 +294,27 @@ function AccountForm({
             />
           </Field>
         </div>
+
+        {/* Mobile / WhatsApp Number */}
+        <Field>
+          <FieldLabel htmlFor="account-phone">
+            Mobile / WhatsApp Number (Optional)
+          </FieldLabel>
+          <Input
+            id="account-phone"
+            type="tel"
+            placeholder="e.g. 9876543210"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+            disabled={loading}
+            maxLength={10}
+            className="font-mono text-xs"
+          />
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Used to auto-populate WhatsApp settlement messages for this account
+            owner.
+          </p>
+        </Field>
 
         {/* Notes */}
         <Field>

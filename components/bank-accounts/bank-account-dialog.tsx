@@ -84,6 +84,7 @@ function BankAccountForm({
   const [bankName, setBankName] = useState(bankAccountToEdit?.bankName ?? "")
   const [nickname, setNickname] = useState(bankAccountToEdit?.nickname ?? "")
   const [last4, setLast4] = useState(bankAccountToEdit?.last4 ?? "")
+  const [upiId, setUpiId] = useState(bankAccountToEdit?.upiId ?? "")
   const [notes, setNotes] = useState(bankAccountToEdit?.notes ?? "")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -101,6 +102,13 @@ function BankAccountForm({
       return
     }
 
+    if (upiId.trim() && !upiId.includes("@")) {
+      setError(
+        "Please enter a valid UPI ID (e.g. name@upi or mobile@okhdfcbank)."
+      )
+      return
+    }
+
     setError(null)
     setLoading(true)
 
@@ -110,6 +118,7 @@ function BankAccountForm({
           bankName: bankName.trim(),
           nickname: nickname.trim() || undefined,
           last4: last4.trim() || undefined,
+          upiId: upiId.trim() || undefined,
           notes: notes.trim(),
         })
         toast.add({
@@ -121,6 +130,7 @@ function BankAccountForm({
           bankName: bankName.trim(),
           nickname: nickname.trim() || undefined,
           last4: last4.trim() || undefined,
+          upiId: upiId.trim() || undefined,
           notes: notes.trim(),
         })
         toast.add({
@@ -188,12 +198,31 @@ function BankAccountForm({
           </Field>
         </div>
 
+        {/* Linked UPI ID */}
+        <Field>
+          <FieldLabel htmlFor="upi-id">
+            Linked UPI ID (For Settlement Payments)
+          </FieldLabel>
+          <Input
+            id="upi-id"
+            placeholder="e.g. yourname@okhdfcbank, mobile@upi"
+            value={upiId}
+            onChange={(e) => setUpiId(e.target.value)}
+            disabled={loading}
+            className="font-mono"
+          />
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Account owners will be directed to transfer their IPO sale payout to
+            this UPI ID.
+          </p>
+        </Field>
+
         {/* Notes */}
         <Field>
           <FieldLabel htmlFor="bank-notes">Notes (Optional)</FieldLabel>
           <Textarea
             id="bank-notes"
-            placeholder="e.g. Linked UPI ID: name@okhdfcbank..."
+            placeholder="e.g. Branch details, customer ID, or other notes..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={2}

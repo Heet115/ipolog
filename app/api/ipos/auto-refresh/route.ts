@@ -42,9 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!force) {
-      targetIpos = targetIpos.filter((ipo) =>
-        isIpoSyncStale(ipo, maxAgeHours)
-      )
+      targetIpos = targetIpos.filter((ipo) => isIpoSyncStale(ipo, maxAgeHours))
     }
 
     if (targetIpos.length === 0) {
@@ -52,13 +50,15 @@ export async function POST(request: NextRequest) {
         success: true,
         refreshedCount: 0,
         totalChecked: allIpos.length,
-        message: "All imported IPO data is fresh (synced within the last 24 hours).",
+        message:
+          "All imported IPO data is fresh (synced within the last 24 hours).",
       })
     }
 
     // Limit concurrency to maximum 10 IPOs per batch to respect API limits
     const batchToProcess = targetIpos.slice(0, 10)
-    const refreshedIpos: Array<{ id: string; name: string; symbol?: string }> = []
+    const refreshedIpos: Array<{ id: string; name: string; symbol?: string }> =
+      []
     const errors: Array<{ id: string; name: string; error: string }> = []
 
     for (const ipo of batchToProcess) {
@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
           listingDate,
           listingPrice: externalIpo.listingPrice || ipo.listingPrice,
           registrar: externalIpo.registrarName || ipo.registrar,
+          registrarUrl: externalIpo.registrarUrl || ipo.registrarUrl,
           lastSyncedAt: Timestamp.now(),
         })
 
@@ -114,11 +115,15 @@ export async function POST(request: NextRequest) {
           symbol: externalIpo.symbol,
         })
       } catch (itemErr: unknown) {
-        console.error(`Failed to auto-refresh IPO ${ipo.id} (${ipo.name}):`, itemErr)
+        console.error(
+          `Failed to auto-refresh IPO ${ipo.id} (${ipo.name}):`,
+          itemErr
+        )
         errors.push({
           id: ipo.id,
           name: ipo.name,
-          error: itemErr instanceof Error ? itemErr.message : "Unknown sync failure",
+          error:
+            itemErr instanceof Error ? itemErr.message : "Unknown sync failure",
         })
       }
     }

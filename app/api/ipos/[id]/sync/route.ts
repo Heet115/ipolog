@@ -111,6 +111,7 @@ export async function POST(
       listingDate,
       listingPrice: externalIpo.listingPrice || existingIpo.listingPrice,
       registrar: externalIpo.registrarName || existingIpo.registrar,
+      registrarUrl: externalIpo.registrarUrl || existingIpo.registrarUrl,
       lastSyncedAt: Timestamp.now(),
     })
 

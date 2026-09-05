@@ -84,8 +84,7 @@ export function exportIpoApplicationsCsv(
     const bank = bankMap.get(app.bankAccountId)
     const profit = calculateApplicationProfit(app, ipo, account)
 
-    const cat =
-      app.category || inferCategoryFromAmount(app.amountApplied)
+    const cat = app.category || inferCategoryFromAmount(app.amountApplied)
     const catLabel = CATEGORY_CONFIG[cat]?.label || cat
 
     const row = [
@@ -182,8 +181,7 @@ export function exportPortfolioSummaryCsv(
           unrealizedYourProfit: 0,
         }
 
-    const cat =
-      app.category || inferCategoryFromAmount(app.amountApplied)
+    const cat = app.category || inferCategoryFromAmount(app.amountApplied)
     const catLabel = CATEGORY_CONFIG[cat]?.label || cat
 
     const row = [

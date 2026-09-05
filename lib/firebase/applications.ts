@@ -14,14 +14,19 @@ import {
   type Timestamp,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase/firebase"
-import type { Application, ApplicationStatus, ApplicationCategory } from "@/types"
+import type {
+  Application,
+  ApplicationStatus,
+  ApplicationCategory,
+} from "@/types"
 import { inferCategoryFromAmount } from "@/lib/calculations/categories"
 
 function docToApplication(
   docSnap: QueryDocumentSnapshot<DocumentData>
 ): Application {
   const data = docSnap.data()
-  const amountApplied = data.amountApplied != null ? Number(data.amountApplied) : 0
+  const amountApplied =
+    data.amountApplied != null ? Number(data.amountApplied) : 0
   return {
     id: docSnap.id,
     userId: data.userId,

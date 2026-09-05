@@ -25,6 +25,8 @@ function docToBankAccount(
     bankName: data.bankName,
     nickname: data.nickname || "",
     last4: data.last4 || "",
+    upiId: data.upiId || "",
+    asbaLimit: data.asbaLimit != null ? Number(data.asbaLimit) : undefined,
     notes: data.notes || "",
     archived: Boolean(data.archived),
     createdAt: data.createdAt,
@@ -63,6 +65,8 @@ export async function createBankAccount(
     bankName: string
     nickname?: string
     last4?: string
+    upiId?: string
+    asbaLimit?: number
     notes?: string
   }
 ): Promise<string> {
@@ -73,6 +77,11 @@ export async function createBankAccount(
     bankName: data.bankName.trim(),
     nickname: data.nickname?.trim() || "",
     last4: data.last4?.trim() || "",
+    upiId: data.upiId?.trim().toLowerCase() || "",
+    asbaLimit:
+      data.asbaLimit != null && !isNaN(data.asbaLimit)
+        ? Number(data.asbaLimit)
+        : null,
     notes: data.notes?.trim() || "",
     archived: false,
     createdAt: serverTimestamp(),
@@ -92,6 +101,8 @@ export async function updateBankAccount(
     bankName: string
     nickname: string
     last4: string
+    upiId: string
+    asbaLimit: number | null
     notes: string
     archived: boolean
   }>
@@ -105,6 +116,14 @@ export async function updateBankAccount(
   if (data.bankName !== undefined) updatePayload.bankName = data.bankName.trim()
   if (data.nickname !== undefined) updatePayload.nickname = data.nickname.trim()
   if (data.last4 !== undefined) updatePayload.last4 = data.last4.trim()
+  if (data.upiId !== undefined)
+    updatePayload.upiId = data.upiId.trim().toLowerCase()
+  if (data.asbaLimit !== undefined) {
+    updatePayload.asbaLimit =
+      data.asbaLimit != null && !isNaN(data.asbaLimit)
+        ? Number(data.asbaLimit)
+        : null
+  }
   if (data.notes !== undefined) updatePayload.notes = data.notes.trim()
   if (data.archived !== undefined) updatePayload.archived = data.archived
 

@@ -13,15 +13,17 @@ export interface RegistrarInfo {
 export const KNOWN_REGISTRARS: RegistrarInfo[] = [
   {
     id: "linkintime",
-    name: "Link Intime India",
+    name: "MUFG Intime (Link Intime)",
     aliases: [
+      "mufg",
+      "mufg intime",
       "link intime",
       "linkintime",
       "link-intime",
       "in time",
       "intime",
     ],
-    checkUrl: "https://linkintime.co.in/initial_offer/public-issues.html",
+    checkUrl: "https://in.mpms.mufg.com/Initial_Offer/public-issues.html",
     searchModes: ["pan", "appNo", "dpId"],
   },
   {
@@ -35,7 +37,7 @@ export const KNOWN_REGISTRARS: RegistrarInfo[] = [
       "kfin technologies",
       "kfin technologies limited",
     ],
-    checkUrl: "https://kosmic.kfintech.com/ipostatus/",
+    checkUrl: "https://ipostatus.kfintech.com/",
     searchModes: ["pan", "appNo", "dpId"],
   },
   {
@@ -78,11 +80,7 @@ export const KNOWN_REGISTRARS: RegistrarInfo[] = [
   {
     id: "purva",
     name: "Purva Sharegistry",
-    aliases: [
-      "purva",
-      "purvashare",
-      "purva sharegistry",
-    ],
+    aliases: ["purva", "purvashare", "purva sharegistry"],
     checkUrl: "https://www.purvashare.com/queries/",
     searchModes: ["appNo", "pan"],
   },
@@ -100,11 +98,7 @@ export const KNOWN_REGISTRARS: RegistrarInfo[] = [
   {
     id: "integrated",
     name: "Integrated Registry",
-    aliases: [
-      "integrated",
-      "integrated registry",
-      "integrated enterprises",
-    ],
+    aliases: ["integrated", "integrated registry", "integrated enterprises"],
     checkUrl: "https://www.integratedindia.in/",
     searchModes: ["pan", "dpId"],
   },
@@ -119,7 +113,11 @@ export function detectRegistrar(
   if (!registrarText) return null
   const clean = registrarText.toLowerCase().trim()
   for (const reg of KNOWN_REGISTRARS) {
-    if (reg.aliases.some((alias) => clean.includes(alias))) {
+    if (
+      reg.id === clean ||
+      reg.name.toLowerCase() === clean ||
+      reg.aliases.some((alias) => clean.includes(alias))
+    ) {
       return reg
     }
   }
@@ -127,14 +125,56 @@ export function detectRegistrar(
 }
 
 /**
+ * Exchange Allotment Portals (available for all IPOs regardless of registrar)
+ */
+export const BSE_ALLOTMENT_URL =
+  "https://www.bseindia.com/investors/appli_check.aspx"
+export const NSE_ALLOTMENT_URL =
+  "https://www.nseindia.com/invest/check-trades-bids-verify-ipo-bids"
+
+/**
+ * Concise key-value mapping of known registrars and stock exchange allotment portals.
+ */
+export const REGISTRAR_URL_MAP: Record<string, string> = {
+  linkintime: "https://in.mpms.mufg.com/Initial_Offer/public-issues.html",
+  mufg: "https://in.mpms.mufg.com/Initial_Offer/public-issues.html",
+  kfintech: "https://ipostatus.kfintech.com/",
+  bigshare: "https://ipo.bigshareonline.com/",
+  skyline: "https://www.skylinerta.com/ipo.php",
+  cameo: "https://ipo.cameoindia.com/",
+  purva: "https://www.purvashare.com/queries/",
+  maashitla: "https://maashitla.com/allotment-status/public-issues",
+  integrated: "https://www.integratedindia.in/",
+  bse: BSE_ALLOTMENT_URL,
+  nse: NSE_ALLOTMENT_URL,
+}
+
+/**
  * Returns the resolved portal URL for an IPO's registrar.
+ * Always prefers the verified official registry URL when a known registrar is detected,
+ * fixing legacy outdated URLs (e.g. linkintime.co.in -> in.mpms.mufg.com).
  */
 export function getRegistrarPortalUrl(
   registrar?: string | null,
   customUrl?: string | null
 ): string | null {
-  if (customUrl && customUrl.trim()) return customUrl.trim()
-  if (!registrar) return null
   const detected = detectRegistrar(registrar)
-  return detected ? detected.checkUrl : null
+  if (detected) {
+    return detected.checkUrl
+  }
+
+  if (customUrl && customUrl.trim()) {
+    const trimmed = customUrl.trim()
+    const detectedFromUrl = detectRegistrar(trimmed)
+    if (detectedFromUrl) {
+      return detectedFromUrl.checkUrl
+    }
+    // Redirect outdated Link Intime domain to modern MUFG portal
+    if (trimmed.includes("linkintime.co.in")) {
+      return "https://in.mpms.mufg.com/Initial_Offer/public-issues.html"
+    }
+    return trimmed
+  }
+
+  return null
 }

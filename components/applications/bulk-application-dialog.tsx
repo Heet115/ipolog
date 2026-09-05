@@ -510,11 +510,11 @@ function BulkApplicationForm({
   return (
     <div className="flex flex-col gap-4">
       <DialogHeader>
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <DialogTitle className="truncate max-w-md">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <DialogTitle className="max-w-md truncate">
             Record Applications — {ipo.name}
           </DialogTitle>
-          <Badge variant="outline" className="text-xs font-mono">
+          <Badge variant="outline" className="font-mono text-xs">
             Step {step} of 2
           </Badge>
         </div>
@@ -560,7 +560,7 @@ function BulkApplicationForm({
                       <SelectContent>
                         {ALL_CATEGORIES.map((cat) => (
                           <SelectItem key={cat} value={cat}>
-                            <div className="flex items-center justify-between gap-2 w-full">
+                            <div className="flex w-full items-center justify-between gap-2">
                               <span>{CATEGORY_CONFIG[cat].label}</span>
                               <span className="text-[10px] text-muted-foreground">
                                 ({CATEGORY_CONFIG[cat].amountLimitText})
@@ -786,7 +786,8 @@ function BulkApplicationForm({
                 <SelectContent>
                   {ALL_CATEGORIES.map((cat) => (
                     <SelectItem key={cat} value={cat}>
-                      {CATEGORY_CONFIG[cat].label} ({CATEGORY_CONFIG[cat].amountLimitText})
+                      {CATEGORY_CONFIG[cat].label} (
+                      {CATEGORY_CONFIG[cat].amountLimitText})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -853,7 +854,9 @@ function BulkApplicationForm({
 
           {/* Quick Presets Bar */}
           <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-            <span className="font-semibold text-muted-foreground">Quick Presets:</span>
+            <span className="font-semibold text-muted-foreground">
+              Quick Presets:
+            </span>
             <Button
               type="button"
               variant="outline"
@@ -870,7 +873,8 @@ function BulkApplicationForm({
               className="h-6 px-2 text-[10px]"
               onClick={() => applyGlobalCategory("shni")}
             >
-              Min sHNI ({minShniLots} lots • {formatCurrency(minShniLots * oneLotAmount)})
+              Min sHNI ({minShniLots} lots •{" "}
+              {formatCurrency(minShniLots * oneLotAmount)})
             </Button>
             <Button
               type="button"
@@ -879,7 +883,8 @@ function BulkApplicationForm({
               className="h-6 px-2 text-[10px]"
               onClick={() => applyGlobalCategory("bhni")}
             >
-              Min bHNI ({minBhniLots} lots • {formatCurrency(minBhniLots * oneLotAmount)})
+              Min bHNI ({minBhniLots} lots •{" "}
+              {formatCurrency(minBhniLots * oneLotAmount)})
             </Button>
           </div>
 
@@ -887,12 +892,12 @@ function BulkApplicationForm({
           <div className="max-h-[300px] min-w-0 overflow-x-auto overflow-y-auto rounded-none border border-border/80">
             <Table className="min-w-[700px]">
               <TableHeader>
-                <TableRow className="bg-muted/30 border-b border-border/70">
-                  <TableHead className="min-w-[170px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                <TableRow className="border-b border-border/70 bg-muted/30">
+                  <TableHead className="h-9 min-w-[170px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                     <button
                       type="button"
                       onClick={() => toggleSort("account")}
-                      className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                      className="inline-flex items-center gap-1 font-semibold transition-colors hover:text-foreground"
                     >
                       Account
                       {sortColumn === "account" ? (
@@ -906,11 +911,11 @@ function BulkApplicationForm({
                       )}
                     </button>
                   </TableHead>
-                  <TableHead className="min-w-[180px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                  <TableHead className="h-9 min-w-[180px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                     <button
                       type="button"
                       onClick={() => toggleSort("bank")}
-                      className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                      className="inline-flex items-center gap-1 font-semibold transition-colors hover:text-foreground"
                     >
                       Bank Account
                       {sortColumn === "bank" ? (
@@ -924,11 +929,11 @@ function BulkApplicationForm({
                       )}
                     </button>
                   </TableHead>
-                  <TableHead className="w-[120px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                  <TableHead className="h-9 w-[120px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                     <button
                       type="button"
                       onClick={() => toggleSort("category")}
-                      className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                      className="inline-flex items-center gap-1 font-semibold transition-colors hover:text-foreground"
                     >
                       Quota
                       {sortColumn === "category" ? (
@@ -942,11 +947,11 @@ function BulkApplicationForm({
                       )}
                     </button>
                   </TableHead>
-                  <TableHead className="w-[80px] text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                  <TableHead className="h-9 w-[80px] text-center text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                     <button
                       type="button"
                       onClick={() => toggleSort("lots")}
-                      className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors mx-auto"
+                      className="mx-auto inline-flex items-center gap-1 font-semibold transition-colors hover:text-foreground"
                     >
                       Lots
                       {sortColumn === "lots" ? (
@@ -960,14 +965,14 @@ function BulkApplicationForm({
                       )}
                     </button>
                   </TableHead>
-                  <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                  <TableHead className="h-9 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                     Shares
                   </TableHead>
-                  <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+                  <TableHead className="h-9 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                     <button
                       type="button"
                       onClick={() => toggleSort("amount")}
-                      className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors ml-auto flex-row-reverse"
+                      className="ml-auto inline-flex flex-row-reverse items-center gap-1 font-semibold transition-colors hover:text-foreground"
                     >
                       Amount
                       {sortColumn === "amount" ? (
@@ -1036,7 +1041,9 @@ function BulkApplicationForm({
                           <SelectTrigger className="h-7 w-full truncate bg-background text-xs">
                             <SelectValue placeholder="Select bank">
                               {(val) => {
-                                const b = activeBankAccounts.find((acc) => acc.id === val)
+                                const b = activeBankAccounts.find(
+                                  (acc) => acc.id === val
+                                )
                                 return b ? formatBankAccount(b) : "Select bank"
                               }}
                             </SelectValue>
@@ -1066,7 +1073,7 @@ function BulkApplicationForm({
                             <SelectValue>
                               <Badge
                                 variant={CATEGORY_CONFIG[cat].badgeVariant}
-                                className="px-1 py-0 text-[9px] font-mono"
+                                className="px-1 py-0 font-mono text-[9px]"
                               >
                                 {CATEGORY_CONFIG[cat].shortLabel}
                               </Badge>
@@ -1099,7 +1106,7 @@ function BulkApplicationForm({
                           />
                           {!validation.isValid && (
                             <span
-                              className="text-[9px] text-destructive font-medium truncate max-w-[80px]"
+                              className="max-w-[80px] truncate text-[9px] font-medium text-destructive"
                               title={validation.warning}
                             >
                               ⚠️ Out of range

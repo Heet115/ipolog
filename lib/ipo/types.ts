@@ -99,6 +99,8 @@ export interface ExternalIPO {
   totalSubscription?: string
   industry?: string
   registrarName?: string
+  registrarWebsite?: string
+  registrarUrl?: string
   rhpUrl?: string
   drhpUrl?: string
   raw?: Record<string, unknown>

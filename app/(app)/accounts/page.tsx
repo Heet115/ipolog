@@ -49,7 +49,8 @@ export default function AccountsPage() {
       console.error("Failed to load application accounts:", err)
       toast.add({
         title: "Failed to refresh accounts",
-        description: "Could not load the latest accounts data. Please try again.",
+        description:
+          "Could not load the latest accounts data. Please try again.",
         type: "error",
       })
     }

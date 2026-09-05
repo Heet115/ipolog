@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { Timestamp } from "firebase/firestore"
 import { verifyServerAuth } from "@/lib/firebase/server-auth"
 import { upstoxProvider } from "@/lib/ipo"
-import {
-  createIpo,
-  findIpoByExternalId,
-  getIpoById,
-} from "@/lib/firebase/ipos"
+import { createIpo, findIpoByExternalId, getIpoById } from "@/lib/firebase/ipos"
 import { inputValueToTimestamp } from "@/lib/utils/ipo"
 
 export async function POST(request: NextRequest) {
@@ -43,7 +39,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Duplicate prevention: Check if already imported
-    const existingIpo = await findIpoByExternalId(user.uid, provider, externalId)
+    const existingIpo = await findIpoByExternalId(
+      user.uid,
+      provider,
+      externalId
+    )
     if (existingIpo) {
       return NextResponse.json({
         success: true,
@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
       listingDate,
       listingPrice: externalIpo.listingPrice,
       registrar: externalIpo.registrarName,
+      registrarUrl: externalIpo.registrarUrl,
       source: "api",
       provider: "upstox",
       externalId: externalIpo.externalId,

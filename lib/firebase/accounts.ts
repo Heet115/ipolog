@@ -29,6 +29,7 @@ function docToAccount(
       data.profitSharePercent ?? (data.type === "my" ? 0 : 40),
     pan: data.pan || undefined,
     dematAccount: data.dematAccount || undefined,
+    phoneNumber: data.phoneNumber || undefined,
     notes: data.notes || "",
     archived: Boolean(data.archived),
     createdAt: data.createdAt,
@@ -69,6 +70,7 @@ export async function createApplicationAccount(
     profitSharePercent?: number
     pan?: string
     dematAccount?: string
+    phoneNumber?: string
     notes?: string
   }
 ): Promise<string> {
@@ -90,6 +92,7 @@ export async function createApplicationAccount(
 
   if (data.pan) payload.pan = data.pan.trim().toUpperCase()
   if (data.dematAccount) payload.dematAccount = data.dematAccount.trim()
+  if (data.phoneNumber) payload.phoneNumber = data.phoneNumber.trim()
 
   const docRef = await addDoc(accountsRef, payload)
   return docRef.id
@@ -107,6 +110,7 @@ export async function updateApplicationAccount(
     profitSharePercent: number
     pan: string | null
     dematAccount: string | null
+    phoneNumber: string | null
     notes: string
     archived: boolean
   }>
@@ -122,7 +126,13 @@ export async function updateApplicationAccount(
   if (data.pan !== undefined)
     updatePayload.pan = data.pan ? data.pan.trim().toUpperCase() : null
   if (data.dematAccount !== undefined)
-    updatePayload.dematAccount = data.dematAccount ? data.dematAccount.trim() : null
+    updatePayload.dematAccount = data.dematAccount
+      ? data.dematAccount.trim()
+      : null
+  if (data.phoneNumber !== undefined)
+    updatePayload.phoneNumber = data.phoneNumber
+      ? data.phoneNumber.trim()
+      : null
   if (data.profitSharePercent !== undefined) {
     // Determine the effective type: use the incoming type if provided,
     // otherwise read the current type from Firestore to enforce the rule.

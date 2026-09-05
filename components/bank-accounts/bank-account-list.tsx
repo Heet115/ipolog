@@ -140,7 +140,10 @@ export function BankAccountList({
   // Precalculate summaries
   const bankSummaryMap = new Map<string, BankMoneySummary>()
   for (const b of filteredAccounts) {
-    bankSummaryMap.set(b.id, calculateBankMoneySummary(b.id, applications, ipoMap))
+    bankSummaryMap.set(
+      b.id,
+      calculateBankMoneySummary(b.id, applications, ipoMap)
+    )
   }
 
   const tableColumns: DataTableColumn<BankAccount>[] = [
@@ -148,19 +151,20 @@ export function BankAccountList({
       id: "bank",
       header: "Bank Name / Nickname",
       sortable: true,
-      sortFn: (a, b) => (a.nickname || a.bankName).localeCompare(b.nickname || b.bankName),
+      sortFn: (a, b) =>
+        (a.nickname || a.bankName).localeCompare(b.nickname || b.bankName),
       cell: (bank) => (
-        <div className="flex items-center gap-2 min-w-0 max-w-[220px]">
-          <Landmark className="size-3.5 text-muted-foreground shrink-0" />
-          <div className="flex flex-col min-w-0">
+        <div className="flex max-w-[220px] min-w-0 items-center gap-2">
+          <Landmark className="size-3.5 shrink-0 text-muted-foreground" />
+          <div className="flex min-w-0 flex-col">
             <span
-              className="font-bold text-foreground truncate block text-xs"
+              className="block truncate text-xs font-bold text-foreground"
               title={bank.bankName}
             >
               {bank.bankName}
             </span>
             {bank.nickname && (
-              <span className="text-[10px] text-muted-foreground truncate">
+              <span className="truncate text-[10px] text-muted-foreground">
                 {bank.nickname}
               </span>
             )}
@@ -175,6 +179,15 @@ export function BankAccountList({
       cell: (bank) => (
         <span className="font-mono text-xs text-muted-foreground">
           {bank.last4 ? `••${bank.last4}` : "—"}
+        </span>
+      ),
+    },
+    {
+      id: "upiId",
+      header: "Linked UPI",
+      cell: (bank) => (
+        <span className="font-mono text-xs text-foreground">
+          {bank.upiId || "—"}
         </span>
       ),
     },
@@ -265,7 +278,7 @@ export function BankAccountList({
       header: "Notes",
       cell: (bank) => (
         <span
-          className="text-xs text-muted-foreground truncate max-w-[150px] block"
+          className="block max-w-[150px] truncate text-xs text-muted-foreground"
           title={bank.notes}
         >
           {bank.notes || "—"}
@@ -355,11 +368,11 @@ export function BankAccountList({
           )}
 
           {/* View Mode Toggle */}
-          <div className="flex items-center rounded-none border border-border bg-background p-0.5 h-8">
+          <div className="flex h-8 items-center rounded-none border border-border bg-background p-0.5">
             <button
               type="button"
               onClick={() => setViewMode("grid")}
-              className={`px-2 py-1 text-xs font-semibold flex items-center gap-1 transition-all ${
+              className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold transition-all ${
                 viewMode === "grid"
                   ? "bg-foreground text-background"
                   : "text-muted-foreground hover:text-foreground"
@@ -371,7 +384,7 @@ export function BankAccountList({
             <button
               type="button"
               onClick={() => setViewMode("table")}
-              className={`px-2 py-1 text-xs font-semibold flex items-center gap-1 transition-all ${
+              className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold transition-all ${
                 viewMode === "table"
                   ? "bg-foreground text-background"
                   : "text-muted-foreground hover:text-foreground"
@@ -446,7 +459,7 @@ export function BankAccountList({
             </AlertDialogDescription>
             {Boolean(
               bankToDelete &&
-                applications.some((a) => a.bankAccountId === bankToDelete.id)
+              applications.some((a) => a.bankAccountId === bankToDelete.id)
             ) && (
               <p className="mt-2 rounded-none border border-warning/40 bg-warning/10 p-2.5 text-xs font-medium text-warning-foreground">
                 ⚠️ Warning: This bank account is linked to{" "}
@@ -465,7 +478,7 @@ export function BankAccountList({
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
             {Boolean(
               bankToDelete &&
-                applications.some((a) => a.bankAccountId === bankToDelete.id)
+              applications.some((a) => a.bankAccountId === bankToDelete.id)
             ) && (
               <Button
                 variant="outline"
@@ -510,35 +523,36 @@ function BankAccountCard({
 }) {
   return (
     <Card
-      className={`rounded-none border transition-all hover:border-foreground/40 hover:shadow-xs flex flex-col justify-between ${
-        bank.archived ? "opacity-60 bg-muted/20" : "bg-card"
+      className={`flex flex-col justify-between rounded-none border transition-all hover:border-foreground/40 hover:shadow-xs ${
+        bank.archived ? "bg-muted/20 opacity-60" : "bg-card"
       }`}
     >
       <CardContent className="flex flex-col gap-3.5 p-4">
         {/* Header: Bank Name + Nickname + Dropdown */}
         <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-col gap-0.5 min-w-0">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <Landmark className="size-3.5 text-muted-foreground shrink-0" />
-              <h3 className="font-heading text-sm font-bold text-foreground truncate">
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <Landmark className="size-3.5 shrink-0 text-muted-foreground" />
+              <h3 className="truncate font-heading text-sm font-bold text-foreground">
                 {bank.bankName}
               </h3>
               {bank.archived && (
-                <Badge variant="outline" className="text-[9px] py-0 px-1 font-mono shrink-0">
+                <Badge
+                  variant="outline"
+                  className="shrink-0 px-1 py-0 font-mono text-[9px]"
+                >
                   Archived
                 </Badge>
               )}
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {bank.nickname && (
-                <span className="font-medium text-foreground truncate max-w-[120px]">
+                <span className="max-w-[120px] truncate font-medium text-foreground">
                   {bank.nickname}
                 </span>
               )}
               {bank.last4 && (
-                <span className="font-mono text-[11px]">
-                  ••{bank.last4}
-                </span>
+                <span className="font-mono text-[11px]">••{bank.last4}</span>
               )}
               {summary.totalApplicationsCount > 0 && (
                 <span className="font-mono text-[10px]">
@@ -546,6 +560,14 @@ function BankAccountCard({
                 </span>
               )}
             </div>
+            {bank.upiId && (
+              <span
+                className="max-w-[220px] truncate font-mono text-[11px] text-primary"
+                title={`Linked UPI: ${bank.upiId}`}
+              >
+                UPI: {bank.upiId}
+              </span>
+            )}
           </div>
 
           <DropdownMenu>
@@ -554,7 +576,7 @@ function BankAccountCard({
                 <Button
                   variant="ghost"
                   size="icon-xs"
-                  className="size-7 -mr-1.5 -mt-1.5 text-muted-foreground hover:text-foreground"
+                  className="-mt-1.5 -mr-1.5 size-7 text-muted-foreground hover:text-foreground"
                 />
               }
             >
@@ -595,18 +617,18 @@ function BankAccountCard({
         {/* Money Metrics Strip */}
         <div className="grid grid-cols-2 gap-2 border-y border-border/50 py-2.5 text-xs">
           <div>
-            <span className="text-[10px] text-muted-foreground block">
+            <span className="block text-[10px] text-muted-foreground">
               Blocked (Active)
             </span>
-            <span className="font-bold text-foreground font-mono">
+            <span className="font-mono font-bold text-foreground">
               {formatCurrency(summary.blockedAmount)}
             </span>
           </div>
           <div>
-            <span className="text-[10px] text-muted-foreground block">
+            <span className="block text-[10px] text-muted-foreground">
               Invested (Allotted)
             </span>
-            <span className="font-bold text-foreground font-mono">
+            <span className="font-mono font-bold text-foreground">
               {formatCurrency(summary.investedAmount)}
             </span>
           </div>
@@ -614,19 +636,17 @@ function BankAccountCard({
 
         {/* Total Capital Committed */}
         <div className="flex items-center justify-between rounded-none border border-border/60 bg-muted/20 px-2.5 py-1.5 text-xs">
-          <span className="text-[11px] text-muted-foreground font-medium">
+          <span className="text-[11px] font-medium text-muted-foreground">
             Total Active Funds:
           </span>
-          <span className="font-bold font-mono text-foreground">
-            {formatCurrency(
-              summary.blockedAmount + summary.investedAmount
-            )}
+          <span className="font-mono font-bold text-foreground">
+            {formatCurrency(summary.blockedAmount + summary.investedAmount)}
           </span>
         </div>
 
         {/* Notes (if any) */}
         {bank.notes && (
-          <p className="text-[11px] text-muted-foreground italic truncate">
+          <p className="truncate text-[11px] text-muted-foreground italic">
             {bank.notes}
           </p>
         )}

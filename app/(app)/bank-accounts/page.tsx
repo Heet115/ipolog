@@ -48,7 +48,8 @@ export default function BankAccountsPage() {
       console.error("Failed to load bank accounts data:", err)
       toast.add({
         title: "Failed to refresh bank accounts",
-        description: "Could not load the latest bank accounts data. Please try again.",
+        description:
+          "Could not load the latest bank accounts data. Please try again.",
         type: "error",
       })
     }

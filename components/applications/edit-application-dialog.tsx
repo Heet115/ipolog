@@ -276,14 +276,12 @@ function EditApplicationForm({
                 }
               >
                 <SelectTrigger className="h-8 w-full bg-background text-xs">
-                  <SelectValue>
-                    {CATEGORY_CONFIG[category].label}
-                  </SelectValue>
+                  <SelectValue>{CATEGORY_CONFIG[category].label}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {ALL_CATEGORIES.map((cat) => (
                     <SelectItem key={cat} value={cat}>
-                      <div className="flex items-center justify-between gap-2 w-full">
+                      <div className="flex w-full items-center justify-between gap-2">
                         <span>{CATEGORY_CONFIG[cat].label}</span>
                         <span className="text-[10px] text-muted-foreground">
                           ({CATEGORY_CONFIG[cat].amountLimitText})
@@ -340,7 +338,7 @@ function EditApplicationForm({
                 disabled={loading}
               />
               {!categoryValidation.isValid && (
-                <span className="text-[10px] text-destructive font-medium mt-1 block">
+                <span className="mt-1 block text-[10px] font-medium text-destructive">
                   ⚠️ {categoryValidation.warning}
                 </span>
               )}

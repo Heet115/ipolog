@@ -1,8 +1,5 @@
-import type {
-  ExternalIPO,
-  UpstoxIpoDetail,
-  UpstoxIpoListItem,
-} from "./types"
+import type { ExternalIPO, UpstoxIpoDetail, UpstoxIpoListItem } from "./types"
+import { getRegistrarPortalUrl } from "@/lib/utils/registrars"
 
 /**
  * Normalizes an external issue type to IPOLog standard type ("mainboard" | "sme").
@@ -57,9 +54,7 @@ export function deriveCompanyName(name: string): string {
 /**
  * Normalizes an Upstox list item into an ExternalIPO.
  */
-export function normalizeUpstoxListItem(
-  item: UpstoxIpoListItem
-): ExternalIPO {
+export function normalizeUpstoxListItem(item: UpstoxIpoListItem): ExternalIPO {
   const minPrice = parseNumeric(item.minimum_price)
   const maxPrice = parseNumeric(item.maximum_price)
   const issuePrice = maxPrice > 0 ? maxPrice : minPrice > 0 ? minPrice : 0
@@ -90,9 +85,7 @@ export function normalizeUpstoxListItem(
 /**
  * Normalizes an Upstox detailed IPO response into an ExternalIPO.
  */
-export function normalizeUpstoxDetail(
-  detail: UpstoxIpoDetail
-): ExternalIPO {
+export function normalizeUpstoxDetail(detail: UpstoxIpoDetail): ExternalIPO {
   const minPrice = parseNumeric(detail.minimum_price)
   const maxPrice = parseNumeric(detail.maximum_price)
   const cutoffPrice = parseNumeric(detail.cut_off_price)
@@ -149,7 +142,17 @@ export function normalizeUpstoxDetail(
     listingPrice: listingPrice > 0 ? listingPrice : undefined,
     totalSubscription: detail.total_subscription || undefined,
     industry: detail.industry?.trim() || undefined,
-    registrarName: detail.registrar_info?.name?.trim() || undefined,
+    registrarName:
+      detail.registrar_info?.name?.trim() ||
+      detail.registrar_info?.registrar?.trim() ||
+      undefined,
+    registrarWebsite: detail.registrar_info?.website?.trim() || undefined,
+    registrarUrl:
+      getRegistrarPortalUrl(
+        detail.registrar_info?.name?.trim() ||
+          detail.registrar_info?.registrar?.trim(),
+        detail.registrar_info?.website?.trim()
+      ) || undefined,
     rhpUrl: detail.rhp_url?.trim() || undefined,
     drhpUrl: detail.drhp_url?.trim() || undefined,
     raw: detail as unknown as Record<string, unknown>,

@@ -225,5 +225,3 @@ export function formatSyncFreshness(
   const diffDays = Math.floor(diffHours / 24)
   return `${diffDays}d ago`
 }
-
-

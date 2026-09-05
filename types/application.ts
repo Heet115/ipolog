@@ -3,11 +3,7 @@ import { Timestamp } from "firebase/firestore"
 export type ApplicationStatus = "pending" | "allotted" | "not_allotted" | "sold"
 
 export type ApplicationCategory =
-  | "retail"
-  | "shni"
-  | "bhni"
-  | "shareholder"
-  | "employee"
+  "retail" | "shni" | "bhni" | "shareholder" | "employee"
 
 export interface Application {
   id: string

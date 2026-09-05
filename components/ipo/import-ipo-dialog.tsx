@@ -237,8 +237,8 @@ export function ImportIpoDialog({
                   Import IPO from Upstox
                 </DialogTitle>
                 <DialogDescription className="text-xs">
-                  Browse official upcoming, open, and closed IPOs and import them
-                  into your tracker
+                  Browse official upcoming, open, and closed IPOs and import
+                  them into your tracker
                 </DialogDescription>
               </div>
             </div>
@@ -301,7 +301,7 @@ export function ImportIpoDialog({
           </div>
 
           {/* Status Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 max-w-full">
+          <div className="flex max-w-full items-center gap-1 overflow-x-auto pb-1">
             {[
               { id: "open" as const, label: "Open Now", icon: CircleDot },
               { id: "upcoming" as const, label: "Upcoming", icon: Calendar },
@@ -314,7 +314,7 @@ export function ImportIpoDialog({
                 <button
                   key={tab.id}
                   onClick={() => setStatus(tab.id)}
-                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-none px-3 py-1 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-none px-3 py-1 text-xs font-semibold tracking-wider uppercase transition-colors ${
                     isActive
                       ? "border-b-2 border-primary bg-primary/10 text-primary"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -421,7 +421,7 @@ export function ImportIpoDialog({
                           variant={
                             ipo.type === "mainboard" ? "default" : "secondary"
                           }
-                          className="text-[10px] uppercase font-bold"
+                          className="text-[10px] font-bold uppercase"
                         >
                           {ipo.type === "mainboard" ? "Mainboard" : "SME"}
                         </Badge>
@@ -442,7 +442,7 @@ export function ImportIpoDialog({
                       {/* Pricing & Dates Metadata */}
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-xs">
                         {/* Price Band */}
-                        <div className="flex items-center gap-1 text-foreground font-semibold">
+                        <div className="flex items-center gap-1 font-semibold text-foreground">
                           <IndianRupee className="size-3 text-muted-foreground" />
                           {ipo.priceBandMin && ipo.priceBandMax
                             ? ipo.priceBandMin === ipo.priceBandMax
@@ -476,7 +476,7 @@ export function ImportIpoDialog({
                         {/* Subscription */}
                         {ipo.totalSubscription &&
                           parseFloat(ipo.totalSubscription) > 0 && (
-                            <span className="font-semibold font-mono text-primary">
+                            <span className="font-mono font-semibold text-primary">
                               Sub: {ipo.totalSubscription}x
                             </span>
                           )}

@@ -9,7 +9,8 @@ export interface CategoryMetadata {
   shortLabel: string
   description: string
   amountLimitText: string
-  badgeVariant: "default" | "secondary" | "outline" | "info" | "warning" | "success"
+  badgeVariant:
+    "default" | "secondary" | "outline" | "info" | "warning" | "success"
 }
 
 export const CATEGORY_CONFIG: Record<ApplicationCategory, CategoryMetadata> = {
@@ -25,7 +26,8 @@ export const CATEGORY_CONFIG: Record<ApplicationCategory, CategoryMetadata> = {
     id: "shni",
     label: "sHNI (Small HNI)",
     shortLabel: "sHNI",
-    description: "Small High Net-worth Individual — bids from ₹2,00,000 to ₹5,00,000",
+    description:
+      "Small High Net-worth Individual — bids from ₹2,00,000 to ₹5,00,000",
     amountLimitText: "₹2L – ₹5L",
     badgeVariant: "default",
   },

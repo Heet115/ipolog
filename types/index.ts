@@ -2,4 +2,8 @@ export type { Ipo, IpoType, IpoStatus } from "./ipo"
 export type { ApplicationAccount, AccountType } from "./account"
 export type { BankAccount } from "./bank-account"
 export { formatBankAccount } from "./bank-account"
-export type { Application, ApplicationStatus, ApplicationCategory } from "./application"
+export type {
+  Application,
+  ApplicationStatus,
+  ApplicationCategory,
+} from "./application"

@@ -7,6 +7,8 @@ export interface BankAccount {
   bankName: string
   nickname?: string
   last4?: string
+  upiId?: string
+  asbaLimit?: number
 
   notes?: string
 

@@ -7,7 +7,11 @@ import { toast } from "@/components/ui/toast"
 const AUTO_REFRESH_CHECK_KEY = "ipolog_last_auto_refresh_check"
 const CHECK_INTERVAL_MS = 30 * 60 * 1000 // Check at most once every 30 minutes per browser session
 
-export function AutoRefreshProvider({ children }: { children: React.ReactNode }) {
+export function AutoRefreshProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const { user } = useAuth()
   const isRefreshingRef = useRef(false)
 

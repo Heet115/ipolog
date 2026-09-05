@@ -35,6 +35,7 @@ interface RecordSaleDialogProps {
   ipo: Ipo
   application: Application | null
   account?: ApplicationAccount
+  onOpenSettlement?: (application: Application) => void
   onSuccess: () => void
 }
 
@@ -45,6 +46,7 @@ export function RecordSaleDialog({
   ipo,
   application,
   account,
+  onOpenSettlement,
   onSuccess,
 }: RecordSaleDialogProps) {
   return (
@@ -67,6 +69,7 @@ export function RecordSaleDialog({
             ipo={ipo}
             application={application}
             account={account}
+            onOpenSettlement={onOpenSettlement}
             onCancel={() => onOpenChange(false)}
             onSuccess={() => {
               onOpenChange(false)
@@ -84,6 +87,7 @@ function RecordSaleForm({
   ipo,
   application,
   account,
+  onOpenSettlement,
   onCancel,
   onSuccess,
 }: {
@@ -91,6 +95,7 @@ function RecordSaleForm({
   ipo: Ipo
   application: Application
   account?: ApplicationAccount
+  onOpenSettlement?: (app: Application) => void
   onCancel: () => void
   onSuccess: () => void
 }) {
@@ -183,6 +188,20 @@ function RecordSaleForm({
         type: "success",
       })
       onSuccess()
+      if (
+        onOpenSettlement &&
+        (account?.type === "other" || (account?.profitSharePercent ?? 0) > 0)
+      ) {
+        onOpenSettlement({
+          ...application,
+          status: "sold",
+          salePrice: numSalePrice,
+          sharesSold: numSharesSold,
+          saleDate: saleDate
+            ? Timestamp.fromDate(saleDate)
+            : application.saleDate,
+        })
+      }
     } catch (err: unknown) {
       console.error(err)
       setError("Failed to record sale. Please try again.")

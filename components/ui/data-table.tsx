@@ -111,13 +111,11 @@ export function DataTable<TData>({
 }: DataTableProps<TData>) {
   const [searchTerm, setSearchTerm] = React.useState("")
   const [sortColumnId, setSortColumnId] = React.useState<string | null>(null)
-  const [sortDirection, setSortDirection] = React.useState<"asc" | "desc" | null>(
-    null
-  )
+  const [sortDirection, setSortDirection] = React.useState<
+    "asc" | "desc" | null
+  >(null)
   const [currentPage, setCurrentPage] = React.useState(1)
-  const [currentPageSize, setCurrentPageSize] = React.useState(
-    pageSize || 10
-  )
+  const [currentPageSize, setCurrentPageSize] = React.useState(pageSize || 10)
 
   // Filtering
   const filteredData = React.useMemo(() => {
@@ -219,13 +217,12 @@ export function DataTable<TData>({
     allPageIds.length > 0 &&
     Boolean(selectedIds && allPageIds.every((id) => selectedIds.includes(id)))
 
-  const isSomeSelected =
-    Boolean(
-      selectedIds &&
-        selectedIds.length > 0 &&
-        allPageIds.some((id) => selectedIds.includes(id)) &&
-        !isAllSelected
-    )
+  const isSomeSelected = Boolean(
+    selectedIds &&
+    selectedIds.length > 0 &&
+    allPageIds.some((id) => selectedIds.includes(id)) &&
+    !isAllSelected
+  )
 
   const toggleSelectAll = () => {
     if (!onSelectionChange) return
@@ -251,15 +248,18 @@ export function DataTable<TData>({
   }
 
   return (
-    <div className={cn("flex flex-col gap-3 min-w-0 w-full", className)}>
+    <div className={cn("flex w-full min-w-0 flex-col gap-3", className)}>
       {/* Top Toolbar (Search, Filter Pills, Batch Actions, Right Slot) */}
-      {(searchable || filterPills || toolbarRight || (selectable && selectedIds && selectedIds.length > 0)) && (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+      {(searchable ||
+        filterPills ||
+        toolbarRight ||
+        (selectable && selectedIds && selectedIds.length > 0)) && (
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           {/* Left: Search & Filter Pills */}
-          <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
             {searchable && (
               <div className="relative w-full sm:w-64">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder={searchPlaceholder}
                   value={searchTerm}
@@ -267,7 +267,7 @@ export function DataTable<TData>({
                     setSearchTerm(e.target.value)
                     setCurrentPage(1)
                   }}
-                  className="h-8 pl-8 pr-7 text-xs bg-background"
+                  className="h-8 bg-background pr-7 pl-8 text-xs"
                 />
                 {searchTerm && (
                   <button
@@ -276,7 +276,7 @@ export function DataTable<TData>({
                       setSearchTerm("")
                       setCurrentPage(1)
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     <X className="size-3" />
                   </button>
@@ -286,25 +286,27 @@ export function DataTable<TData>({
 
             {/* Filter Pills */}
             {filterPills && filterPills.length > 0 && (
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex flex-wrap items-center gap-1.5">
                 {filterPills.map((pill) => (
                   <button
                     key={pill.id}
                     type="button"
                     onClick={pill.onToggle}
                     className={cn(
-                      "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold border transition-all rounded-none",
+                      "inline-flex items-center gap-1.5 rounded-none border px-2.5 py-1 text-xs font-semibold transition-all",
                       pill.active
-                        ? "bg-foreground text-background border-foreground"
-                        : "bg-background text-muted-foreground border-border hover:text-foreground hover:bg-muted/40"
+                        ? "border-foreground bg-foreground text-background"
+                        : "border-border bg-background text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                     )}
                   >
                     <span>{pill.label}</span>
                     {pill.count !== undefined && (
                       <span
                         className={cn(
-                          "text-[10px] font-mono",
-                          pill.active ? "text-background/80" : "text-muted-foreground"
+                          "font-mono text-[10px]",
+                          pill.active
+                            ? "text-background/80"
+                            : "text-muted-foreground"
                         )}
                       >
                         ({pill.count})
@@ -317,8 +319,11 @@ export function DataTable<TData>({
           </div>
 
           {/* Right: Batch Actions or Toolbar Right */}
-          <div className="flex items-center gap-2 justify-end shrink-0">
-            {selectable && selectedIds && selectedIds.length > 0 && batchActions ? (
+          <div className="flex shrink-0 items-center justify-end gap-2">
+            {selectable &&
+            selectedIds &&
+            selectedIds.length > 0 &&
+            batchActions ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-foreground">
                   {selectedIds.length} selected
@@ -339,7 +344,7 @@ export function DataTable<TData>({
       {/* Main Table Container */}
       <div
         className={cn(
-          "rounded-none overflow-x-auto min-w-0 bg-card",
+          "min-w-0 overflow-x-auto rounded-none bg-card",
           bordered && "border border-border/80"
         )}
       >
@@ -347,7 +352,7 @@ export function DataTable<TData>({
           <TableHeader className="bg-muted/30">
             <TableRow className="border-b border-border/70 hover:bg-transparent">
               {selectable && (
-                <TableHead className="w-10 text-center px-2">
+                <TableHead className="w-10 px-2 text-center">
                   <Checkbox
                     checked={isAllSelected}
                     indeterminate={isSomeSelected}
@@ -359,13 +364,18 @@ export function DataTable<TData>({
 
               {columns.map((col) => {
                 const isSorted = sortColumnId === col.id
-                const isSortable = col.sortable !== false && (col.sortable || col.sortFn || col.accessorKey || col.accessorFn)
+                const isSortable =
+                  col.sortable !== false &&
+                  (col.sortable ||
+                    col.sortFn ||
+                    col.accessorKey ||
+                    col.accessorFn)
 
                 return (
                   <TableHead
                     key={col.id}
                     className={cn(
-                      "text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9",
+                      "h-9 text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none",
                       col.align === "right" && "text-right",
                       col.align === "center" && "text-center",
                       col.headClassName
@@ -376,7 +386,7 @@ export function DataTable<TData>({
                         type="button"
                         onClick={() => handleToggleSort(col.id)}
                         className={cn(
-                          "inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors",
+                          "inline-flex items-center gap-1 font-semibold transition-colors hover:text-foreground",
                           col.align === "right" && "ml-auto flex-row-reverse",
                           col.align === "center" && "mx-auto",
                           isSorted && "text-foreground"
@@ -417,13 +427,13 @@ export function DataTable<TData>({
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i} className="animate-pulse">
                   {selectable && (
-                    <TableCell className="text-center p-3">
-                      <div className="size-4 bg-muted/60 mx-auto" />
+                    <TableCell className="p-3 text-center">
+                      <div className="mx-auto size-4 bg-muted/60" />
                     </TableCell>
                   )}
                   {columns.map((col) => (
                     <TableCell key={col.id} className="p-3">
-                      <div className="h-4 bg-muted/60 w-3/4" />
+                      <div className="h-4 w-3/4 bg-muted/60" />
                     </TableCell>
                   ))}
                 </TableRow>
@@ -434,7 +444,7 @@ export function DataTable<TData>({
                   colSpan={columns.length + (selectable ? 1 : 0)}
                   className="py-12 text-center"
                 >
-                  <Empty className="p-0 border-0">
+                  <Empty className="border-0 p-0">
                     <EmptyHeader>
                       {emptyIcon && <EmptyMedia>{emptyIcon}</EmptyMedia>}
                       <EmptyTitle>{emptyTitle}</EmptyTitle>
@@ -456,12 +466,12 @@ export function DataTable<TData>({
                     key={rowKey}
                     data-state={isSelected ? "selected" : undefined}
                     className={cn(
-                      "transition-colors border-b border-border/40",
+                      "border-b border-border/40 transition-colors",
                       isSelected && "bg-muted/40"
                     )}
                   >
                     {selectable && (
-                      <TableCell className="text-center px-2">
+                      <TableCell className="px-2 text-center">
                         <Checkbox
                           checked={isSelected}
                           onCheckedChange={() => toggleSelectRow(rowKey)}
@@ -486,7 +496,7 @@ export function DataTable<TData>({
                         <TableCell
                           key={col.id}
                           className={cn(
-                            "text-xs py-2.5",
+                            "py-2.5 text-xs",
                             col.align === "right" && "text-right",
                             col.align === "center" && "text-center",
                             col.className
@@ -509,7 +519,7 @@ export function DataTable<TData>({
 
       {/* Pagination Footer */}
       {pageSize && totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-muted-foreground pt-1">
+        <div className="flex flex-col gap-2 pt-1 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <div>
             Showing{" "}
             <strong>
@@ -521,7 +531,7 @@ export function DataTable<TData>({
 
           <div className="flex items-center gap-1.5 self-end sm:self-auto">
             {pageSizeOptions.length > 1 && (
-              <div className="flex items-center gap-1 mr-2 text-[11px]">
+              <div className="mr-2 flex items-center gap-1 text-[11px]">
                 <span>Rows:</span>
                 <select
                   value={currentPageSize}
@@ -529,7 +539,7 @@ export function DataTable<TData>({
                     setCurrentPageSize(Number(e.target.value))
                     setCurrentPage(1)
                   }}
-                  className="h-7 border border-border bg-background px-1 text-xs rounded-none outline-none"
+                  className="h-7 rounded-none border border-border bg-background px-1 text-xs outline-none"
                 >
                   {pageSizeOptions.map((opt) => (
                     <option key={opt} value={opt}>
@@ -559,7 +569,7 @@ export function DataTable<TData>({
               <ChevronLeft className="size-3.5" />
             </Button>
 
-            <span className="px-2 font-mono text-foreground font-semibold">
+            <span className="px-2 font-mono font-semibold text-foreground">
               {currentPage} / {totalPages}
             </span>
 

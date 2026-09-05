@@ -9,8 +9,13 @@ import {
   Layers,
   Calendar,
   Landmark,
+  MessageSquare,
 } from "lucide-react"
-import { DataTable, type DataTableColumn, type DataTableFilterPill } from "@/components/ui/data-table"
+import {
+  DataTable,
+  type DataTableColumn,
+  type DataTableFilterPill,
+} from "@/components/ui/data-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -55,6 +60,7 @@ interface ApplicationTableProps {
   userId: string
   onEdit: (application: Application) => void
   onRecordSale: (application: Application) => void
+  onWhatsAppSettlement?: (application: Application) => void
   onRefresh: () => void
 }
 
@@ -66,6 +72,7 @@ export function ApplicationTable({
   userId,
   onEdit,
   onRecordSale,
+  onWhatsAppSettlement,
   onRefresh,
 }: ApplicationTableProps) {
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -120,10 +127,7 @@ export function ApplicationTable({
         )
       case "sold":
         return (
-          <Badge
-            variant="info"
-            className="px-1.5 py-0 text-[10px] font-normal"
-          >
+          <Badge variant="info" className="px-1.5 py-0 text-[10px] font-normal">
             Sold
           </Badge>
         )
@@ -142,8 +146,12 @@ export function ApplicationTable({
 
   // Filter pills counts
   const pendingCount = applications.filter((a) => a.status === "pending").length
-  const allottedCount = applications.filter((a) => a.status === "allotted").length
-  const notAllottedCount = applications.filter((a) => a.status === "not_allotted").length
+  const allottedCount = applications.filter(
+    (a) => a.status === "allotted"
+  ).length
+  const notAllottedCount = applications.filter(
+    (a) => a.status === "not_allotted"
+  ).length
   const soldCount = applications.filter((a) => a.status === "sold").length
 
   const filterPills: DataTableFilterPill[] = [
@@ -159,21 +167,26 @@ export function ApplicationTable({
       label: "Pending",
       count: pendingCount,
       active: statusFilter === "pending",
-      onToggle: () => setStatusFilter(statusFilter === "pending" ? "all" : "pending"),
+      onToggle: () =>
+        setStatusFilter(statusFilter === "pending" ? "all" : "pending"),
     },
     {
       id: "allotted",
       label: "Allotted",
       count: allottedCount,
       active: statusFilter === "allotted",
-      onToggle: () => setStatusFilter(statusFilter === "allotted" ? "all" : "allotted"),
+      onToggle: () =>
+        setStatusFilter(statusFilter === "allotted" ? "all" : "allotted"),
     },
     {
       id: "not_allotted",
       label: "Not Allotted",
       count: notAllottedCount,
       active: statusFilter === "not_allotted",
-      onToggle: () => setStatusFilter(statusFilter === "not_allotted" ? "all" : "not_allotted"),
+      onToggle: () =>
+        setStatusFilter(
+          statusFilter === "not_allotted" ? "all" : "not_allotted"
+        ),
     },
     {
       id: "sold",
@@ -190,8 +203,14 @@ export function ApplicationTable({
   })
 
   // Aggregate stats for footer
-  const totalLots = filteredApplications.reduce((sum, a) => sum + a.lotsApplied, 0)
-  const totalAmount = filteredApplications.reduce((sum, a) => sum + a.amountApplied, 0)
+  const totalLots = filteredApplications.reduce(
+    (sum, a) => sum + a.lotsApplied,
+    0
+  )
+  const totalAmount = filteredApplications.reduce(
+    (sum, a) => sum + a.amountApplied,
+    0
+  )
 
   const columns: DataTableColumn<Application>[] = [
     {
@@ -206,17 +225,17 @@ export function ApplicationTable({
       cell: (app) => {
         const account = accountMap.get(app.accountId)
         return (
-          <div className="flex flex-col gap-0.5 min-w-0 max-w-[220px]">
-            <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex max-w-[220px] min-w-0 flex-col gap-0.5">
+            <div className="flex min-w-0 items-center gap-1.5">
               <span
-                className="font-bold text-foreground truncate block text-xs"
+                className="block truncate text-xs font-bold text-foreground"
                 title={account?.name || "Unknown"}
               >
                 {account?.name || "Unknown"}
               </span>
               <Badge
                 variant={account?.type === "my" ? "secondary" : "default"}
-                className="text-[9px] py-0 px-1 font-normal shrink-0"
+                className="shrink-0 px-1 py-0 text-[9px] font-normal"
               >
                 {account?.type === "my"
                   ? "My"
@@ -224,7 +243,7 @@ export function ApplicationTable({
               </Badge>
             </div>
             {app.applicationDate && (
-              <span className="text-[10px] text-muted-foreground flex items-center gap-1 font-mono">
+              <span className="flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
                 <Calendar className="size-2.5" />
                 {formatDate(app.applicationDate)}
               </span>
@@ -245,9 +264,11 @@ export function ApplicationTable({
       cell: (app) => {
         const bank = bankMap.get(app.bankAccountId)
         return (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground truncate max-w-[180px]">
+          <div className="flex max-w-[180px] items-center gap-1 truncate text-xs text-muted-foreground">
             <Landmark className="size-3 shrink-0" />
-            <span className="truncate">{bank ? formatBankAccount(bank) : "—"}</span>
+            <span className="truncate">
+              {bank ? formatBankAccount(bank) : "—"}
+            </span>
           </div>
         )
       },
@@ -268,7 +289,7 @@ export function ApplicationTable({
         return (
           <Badge
             variant={meta.badgeVariant}
-            className="px-1.5 py-0 text-[10px] font-mono"
+            className="px-1.5 py-0 font-mono text-[10px]"
             title={`${meta.label} (${meta.amountLimitText})`}
           >
             {meta.shortLabel}
@@ -283,7 +304,7 @@ export function ApplicationTable({
       sortable: true,
       sortFn: (a, b) => a.lotsApplied - b.lotsApplied,
       cell: (app) => (
-        <span className="font-mono font-semibold text-foreground text-xs">
+        <span className="font-mono text-xs font-semibold text-foreground">
           {app.lotsApplied}
         </span>
       ),
@@ -295,7 +316,7 @@ export function ApplicationTable({
       sortable: true,
       sortFn: (a, b) => a.sharesApplied - b.sharesApplied,
       cell: (app) => (
-        <span className="font-mono text-muted-foreground text-xs">
+        <span className="font-mono text-xs text-muted-foreground">
           {app.sharesApplied}
         </span>
       ),
@@ -307,7 +328,7 @@ export function ApplicationTable({
       sortable: true,
       sortFn: (a, b) => a.amountApplied - b.amountApplied,
       cell: (app) => (
-        <span className="font-mono font-bold text-foreground text-xs">
+        <span className="font-mono text-xs font-bold text-foreground">
           {formatCurrency(app.amountApplied)}
         </span>
       ),
@@ -332,11 +353,11 @@ export function ApplicationTable({
           const currPrice = ipo.currentPrice || ipo.listingPrice
           return (
             <div className="flex flex-col items-end gap-0.5">
-              <span className="font-semibold text-foreground text-xs">
+              <span className="text-xs font-semibold text-foreground">
                 {shares} sh ({app.allottedLots || 1} lot)
               </span>
               {currPrice && (
-                <span className="text-[10px] text-success font-semibold font-mono">
+                <span className="font-mono text-[10px] font-semibold text-success">
                   CMP: {formatCurrency(currPrice)}
                 </span>
               )}
@@ -348,11 +369,11 @@ export function ApplicationTable({
           const profit = calculateApplicationProfit(app, ipo, account)
           return (
             <div className="flex flex-col items-end gap-0.5">
-              <span className="font-bold text-success text-xs font-mono">
+              <span className="font-mono text-xs font-bold text-success">
                 {formatCurrency(profit.realizedYourProfit)}
               </span>
               {profit.realizedProfitShared > 0 && (
-                <span className="text-[10px] text-muted-foreground font-mono">
+                <span className="font-mono text-[10px] text-muted-foreground">
                   Shared: {formatCurrency(profit.realizedProfitShared)}
                 </span>
               )}
@@ -362,13 +383,13 @@ export function ApplicationTable({
 
         if (app.status === "not_allotted") {
           return (
-            <span className="text-[11px] text-muted-foreground font-mono">
+            <span className="font-mono text-[11px] text-muted-foreground">
               Refund: {formatCurrency(app.amountApplied)}
             </span>
           )
         }
 
-        return <span className="text-muted-foreground text-xs">—</span>
+        return <span className="text-xs text-muted-foreground">—</span>
       },
     },
     {
@@ -377,52 +398,84 @@ export function ApplicationTable({
       align: "right",
       sortable: false,
       cell: (app) => {
+        const canSettle =
+          (app.status === "allotted" || app.status === "sold") &&
+          Boolean(onWhatsAppSettlement)
+
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  className="size-7 text-muted-foreground hover:text-foreground"
-                />
-              }
-            >
-              <MoreVertical className="size-3.5" />
-              <span className="sr-only">Actions</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44 text-xs">
-              <DropdownMenuGroup>
-                {(app.status === "allotted" || app.status === "sold") && (
-                  <DropdownMenuItem onClick={() => onRecordSale(app)}>
-                    <TrendingUp data-icon="inline-start" />
-                    {app.status === "sold" ? "Edit Sale Details" : "Record Sale"}
+          <div className="flex items-center justify-end gap-1">
+            {canSettle && (
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => onWhatsAppSettlement?.(app)}
+                className="size-7 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500"
+                title="WhatsApp Settlement Report"
+              >
+                <MessageSquare className="size-3.5" />
+                <span className="sr-only">WhatsApp Settlement</span>
+              </Button>
+            )}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    className="size-7 text-muted-foreground hover:text-foreground"
+                  />
+                }
+              >
+                <MoreVertical className="size-3.5" />
+                <span className="sr-only">Actions</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 text-xs">
+                <DropdownMenuGroup>
+                  {(app.status === "allotted" || app.status === "sold") && (
+                    <DropdownMenuItem onClick={() => onRecordSale(app)}>
+                      <TrendingUp data-icon="inline-start" />
+                      {app.status === "sold"
+                        ? "Edit Sale Details"
+                        : "Record Sale"}
+                    </DropdownMenuItem>
+                  )}
+                  {canSettle && (
+                    <DropdownMenuItem
+                      onClick={() => onWhatsAppSettlement?.(app)}
+                    >
+                      <MessageSquare
+                        data-icon="inline-start"
+                        className="text-emerald-500"
+                      />
+                      WhatsApp Settlement
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => onEdit(app)}>
+                    <Edit2 data-icon="inline-start" />
+                    Edit Application
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={() => onEdit(app)}>
-                  <Edit2 data-icon="inline-start" />
-                  Edit Application
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => setAppToDelete(app)}
-                >
-                  <Trash2 data-icon="inline-start" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => setAppToDelete(app)}
+                  >
+                    <Trash2 data-icon="inline-start" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )
       },
     },
   ]
 
   return (
-    <div className="flex flex-col gap-3 min-w-0 w-full">
+    <div className="flex w-full min-w-0 flex-col gap-3">
       <DataTable
         data={filteredApplications}
         columns={columns}
@@ -449,12 +502,13 @@ export function ApplicationTable({
         footer={
           filteredApplications.length > 0 ? (
             <div className="flex items-center justify-between bg-muted/40 px-4 py-2.5 text-xs">
-              <span className="text-muted-foreground font-medium">
-                Total: {filteredApplications.length} Applications ({totalLots} Lots)
+              <span className="font-medium text-muted-foreground">
+                Total: {filteredApplications.length} Applications ({totalLots}{" "}
+                Lots)
               </span>
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground">Total Applied:</span>
-                <span className="font-bold text-foreground font-mono">
+                <span className="font-mono font-bold text-foreground">
                   {formatCurrency(totalAmount)}
                 </span>
               </div>

@@ -15,6 +15,7 @@ export interface ApplicationAccount {
 
   pan?: string
   dematAccount?: string
+  phoneNumber?: string
 
   notes?: string
 

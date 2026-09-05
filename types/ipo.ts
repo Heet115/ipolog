@@ -3,12 +3,7 @@ import { Timestamp } from "firebase/firestore"
 export type IpoType = "mainboard" | "sme"
 
 export type IpoStatus =
-  | "upcoming"
-  | "open"
-  | "closed"
-  | "allotment_pending"
-  | "listed"
-  | "completed"
+  "upcoming" | "open" | "closed" | "allotment_pending" | "listed" | "completed"
 
 export interface Ipo {
   id: string

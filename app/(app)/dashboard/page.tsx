@@ -41,7 +41,10 @@ import {
 import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/lib/firebase/auth-context"
 import { getIpos } from "@/lib/firebase/ipos"
-import { getApplications, cleanupOrphanedApplications } from "@/lib/firebase/applications"
+import {
+  getApplications,
+  cleanupOrphanedApplications,
+} from "@/lib/firebase/applications"
 import { getApplicationAccounts } from "@/lib/firebase/accounts"
 import { getBankAccounts } from "@/lib/firebase/bank-accounts"
 import {

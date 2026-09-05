@@ -57,6 +57,7 @@ import { BulkAllotmentDialog } from "@/components/applications/bulk-allotment-di
 import { BulkSaleDialog } from "@/components/applications/bulk-sale-dialog"
 import { RecordSaleDialog } from "@/components/applications/record-sale-dialog"
 import { EditApplicationDialog } from "@/components/applications/edit-application-dialog"
+import { SettlementDialog } from "@/components/applications/settlement-dialog"
 import { ApplicationTable } from "@/components/applications/application-table"
 import { useAuth } from "@/lib/firebase/auth-context"
 import { getIpoById, archiveIpo, deleteIpo } from "@/lib/firebase/ipos"
@@ -100,6 +101,7 @@ export default function IpoDetailPage() {
   const [bulkSaleOpen, setBulkSaleOpen] = useState(false)
   const [checkAllotmentOpen, setCheckAllotmentOpen] = useState(false)
   const [appToSell, setAppToSell] = useState<Application | null>(null)
+  const [appToSettle, setAppToSettle] = useState<Application | null>(null)
   const [appToEdit, setAppToEdit] = useState<Application | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [syncing, setSyncing] = useState(false)
@@ -853,6 +855,7 @@ export default function IpoDetailPage() {
               userId={user?.uid || ""}
               onEdit={(app) => setAppToEdit(app)}
               onRecordSale={(app) => setAppToSell(app)}
+              onWhatsAppSettlement={(app) => setAppToSettle(app)}
               onRefresh={reloadData}
             />
           )}
@@ -946,6 +949,7 @@ export default function IpoDetailPage() {
               ipo={ipo}
               application={appToSell}
               account={accounts.find((a) => a.id === appToSell.accountId)}
+              onOpenSettlement={(app) => setAppToSettle(app)}
               onSuccess={() => {
                 setAppToSell(null)
                 reloadData()
@@ -965,6 +969,16 @@ export default function IpoDetailPage() {
                 setAppToEdit(null)
                 reloadData()
               }}
+            />
+          )}
+          {appToSettle && (
+            <SettlementDialog
+              open={true}
+              onOpenChange={(open) => !open && setAppToSettle(null)}
+              application={appToSettle}
+              ipo={ipo}
+              account={accounts.find((a) => a.id === appToSettle.accountId)}
+              bankAccounts={bankAccounts}
             />
           )}
         </>

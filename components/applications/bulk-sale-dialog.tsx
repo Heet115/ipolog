@@ -140,7 +140,9 @@ function BulkSaleForm({
     }
   )
 
-  const [sortColumn, setSortColumn] = useState<"account" | "shares" | "price" | "profit" | null>(null)
+  const [sortColumn, setSortColumn] = useState<
+    "account" | "shares" | "price" | "profit" | null
+  >(null)
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -363,21 +365,30 @@ function BulkSaleForm({
       return sortDirection === "asc" ? res : -res
     })
     return list
-  }, [eligibleApps, sortColumn, sortDirection, accountMap, rowStates, defaultPrice, ipo.issuePrice])
+  }, [
+    eligibleApps,
+    sortColumn,
+    sortDirection,
+    accountMap,
+    rowStates,
+    defaultPrice,
+    ipo.issuePrice,
+  ])
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <DialogHeader>
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <DialogTitle className="truncate max-w-md">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <DialogTitle className="max-w-md truncate">
             Bulk Exit / Sale — {ipo.name}
           </DialogTitle>
-          <Badge variant="outline" className="text-xs font-mono">
+          <Badge variant="outline" className="font-mono text-xs">
             Issue: {formatCurrency(ipo.issuePrice)}
           </Badge>
         </div>
         <DialogDescription>
-          Record listing-day exit across multiple accounts simultaneously and commit in a single transaction.
+          Record listing-day exit across multiple accounts simultaneously and
+          commit in a single transaction.
         </DialogDescription>
       </DialogHeader>
 
@@ -388,7 +399,7 @@ function BulkSaleForm({
       )}
 
       {/* Global Sale Controls */}
-      <div className="grid grid-cols-1 gap-3 rounded-none bg-muted/40 p-3 sm:grid-cols-2 text-xs border">
+      <div className="grid grid-cols-1 gap-3 rounded-none border bg-muted/40 p-3 text-xs sm:grid-cols-2">
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
             <label className="text-[11px] font-semibold text-muted-foreground">
@@ -398,7 +409,7 @@ function BulkSaleForm({
               <button
                 type="button"
                 onClick={handleFillCmp}
-                className="text-[10px] text-primary hover:underline flex items-center gap-1 font-medium"
+                className="flex items-center gap-1 text-[10px] font-medium text-primary hover:underline"
               >
                 <Sparkles className="size-3" />
                 CMP: ₹{ipo.currentPrice || ipo.listingPrice}
@@ -443,7 +454,7 @@ function BulkSaleForm({
       <div className="max-h-[300px] min-w-0 overflow-x-auto overflow-y-auto rounded-none border border-border/80">
         <Table className="min-w-[550px]">
           <TableHeader>
-            <TableRow className="bg-muted/30 border-b border-border/70">
+            <TableRow className="border-b border-border/70 bg-muted/30">
               <TableHead className="w-10 text-center">
                 <Checkbox
                   checked={allSelected}
@@ -452,11 +463,11 @@ function BulkSaleForm({
                   }
                 />
               </TableHead>
-              <TableHead className="min-w-[160px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+              <TableHead className="h-9 min-w-[160px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 <button
                   type="button"
                   onClick={() => toggleSort("account")}
-                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                  className="inline-flex items-center gap-1 font-semibold transition-colors hover:text-foreground"
                 >
                   Account
                   {sortColumn === "account" ? (
@@ -470,11 +481,11 @@ function BulkSaleForm({
                   )}
                 </button>
               </TableHead>
-              <TableHead className="w-[100px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+              <TableHead className="h-9 w-[100px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 <button
                   type="button"
                   onClick={() => toggleSort("shares")}
-                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                  className="inline-flex items-center gap-1 font-semibold transition-colors hover:text-foreground"
                 >
                   Shares Sold
                   {sortColumn === "shares" ? (
@@ -488,11 +499,11 @@ function BulkSaleForm({
                   )}
                 </button>
               </TableHead>
-              <TableHead className="w-[110px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+              <TableHead className="h-9 w-[110px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 <button
                   type="button"
                   onClick={() => toggleSort("price")}
-                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                  className="inline-flex items-center gap-1 font-semibold transition-colors hover:text-foreground"
                 >
                   Sale Price (₹)
                   {sortColumn === "price" ? (
@@ -506,11 +517,11 @@ function BulkSaleForm({
                   )}
                 </button>
               </TableHead>
-              <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+              <TableHead className="h-9 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 <button
                   type="button"
                   onClick={() => toggleSort("profit")}
-                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors ml-auto flex-row-reverse"
+                  className="ml-auto inline-flex flex-row-reverse items-center gap-1 font-semibold transition-colors hover:text-foreground"
                 >
                   Profit (You)
                   {sortColumn === "profit" ? (

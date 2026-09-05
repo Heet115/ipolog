@@ -91,7 +91,7 @@ export function BulkAllotmentDialog({
 }: BulkAllotmentDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[88svh] overflow-y-auto">
+      <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-2xl md:max-w-3xl lg:max-w-4xl">
         {open && (
           <BulkAllotmentForm
             key={ipo.id}
@@ -323,7 +323,16 @@ function BulkAllotmentForm({
       return sortDirection === "asc" ? res : -res
     })
     return list
-  }, [filteredApps, sortColumn, sortDirection, accountMap, bankMap, rowStates, ipo.lotSize, ipo.issuePrice])
+  }, [
+    filteredApps,
+    sortColumn,
+    sortDirection,
+    accountMap,
+    bankMap,
+    rowStates,
+    ipo.lotSize,
+    ipo.issuePrice,
+  ])
 
   // Calculate live summary stats
   let allottedCount = 0
@@ -357,9 +366,7 @@ function BulkAllotmentForm({
 
   const totalDecided = allottedCount + soldCount + notAllottedCount
   const successRate =
-    totalDecided > 0
-      ? ((allottedCount + soldCount) / totalDecided) * 100
-      : 0
+    totalDecided > 0 ? ((allottedCount + soldCount) / totalDecided) * 100 : 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -378,7 +385,8 @@ function BulkAllotmentForm({
           }
         }
 
-        const isAllotted = state.status === "allotted" || state.status === "sold"
+        const isAllotted =
+          state.status === "allotted" || state.status === "sold"
         const finalLots = isAllotted ? Math.max(1, state.allottedLots) : 0
         const finalShares = isAllotted ? finalLots * ipo.lotSize : 0
 
@@ -407,16 +415,18 @@ function BulkAllotmentForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <DialogHeader className="pb-1">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <DialogTitle className="truncate max-w-md">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <DialogTitle className="max-w-md truncate">
             Update Allotment — {ipo.name}
           </DialogTitle>
-          <Badge variant="outline" className="text-xs uppercase font-mono">
+          <Badge variant="outline" className="font-mono text-xs uppercase">
             {ipo.lotSize} sh/lot • {formatCurrency(ipo.issuePrice)}
           </Badge>
         </div>
         <DialogDescription>
-          Record allotment results across all {applications.length} accounts. Allotted shares convert to invested funds; unallotted funds are marked for refund.
+          Record allotment results across all {applications.length} accounts.
+          Allotted shares convert to invested funds; unallotted funds are marked
+          for refund.
         </DialogDescription>
       </DialogHeader>
 
@@ -427,11 +437,12 @@ function BulkAllotmentForm({
       )}
 
       {/* Live Allotment Overview Card */}
-      <div className="rounded-none border bg-muted/30 p-3.5 flex flex-col gap-3">
+      <div className="flex flex-col gap-3 rounded-none border bg-muted/30 p-3.5">
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1 font-semibold text-success">
-              <CheckCircle2 className="size-3.5" /> {allottedCount + soldCount} Allotted
+              <CheckCircle2 className="size-3.5" /> {allottedCount + soldCount}{" "}
+              Allotted
             </span>
             <span className="flex items-center gap-1 font-semibold text-destructive">
               <XCircle className="size-3.5" /> {notAllottedCount} Not Allotted
@@ -443,10 +454,16 @@ function BulkAllotmentForm({
 
           <div className="flex items-center gap-3 text-right font-mono">
             <span className="text-xs text-muted-foreground">
-              Invested: <strong className="text-foreground">{formatCurrency(totalInvested)}</strong>
+              Invested:{" "}
+              <strong className="text-foreground">
+                {formatCurrency(totalInvested)}
+              </strong>
             </span>
             <span className="text-xs text-muted-foreground">
-              Refunds: <strong className="text-warning-foreground">{formatCurrency(totalRefund)}</strong>
+              Refunds:{" "}
+              <strong className="text-warning-foreground">
+                {formatCurrency(totalRefund)}
+              </strong>
             </span>
           </div>
         </div>
@@ -456,7 +473,9 @@ function BulkAllotmentForm({
           <div className="flex flex-col gap-1">
             <div className="flex justify-between text-[11px] text-muted-foreground">
               <span>Allotment Rate</span>
-              <span className="font-semibold text-foreground font-mono">{successRate.toFixed(0)}% Success</span>
+              <span className="font-mono font-semibold text-foreground">
+                {successRate.toFixed(0)}% Success
+              </span>
             </div>
             <Progress value={successRate} className="h-1.5 w-full bg-muted" />
           </div>
@@ -464,8 +483,8 @@ function BulkAllotmentForm({
 
         {/* Quick Action Presets + Search */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/50 pt-2.5">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-medium text-muted-foreground mr-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-[11px] font-medium text-muted-foreground">
               Quick Actions:
             </span>
             <Button
@@ -473,7 +492,7 @@ function BulkAllotmentForm({
               variant="outline"
               size="xs"
               onClick={handleAllAllotted}
-              className="text-xs h-7"
+              className="h-7 text-xs"
             >
               <PartyPopper data-icon="inline-start" />
               All Allotted
@@ -483,7 +502,7 @@ function BulkAllotmentForm({
               variant="outline"
               size="xs"
               onClick={handleAllNotAllotted}
-              className="text-xs h-7"
+              className="h-7 text-xs"
             >
               <XCircle data-icon="inline-start" />
               All Not Allotted
@@ -493,7 +512,7 @@ function BulkAllotmentForm({
               variant="outline"
               size="xs"
               onClick={() => setConfirmResetOpen(true)}
-              className="text-xs h-7"
+              className="h-7 text-xs"
             >
               <RotateCcw data-icon="inline-start" />
               Reset All
@@ -507,7 +526,7 @@ function BulkAllotmentForm({
               placeholder="Filter accounts..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-7 pl-7 text-xs bg-background"
+              className="h-7 bg-background pl-7 text-xs"
             />
           </div>
         </div>
@@ -517,12 +536,12 @@ function BulkAllotmentForm({
       <div className="max-h-[340px] min-w-0 overflow-x-auto overflow-y-auto rounded-none border border-border/80">
         <Table className="min-w-[650px]">
           <TableHeader>
-            <TableRow className="bg-muted/30 border-b border-border/70">
-              <TableHead className="min-w-[170px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+            <TableRow className="border-b border-border/70 bg-muted/30">
+              <TableHead className="h-9 min-w-[170px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 <button
                   type="button"
                   onClick={() => toggleSort("account")}
-                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                  className="inline-flex items-center gap-1 font-semibold transition-colors hover:text-foreground"
                 >
                   Account
                   {sortColumn === "account" ? (
@@ -537,11 +556,11 @@ function BulkAllotmentForm({
                 </button>
               </TableHead>
 
-              <TableHead className="min-w-[150px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+              <TableHead className="h-9 min-w-[150px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 <button
                   type="button"
                   onClick={() => toggleSort("bank")}
-                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors"
+                  className="inline-flex items-center gap-1 font-semibold transition-colors hover:text-foreground"
                 >
                   Bank
                   {sortColumn === "bank" ? (
@@ -556,11 +575,11 @@ function BulkAllotmentForm({
                 </button>
               </TableHead>
 
-              <TableHead className="text-right min-w-[110px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+              <TableHead className="h-9 min-w-[110px] text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 <button
                   type="button"
                   onClick={() => toggleSort("applied")}
-                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors ml-auto flex-row-reverse"
+                  className="ml-auto inline-flex flex-row-reverse items-center gap-1 font-semibold transition-colors hover:text-foreground"
                 >
                   Applied
                   {sortColumn === "applied" ? (
@@ -575,11 +594,11 @@ function BulkAllotmentForm({
                 </button>
               </TableHead>
 
-              <TableHead className="min-w-[220px] text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+              <TableHead className="h-9 min-w-[220px] text-center text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 <button
                   type="button"
                   onClick={() => toggleSort("status")}
-                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors mx-auto"
+                  className="mx-auto inline-flex items-center gap-1 font-semibold transition-colors hover:text-foreground"
                 >
                   Allotment Decision
                   {sortColumn === "status" ? (
@@ -594,11 +613,11 @@ function BulkAllotmentForm({
                 </button>
               </TableHead>
 
-              <TableHead className="text-right min-w-[130px] text-xs font-semibold uppercase tracking-wider text-muted-foreground select-none h-9">
+              <TableHead className="h-9 min-w-[130px] text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 <button
                   type="button"
                   onClick={() => toggleSort("invested")}
-                  className="inline-flex items-center gap-1 hover:text-foreground font-semibold transition-colors ml-auto flex-row-reverse"
+                  className="ml-auto inline-flex flex-row-reverse items-center gap-1 font-semibold transition-colors hover:text-foreground"
                 >
                   Invested / Lots
                   {sortColumn === "invested" ? (
@@ -655,7 +674,9 @@ function BulkAllotmentForm({
                         {account?.name || "Account"}
                       </span>
                       <Badge
-                        variant={account?.type === "my" ? "secondary" : "default"}
+                        variant={
+                          account?.type === "my" ? "secondary" : "default"
+                        }
                         className="shrink-0 px-1 py-0 text-[9px] font-normal"
                       >
                         {account?.type === "my"
@@ -668,9 +689,14 @@ function BulkAllotmentForm({
                   {/* Bank Account */}
                   <TableCell className="text-xs text-muted-foreground">
                     {bank ? (
-                      <div className="flex items-center gap-1 truncate max-w-[150px]" title={formatBankAccount(bank)}>
+                      <div
+                        className="flex max-w-[150px] items-center gap-1 truncate"
+                        title={formatBankAccount(bank)}
+                      >
                         <Landmark className="size-3 shrink-0" />
-                        <span className="truncate">{formatBankAccount(bank)}</span>
+                        <span className="truncate">
+                          {formatBankAccount(bank)}
+                        </span>
                       </div>
                     ) : (
                       "—"
@@ -678,8 +704,8 @@ function BulkAllotmentForm({
                   </TableCell>
 
                   {/* Applied Amount */}
-                  <TableCell className="text-right text-xs font-mono">
-                    <span className="font-semibold text-foreground block">
+                  <TableCell className="text-right font-mono text-xs">
+                    <span className="block font-semibold text-foreground">
                       {formatCurrency(app.amountApplied)}
                     </span>
                     <span className="text-[10px] text-muted-foreground">
@@ -735,7 +761,7 @@ function BulkAllotmentForm({
                   </TableCell>
 
                   {/* Allotted Lots Stepper / Invested Calculation */}
-                  <TableCell className="text-right text-xs font-mono">
+                  <TableCell className="text-right font-mono text-xs">
                     {isAllotted ? (
                       <div className="flex flex-col items-end gap-1">
                         <div className="flex items-center rounded-none border bg-background">
@@ -753,7 +779,9 @@ function BulkAllotmentForm({
                             type="number"
                             min={1}
                             max={app.lotsApplied}
-                            value={state.allottedLots === 0 ? "" : state.allottedLots}
+                            value={
+                              state.allottedLots === 0 ? "" : state.allottedLots
+                            }
                             onChange={(e) => {
                               const val = e.target.value
                               if (val === "") {
@@ -784,16 +812,17 @@ function BulkAllotmentForm({
                             <Plus className="size-2.5" />
                           </button>
                         </div>
-                        <span className="font-bold text-success text-xs">
+                        <span className="text-xs font-bold text-success">
                           {formatCurrency(currentInvested)}
                         </span>
                       </div>
                     ) : isSold ? (
                       <div className="flex flex-col items-end gap-0.5">
-                        <span className="font-semibold text-foreground text-xs">
-                          {state.allottedLots} lot{state.allottedLots > 1 ? "s" : ""}
+                        <span className="text-xs font-semibold text-foreground">
+                          {state.allottedLots} lot
+                          {state.allottedLots > 1 ? "s" : ""}
                         </span>
-                        <span className="text-[10px] text-muted-foreground font-semibold">
+                        <span className="text-[10px] font-semibold text-muted-foreground">
                           {formatCurrency(currentInvested)}
                         </span>
                       </div>
@@ -812,7 +841,7 @@ function BulkAllotmentForm({
         </Table>
       </div>
 
-      <DialogFooter className="border-t pt-3 flex items-center justify-between sm:justify-end gap-2">
+      <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
         <Button
           type="button"
           variant="outline"
@@ -829,15 +858,13 @@ function BulkAllotmentForm({
       </DialogFooter>
 
       {/* Reset All Confirmation Dialog */}
-      <AlertDialog
-        open={confirmResetOpen}
-        onOpenChange={setConfirmResetOpen}
-      >
+      <AlertDialog open={confirmResetOpen} onOpenChange={setConfirmResetOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Reset all allotments?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to reset all accounts back to pending status? Any customized allotment counts will be cleared.
+              Are you sure you want to reset all accounts back to pending
+              status? Any customized allotment counts will be cleared.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

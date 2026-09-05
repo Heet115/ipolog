@@ -151,7 +151,7 @@ export default function IposPage() {
             {importedCount > 0 && (
               <Badge
                 variant="outline"
-                className="text-[10px] font-mono text-muted-foreground"
+                className="font-mono text-[10px] text-muted-foreground"
                 title="Imported IPOs are refreshed automatically every 24 hours"
               >
                 Auto-sync: 24h
@@ -212,7 +212,7 @@ export default function IposPage() {
               to begin recording applications.
             </EmptyDescription>
           </EmptyHeader>
-          <EmptyContent className="flex flex-row justify-center items-center gap-2">
+          <EmptyContent className="flex flex-row items-center justify-center gap-2">
             <Button
               variant="outline"
               size="sm"
