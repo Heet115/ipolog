@@ -13,6 +13,7 @@ import {
   ChevronsUpDown,
   UserCheck,
   Building2,
+  Settings,
 } from "lucide-react"
 
 import {
@@ -70,6 +71,11 @@ const navItems = [
     title: "Bank Accounts",
     url: "/bank-accounts",
     icon: Landmark,
+  },
+  {
+    title: "Settings",
+    url: "/settings",
+    icon: Settings,
   },
 ]
 
@@ -206,6 +212,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <DropdownMenuItem render={<Link href="/bank-accounts" onClick={handleNavClick} />}>
                       <Building2 data-icon="inline-start" />
                       Bank ASBA Limits
+                    </DropdownMenuItem>
+                    <DropdownMenuItem render={<Link href="/settings" onClick={handleNavClick} />}>
+                      <Settings data-icon="inline-start" />
+                      Settings
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />

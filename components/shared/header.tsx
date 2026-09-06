@@ -29,6 +29,7 @@ export function Header() {
     if (pathname === "/ipos") return "My IPOs"
     if (pathname === "/accounts") return "Application Accounts"
     if (pathname === "/bank-accounts") return "Bank Accounts"
+    if (pathname === "/settings") return "Settings"
     return "Overview"
   }
 

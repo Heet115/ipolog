@@ -2,220 +2,160 @@
 
 import * as React from "react"
 import {
-  User,
   KeyRound,
   ShieldCheck,
-  Mail,
-  Copy,
+  Eye,
+  EyeOff,
+  Loader2,
   Check,
-  ExternalLink,
-  Shield,
+  Copy,
+  Mail,
+  Calendar,
+  Clock,
 } from "lucide-react"
 
+import { useAuth } from "@/lib/firebase/auth-context"
 import {
   Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
 } from "@/components/ui/card"
 import {
   Field,
+  FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
-  FieldDescription,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Spinner } from "@/components/ui/spinner"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast } from "@/components/ui/toast"
-import { useAuth } from "@/lib/firebase/auth-context"
-import type { User as FirebaseUser } from "firebase/auth"
 
-interface ProfileCardProps {
-  user: FirebaseUser
-  updateDisplayName: (name: string) => Promise<void>
-}
+export default function SettingsPage() {
+  const { user, updateDisplayName, changePassword } = useAuth()
 
-function ProfileCard({ user, updateDisplayName }: ProfileCardProps) {
-  const initialName = user.displayName || user.email?.split("@")[0] || ""
-  const [displayName, setDisplayName] = React.useState(initialName)
-  const [savingName, setSavingName] = React.useState(false)
+  // Profile Form State
+  const initialName =
+    user?.displayName || (user?.email ? user.email.split("@")[0] : "")
+  const [customName, setCustomName] = React.useState<string | null>(null)
+  const displayName = customName ?? initialName
+  const [isSavingProfile, setIsSavingProfile] = React.useState(false)
+
+  // Password Form State
+  const [currentPassword, setCurrentPassword] = React.useState("")
+  const [newPassword, setNewPassword] = React.useState("")
+  const [confirmPassword, setConfirmPassword] = React.useState("")
+  const [showCurrentPassword, setShowCurrentPassword] = React.useState(false)
+  const [showNewPassword, setShowNewPassword] = React.useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
+  const [isChangingPassword, setIsChangingPassword] = React.useState(false)
+
+  // Copy UID State
+  const [copiedUid, setCopiedUid] = React.useState(false)
 
   const userInitial =
-    (displayName || user.email || "U").charAt(0).toUpperCase()
+    (displayName || user?.email || "U").charAt(0).toUpperCase()
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
+  const isPasswordProvider =
+    user?.providerData.some((p) => p.providerId === "password") ?? false
+  const isGoogleProvider =
+    user?.providerData.some((p) => p.providerId === "google.com") ?? false
+
+  const hasNameChanged =
+    customName !== null &&
+    customName.trim() !== (user?.displayName ?? "") &&
+    customName.trim().length > 0
+
+  const passwordsMatch =
+    confirmPassword.length > 0 && newPassword === confirmPassword
+  const hasPasswordMismatch =
+    confirmPassword.length > 0 && newPassword !== confirmPassword
+
+  // Handle Display Name Update
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!displayName.trim()) {
+    const trimmed = displayName.trim()
+    if (!trimmed) {
       toast.add({
-        title: "Name cannot be empty",
-        description: "Please enter a valid display name.",
+        title: "Invalid name",
+        description: "Display name cannot be empty.",
         type: "error",
       })
       return
     }
 
-    setSavingName(true)
+    setIsSavingProfile(true)
     try {
-      await updateDisplayName(displayName.trim())
+      await updateDisplayName(trimmed)
+      setCustomName(null)
       toast.add({
         title: "Profile updated",
         description: "Your display name has been updated successfully.",
         type: "success",
       })
     } catch (err: unknown) {
-      console.error("Failed to update profile name:", err)
-      const msg =
-        err instanceof Error ? err.message : "Failed to update profile name."
+      console.error("Failed to update display name:", err)
+      const message =
+        err instanceof Error ? err.message : "Failed to update profile."
       toast.add({
         title: "Update failed",
-        description: msg,
+        description: message,
         type: "error",
       })
     } finally {
-      setSavingName(false)
+      setIsSavingProfile(false)
     }
   }
 
-  return (
-    <Card>
-      <CardHeader className="border-b pb-3">
-        <div className="flex items-center gap-2">
-          <User className="size-4 text-primary" />
-          <CardTitle>Profile Details</CardTitle>
-        </div>
-        <CardDescription>
-          Update your display name visible across application statements and reports
-        </CardDescription>
-      </CardHeader>
-
-      <form onSubmit={handleUpdateProfile}>
-        <CardContent className="pt-4">
-          <FieldGroup>
-            {/* Avatar preview and basic info */}
-            <div className="flex items-center gap-3 rounded-none border border-border/60 bg-muted/20 p-3">
-              <Avatar className="size-12 rounded-full border border-border">
-                <AvatarFallback className="bg-primary/10 text-sm font-bold text-primary">
-                  {userInitial}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-semibold text-foreground">
-                  {displayName || user.email?.split("@")[0] || "User"}
-                </span>
-                <span className="font-mono text-xs text-muted-foreground">
-                  {user.email}
-                </span>
-              </div>
-            </div>
-
-            <Field>
-              <FieldLabel htmlFor="displayName">Display Name</FieldLabel>
-              <Input
-                id="displayName"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="e.g. Heet Patel"
-                disabled={savingName}
-                maxLength={60}
-              />
-              <FieldDescription>
-                This name is displayed in the navigation sidebar, account filters, and generated settlement WhatsApp messages.
-              </FieldDescription>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="accountEmail">Email Address</FieldLabel>
-              <Input
-                id="accountEmail"
-                value={user.email || ""}
-                readOnly
-                disabled
-                className="bg-muted/40 font-mono text-xs cursor-not-allowed"
-              />
-              <FieldDescription>
-                Email address is permanently linked to your authentication provider.
-              </FieldDescription>
-            </Field>
-          </FieldGroup>
-        </CardContent>
-
-        <CardFooter className="flex justify-end gap-2 border-t pt-3">
-          <Button
-            type="submit"
-            size="sm"
-            disabled={
-              savingName ||
-              !displayName.trim() ||
-              displayName.trim() === (user.displayName || "")
-            }
-          >
-            {savingName ? (
-              <>
-                <Spinner className="mr-1.5 size-3.5" />
-                Saving...
-              </>
-            ) : (
-              "Save Changes"
-            )}
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
-  )
-}
-
-interface PasswordCardProps {
-  user: FirebaseUser
-  changePassword: (currentPass: string, newPass: string) => Promise<void>
-}
-
-function PasswordCard({ user, changePassword }: PasswordCardProps) {
-  const [currentPassword, setCurrentPassword] = React.useState("")
-  const [newPassword, setNewPassword] = React.useState("")
-  const [confirmPassword, setConfirmPassword] = React.useState("")
-  const [savingPassword, setSavingPassword] = React.useState(false)
-  const [passwordError, setPasswordError] = React.useState<string | null>(null)
-
-  const isPasswordProvider =
-    user.providerData?.some((p) => p.providerId === "password") ||
-    (!user.providerData?.length && !!user.email)
-
-  const isGoogleProvider = user.providerData?.some(
-    (p) => p.providerId === "google.com"
-  )
-
+  // Handle Password Update
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    setPasswordError(null)
-
     if (!currentPassword) {
-      setPasswordError("Please enter your current password.")
-      return
-    }
-    if (newPassword.length < 6) {
-      setPasswordError("New password must be at least 6 characters long.")
-      return
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("New password and confirmation do not match.")
-      return
-    }
-    if (newPassword === currentPassword) {
-      setPasswordError("New password must be different from current password.")
+      toast.add({
+        title: "Current password required",
+        description: "Please enter your current password to verify.",
+        type: "error",
+      })
       return
     }
 
-    setSavingPassword(true)
+    if (newPassword.length < 6) {
+      toast.add({
+        title: "Weak password",
+        description: "New password must be at least 6 characters long.",
+        type: "error",
+      })
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.add({
+        title: "Passwords do not match",
+        description: "New password and confirmation do not match.",
+        type: "error",
+      })
+      return
+    }
+
+    setIsChangingPassword(true)
     try {
       await changePassword(currentPassword, newPassword)
       toast.add({
         title: "Password updated",
-        description: "Your account password has been changed successfully.",
+        description: "Your password has been changed successfully.",
         type: "success",
       })
       setCurrentPassword("")
@@ -223,172 +163,41 @@ function PasswordCard({ user, changePassword }: PasswordCardProps) {
       setConfirmPassword("")
     } catch (err: unknown) {
       console.error("Failed to change password:", err)
-      const code = (err as { code?: string })?.code || ""
-      let msg = "Failed to update password. Please check your credentials."
-
-      if (
-        code === "auth/wrong-password" ||
-        code === "auth/invalid-credential"
-      ) {
-        msg = "Current password is incorrect. Please verify and try again."
-      } else if (code === "auth/weak-password") {
-        msg = "New password is too weak. Please use at least 6 characters."
-      } else if (code === "auth/too-many-requests") {
-        msg = "Too many failed attempts. Please wait a moment and try again."
-      } else if (err instanceof Error) {
-        msg = err.message
+      let message = "Failed to update password. Please verify your current password."
+      if (err instanceof Error) {
+        if (
+          err.message.includes("auth/invalid-credential") ||
+          err.message.includes("auth/wrong-password")
+        ) {
+          message = "Current password is incorrect. Please try again."
+        } else if (err.message.includes("auth/weak-password")) {
+          message = "Password must be at least 6 characters long."
+        } else if (err.message.includes("auth/too-many-requests")) {
+          message = "Too many failed attempts. Please try again later."
+        } else {
+          message = err.message
+        }
       }
-
-      setPasswordError(msg)
       toast.add({
-        title: "Password update failed",
-        description: msg,
+        title: "Password change failed",
+        description: message,
         type: "error",
       })
     } finally {
-      setSavingPassword(false)
+      setIsChangingPassword(false)
     }
   }
 
-  return (
-    <Card>
-      <CardHeader className="border-b pb-3">
-        <div className="flex items-center gap-2">
-          <KeyRound className="size-4 text-primary" />
-          <CardTitle>Security & Password</CardTitle>
-        </div>
-        <CardDescription>
-          Manage your login password and authentication credentials
-        </CardDescription>
-      </CardHeader>
-
-      {isPasswordProvider ? (
-        <form onSubmit={handleChangePassword}>
-          <CardContent className="pt-4">
-            <FieldGroup>
-              {passwordError && (
-                <div
-                  role="alert"
-                  className="rounded-none border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive"
-                >
-                  {passwordError}
-                </div>
-              )}
-
-              <Field>
-                <FieldLabel htmlFor="currentPassword">Current Password</FieldLabel>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  disabled={savingPassword}
-                  autoComplete="current-password"
-                />
-                <FieldDescription>
-                  Required for verification before changing your password.
-                </FieldDescription>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="newPassword">New Password</FieldLabel>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  disabled={savingPassword}
-                  autoComplete="new-password"
-                />
-                <FieldDescription>
-                  Must be at least 6 characters long.
-                </FieldDescription>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="confirmPassword">Confirm New Password</FieldLabel>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={savingPassword}
-                  autoComplete="new-password"
-                />
-              </Field>
-            </FieldGroup>
-          </CardContent>
-
-          <CardFooter className="flex justify-end gap-2 border-t pt-3">
-            <Button
-              type="submit"
-              size="sm"
-              disabled={
-                savingPassword ||
-                !currentPassword ||
-                !newPassword ||
-                !confirmPassword
-              }
-            >
-              {savingPassword ? (
-                <>
-                  <Spinner className="mr-1.5 size-3.5" />
-                  Updating Password...
-                </>
-              ) : (
-                "Change Password"
-              )}
-            </Button>
-          </CardFooter>
-        </form>
-      ) : isGoogleProvider ? (
-        <CardContent className="pt-4">
-          <div className="flex flex-col gap-3 rounded-none border border-border/80 bg-muted/30 p-4">
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="size-4 text-success" />
-              <span className="text-xs font-semibold text-foreground">
-                Google OAuth Account
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              You are signed in via Google (<span className="font-mono text-foreground">{user.email}</span>). Password modifications, passkeys, and two-factor authentication are safely managed via your Google Account security center.
-            </p>
-            <div>
-              <Button
-                variant="outline"
-                size="xs"
-                render={
-                  <a
-                    href="https://myaccount.google.com/security"
-                    target="_blank"
-                    rel="noreferrer"
-                  />
-                }
-              >
-                <ExternalLink data-icon="inline-start" className="size-3.5" />
-                Google Security Settings
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      ) : null}
-    </Card>
-  )
-}
-
-export default function SettingsPage() {
-  const { user, loading, updateDisplayName, changePassword } = useAuth()
-  const [copiedUid, setCopiedUid] = React.useState(false)
-
   const handleCopyUid = () => {
-    if (user?.uid) {
-      navigator.clipboard.writeText(user.uid)
-      setCopiedUid(true)
-      setTimeout(() => setCopiedUid(false), 2000)
-    }
+    if (!user?.uid) return
+    navigator.clipboard.writeText(user.uid)
+    setCopiedUid(true)
+    toast.add({
+      title: "Copied to clipboard",
+      description: "User ID copied successfully.",
+      type: "success",
+    })
+    setTimeout(() => setCopiedUid(false), 2000)
   }
 
   const formatDate = (isoString?: string | null) => {
@@ -400,132 +209,348 @@ export default function SettingsPage() {
         year: "numeric",
       })
     } catch {
-      return "N/A"
+      return isoString
     }
   }
 
-  const isGoogleProvider = user?.providerData?.some(
-    (p) => p.providerId === "google.com"
-  )
-
-  if (loading || !user) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <Spinner className="size-6 text-muted-foreground" />
-      </div>
-    )
-  }
-
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold tracking-tight text-foreground">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-4 md:p-6">
+      {/* Page Header */}
+      <div className="flex flex-col gap-1">
+        <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground">
           Account Settings
         </h1>
         <p className="text-xs text-muted-foreground">
-          Manage your personal profile information, credentials, and security preferences
+          Manage your personal profile, display name, and login security credentials.
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left 2 Cols: Main Forms */}
-        <div className="flex flex-col gap-6 lg:col-span-2">
-          {/* Profile Card with key for reactive reset if user changes */}
-          <ProfileCard
-            key={user.displayName || user.uid}
-            user={user}
-            updateDisplayName={updateDisplayName}
-          />
-
-          {/* Password / Security Card */}
-          <PasswordCard user={user} changePassword={changePassword} />
-        </div>
-
-        {/* Right 1 Col: Account Overview & Metadata */}
-        <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader className="border-b pb-3">
-              <div className="flex items-center gap-2">
-                <Shield className="size-4 text-primary" />
-                <CardTitle>Account Overview</CardTitle>
-              </div>
-              <CardDescription>
-                Overview of account status and authentication provider
+      <div className="grid gap-6">
+        {/* Section 1: Personal Profile */}
+        <Card>
+          <form onSubmit={handleSaveProfile}>
+            <CardHeader>
+              <CardTitle>Personal Profile</CardTitle>
+              <CardDescription className="pb-4">
+                Update your display name and review your account details.
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-4">
-              <div className="flex flex-col gap-4 text-xs">
-                {/* Auth Provider */}
-                <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
-                  <span className="text-muted-foreground">Sign-in Method</span>
-                  {isGoogleProvider ? (
-                    <Badge variant="outline" className="gap-1 text-[11px]">
-                      <ShieldCheck className="size-3 text-success" />
-                      Google OAuth
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="gap-1 text-[11px]">
-                      <Mail className="size-3" />
-                      Email & Password
-                    </Badge>
-                  )}
-                </div>
 
-                {/* Email Verification */}
-                <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
-                  <span className="text-muted-foreground">Email Status</span>
-                  {user.emailVerified ? (
-                    <Badge variant="success" className="text-[11px]">
-                      Verified
+            <CardContent className="flex flex-col gap-6">
+              {/* Avatar & Email preview */}
+              <div className="flex items-center gap-4">
+                <Avatar className="size-14 shrink-0 rounded-full border border-border">
+                  <AvatarFallback className="bg-muted text-base font-bold text-foreground">
+                    {userInitial}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-foreground">
+                      {displayName || "Unnamed User"}
+                    </span>
+                    <Badge variant="outline" className="text-[10px]">
+                      {isGoogleProvider ? "Google Account" : "Email Account"}
                     </Badge>
-                  ) : (
-                    <Badge variant="warning" className="text-[11px]">
-                      Unverified
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Account Created */}
-                <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
-                  <span className="text-muted-foreground">Member Since</span>
-                  <span className="font-mono text-foreground">
-                    {formatDate(user.metadata?.creationTime)}
-                  </span>
-                </div>
-
-                {/* Last Sign In */}
-                <div className="flex items-center justify-between border-b border-border/50 pb-2.5">
-                  <span className="text-muted-foreground">Last Sign In</span>
-                  <span className="font-mono text-foreground">
-                    {formatDate(user.metadata?.lastSignInTime)}
-                  </span>
-                </div>
-
-                {/* User ID */}
-                <div className="flex flex-col gap-1.5 pt-1">
-                  <span className="text-muted-foreground">User Identifier (UID)</span>
-                  <div className="flex items-center justify-between rounded-none border border-border bg-muted/40 px-2 py-1 font-mono text-[10px] text-foreground">
-                    <span className="truncate pr-2">{user.uid}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      onClick={handleCopyUid}
-                      title="Copy UID"
-                      className="shrink-0 size-5"
-                    >
-                      {copiedUid ? (
-                        <Check className="size-3 text-success" />
-                      ) : (
-                        <Copy className="size-3" />
-                      )}
-                    </Button>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Mail className="size-3.5 shrink-0" />
+                    <span className="font-mono text-[11px]">{user?.email}</span>
                   </div>
                 </div>
               </div>
+
+              <Separator />
+
+              {/* Display Name Field */}
+              <FieldGroup className="gap-4">
+                <Field>
+                  <FieldLabel htmlFor="display-name">Display Name</FieldLabel>
+                  <Input
+                    id="display-name"
+                    value={displayName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                    placeholder="Enter your name"
+                    disabled={isSavingProfile}
+                    className="max-w-md"
+                  />
+                  <FieldDescription className="pb-2">
+                    This name is shown in the sidebar navigation, header, and generated
+                    settlement ledgers.
+                  </FieldDescription>
+                </Field>
+              </FieldGroup>
             </CardContent>
-          </Card>
-        </div>
+
+            <CardFooter className="flex items-center justify-between border-t border-border/60 bg-muted/20 py-3">
+              <span className="text-[11px] text-muted-foreground">
+                {hasNameChanged ? "Unsaved changes" : "All changes saved"}
+              </span>
+              <Button
+                type="submit"
+                size="xs"
+                disabled={isSavingProfile || !hasNameChanged || !displayName.trim()}
+              >
+                {isSavingProfile ? (
+                  <>
+                    <Loader2 data-icon="inline-start" className="size-3.5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check data-icon="inline-start" className="size-3.5" />
+                    Save Name
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
+
+        {/* Section 2: Security & Password */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Security & Password</CardTitle>
+            <CardDescription>
+              Ensure your account stays protected by using a strong password.
+            </CardDescription>
+          </CardHeader>
+
+          {isGoogleProvider && !isPasswordProvider ? (
+            <CardContent>
+              <Alert>
+                <ShieldCheck className="size-4 text-primary" />
+                <AlertTitle>Authenticated via Google Single Sign-On</AlertTitle>
+                <AlertDescription>
+                  Your account is secured with Google OAuth. Your password and two-factor
+                  authentication are managed directly inside your Google Account
+                  security dashboard.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          ) : (
+            <form onSubmit={handleChangePassword}>
+              <CardContent className="flex flex-col gap-4">
+                <FieldGroup className="gap-4 pb-2">
+                  {/* Current Password */}
+                  <Field>
+                    <FieldLabel htmlFor="current-password">Current Password</FieldLabel>
+                    <InputGroup className="max-w-md">
+                      <InputGroupInput
+                        id="current-password"
+                        type={showCurrentPassword ? "text" : "password"}
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="••••••••"
+                        disabled={isChangingPassword}
+                        autoComplete="current-password"
+                      />
+                      <InputGroupAddon align="inline-end">
+                        <InputGroupButton
+                          size="icon-xs"
+                          onClick={() => setShowCurrentPassword((prev) => !prev)}
+                          aria-label={
+                            showCurrentPassword ? "Hide password" : "Show password"
+                          }
+                        >
+                          {showCurrentPassword ? (
+                            <EyeOff className="size-3.5" />
+                          ) : (
+                            <Eye className="size-3.5" />
+                          )}
+                        </InputGroupButton>
+                      </InputGroupAddon>
+                    </InputGroup>
+                    <FieldDescription>
+                      Enter your current password to verify your identity.
+                    </FieldDescription>
+                  </Field>
+
+                  {/* New Password */}
+                  <Field>
+                    <FieldLabel htmlFor="new-password">New Password</FieldLabel>
+                    <InputGroup className="max-w-md">
+                      <InputGroupInput
+                        id="new-password"
+                        type={showNewPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="••••••••"
+                        disabled={isChangingPassword}
+                        autoComplete="new-password"
+                      />
+                      <InputGroupAddon align="inline-end">
+                        <InputGroupButton
+                          size="icon-xs"
+                          onClick={() => setShowNewPassword((prev) => !prev)}
+                          aria-label={
+                            showNewPassword ? "Hide password" : "Show password"
+                          }
+                        >
+                          {showNewPassword ? (
+                            <EyeOff className="size-3.5" />
+                          ) : (
+                            <Eye className="size-3.5" />
+                          )}
+                        </InputGroupButton>
+                      </InputGroupAddon>
+                    </InputGroup>
+                    <FieldDescription>
+                      Must be at least 6 characters with a combination of letters and
+                      numbers.
+                    </FieldDescription>
+                  </Field>
+
+                  {/* Confirm New Password */}
+                  <Field data-invalid={hasPasswordMismatch}>
+                    <FieldLabel htmlFor="confirm-password">
+                      Confirm New Password
+                    </FieldLabel>
+                    <InputGroup className="max-w-md">
+                      <InputGroupInput
+                        id="confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        disabled={isChangingPassword}
+                        autoComplete="new-password"
+                        aria-invalid={hasPasswordMismatch}
+                      />
+                      <InputGroupAddon align="inline-end">
+                        <InputGroupButton
+                          size="icon-xs"
+                          onClick={() => setShowConfirmPassword((prev) => !prev)}
+                          aria-label={
+                            showConfirmPassword
+                              ? "Hide password"
+                              : "Show password"
+                          }
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="size-3.5" />
+                          ) : (
+                            <Eye className="size-3.5" />
+                          )}
+                        </InputGroupButton>
+                      </InputGroupAddon>
+                    </InputGroup>
+                    {hasPasswordMismatch ? (
+                      <FieldError>Passwords do not match.</FieldError>
+                    ) : passwordsMatch ? (
+                      <FieldDescription className="text-success">
+                        Passwords match.
+                      </FieldDescription>
+                    ) : (
+                      <FieldDescription>
+                        Re-type the new password to confirm.
+                      </FieldDescription>
+                    )}
+                  </Field>
+                </FieldGroup>
+              </CardContent>
+
+              <CardFooter className="flex items-center justify-between border-t border-border/60 bg-muted/20 py-3">
+                <span className="text-[11px] text-muted-foreground">
+                  Credentials are encrypted using Firebase Auth
+                </span>
+                <Button
+                  type="submit"
+                  size="xs"
+                  disabled={
+                    isChangingPassword ||
+                    !currentPassword ||
+                    !newPassword ||
+                    !confirmPassword ||
+                    newPassword.length < 6 ||
+                    newPassword !== confirmPassword
+                  }
+                >
+                  {isChangingPassword ? (
+                    <>
+                      <Loader2
+                        data-icon="inline-start"
+                        className="size-3.5 animate-spin"
+                      />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound data-icon="inline-start" className="size-3.5" />
+                      Update Password
+                    </>
+                  )}
+                </Button>
+              </CardFooter>
+            </form>
+          )}
+        </Card>
+
+        {/* Section 3: Account Metadata */}
+        <Card size="sm">
+          <CardHeader>
+            <CardTitle>Account Details</CardTitle>
+            <CardDescription>
+              Technical information and session identifiers for this account.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 text-xs sm:grid-cols-2">
+              <div className="flex flex-col gap-1 rounded-none border border-border/70 p-2.5">
+                <span className="text-[11px] text-muted-foreground">Account UID</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate font-mono text-[11px] text-foreground">
+                    {user?.uid || "N/A"}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={handleCopyUid}
+                    title="Copy UID"
+                  >
+                    {copiedUid ? (
+                      <Check className="size-3 text-success" />
+                    ) : (
+                      <Copy className="size-3 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1 rounded-none border border-border/70 p-2.5">
+                <span className="text-[11px] text-muted-foreground">Auth Provider</span>
+                <div className="flex items-center gap-1.5 pt-0.5">
+                  <ShieldCheck className="size-3.5 text-muted-foreground" />
+                  <span className="font-medium text-foreground">
+                    {isGoogleProvider ? "Google (OAuth)" : "Email & Password"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1 rounded-none border border-border/70 p-2.5">
+                <span className="text-[11px] text-muted-foreground">Joined On</span>
+                <div className="flex items-center gap-1.5 pt-0.5">
+                  <Calendar className="size-3.5 text-muted-foreground" />
+                  <span className="font-mono text-[11px] text-foreground">
+                    {formatDate(user?.metadata.creationTime)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1 rounded-none border border-border/70 p-2.5">
+                <span className="text-[11px] text-muted-foreground">Last Sign In</span>
+                <div className="flex items-center gap-1.5 pt-0.5">
+                  <Clock className="size-3.5 text-muted-foreground" />
+                  <span className="font-mono text-[11px] text-foreground">
+                    {formatDate(user?.metadata.lastSignInTime)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
