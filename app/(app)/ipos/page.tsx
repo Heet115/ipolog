@@ -89,6 +89,7 @@ export default function IposPage() {
   const handleSyncAll = async () => {
     if (!user) return
     setSyncingAll(true)
+    const isOutdatedSync = staleCount > 0
     try {
       const token = await user.getIdToken()
       const res = await fetch("/api/ipos/auto-refresh", {
@@ -97,7 +98,7 @@ export default function IposPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ force: true }),
+        body: JSON.stringify({ force: !isOutdatedSync }),
       })
       const data = await res.json()
       if (!res.ok || !data.success) {
@@ -105,7 +106,9 @@ export default function IposPage() {
       }
       toast.add({
         title: "Sync Complete",
-        description: `Refreshed ${data.refreshedCount} imported IPO(s).`,
+        description: isOutdatedSync
+          ? `Refreshed ${data.refreshedCount} outdated IPO(s).`
+          : `Refreshed ${data.refreshedCount} imported IPO(s).`,
         type: "success",
       })
       reloadData()
@@ -138,8 +141,9 @@ export default function IposPage() {
     }
   }
 
-  const importedCount = ipos.filter((i) => Boolean(i.externalId)).length
-  const staleCount = ipos.filter((i) => isIpoSyncStale(i)).length
+  const activeIpos = ipos.filter((i) => !i.archived)
+  const importedCount = activeIpos.filter((i) => Boolean(i.externalId)).length
+  const staleCount = activeIpos.filter((i) => isIpoSyncStale(i)).length
 
   return (
     <div className="flex flex-col gap-6">

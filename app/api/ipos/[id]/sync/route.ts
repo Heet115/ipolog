@@ -57,6 +57,16 @@ export async function POST(
       )
     }
 
+    if (existingIpo.archived) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Archived IPOs cannot be refreshed.",
+        },
+        { status: 400 }
+      )
+    }
+
     // 3. Ensure IPO was imported from an external API provider
     if (!existingIpo.externalId) {
       return NextResponse.json(

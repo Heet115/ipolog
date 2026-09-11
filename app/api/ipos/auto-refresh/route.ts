@@ -31,11 +31,13 @@ export async function POST(request: NextRequest) {
         ? body.ipoId.trim()
         : undefined
 
-    // 3. Fetch all active IPOs
-    const allIpos = await getIpos(user.uid, false)
+    // 3. Fetch active IPOs (excluding archived)
+    const activeIpos = await getIpos(user.uid, false)
 
-    // 4. Identify imported IPOs that need a 24-hour sync
-    let targetIpos = allIpos.filter((ipo) => Boolean(ipo.externalId))
+    // 4. Identify active imported IPOs that need a 24-hour sync (strictly excluding archived)
+    let targetIpos = activeIpos.filter(
+      (ipo) => !ipo.archived && Boolean(ipo.externalId)
+    )
 
     if (specificIpoId) {
       targetIpos = targetIpos.filter((ipo) => ipo.id === specificIpoId)
@@ -49,7 +51,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         refreshedCount: 0,
-        totalChecked: allIpos.length,
+        totalChecked: activeIpos.length,
         message:
           "All imported IPO data is fresh (synced within the last 24 hours).",
       })

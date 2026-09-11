@@ -64,18 +64,15 @@ export async function getIpos(
   includeArchived = false
 ): Promise<Ipo[]> {
   const iposRef = collection(db, "users", userId, "ipos")
-  let q = query(iposRef, orderBy("createdAt", "desc"))
+  const q = query(iposRef, orderBy("createdAt", "desc"))
+  const snap = await getDocs(q)
+  const allIpos = snap.docs.map(docToIpo)
 
-  if (!includeArchived) {
-    q = query(
-      iposRef,
-      where("archived", "==", false),
-      orderBy("createdAt", "desc")
-    )
+  if (includeArchived) {
+    return allIpos
   }
 
-  const snap = await getDocs(q)
-  return snap.docs.map(docToIpo)
+  return allIpos.filter((ipo) => !ipo.archived)
 }
 
 /**

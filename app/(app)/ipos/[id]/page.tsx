@@ -152,8 +152,8 @@ export default function IpoDetailPage() {
             setAccounts(accountsData)
             setBankAccounts(banksData)
 
-            // Auto-refresh in background if imported IPO data is older than 24 hours
-            if (ipoData.externalId && isIpoSyncStale(ipoData, 24)) {
+            // Auto-refresh in background if imported IPO data is older than 24 hours and not archived
+            if (ipoData.externalId && !ipoData.archived && isIpoSyncStale(ipoData, 24)) {
               user.getIdToken().then((token) => {
                 fetch(`/api/ipos/${ipoData.id}/sync`, {
                   method: "POST",
@@ -356,7 +356,7 @@ export default function IpoDetailPage() {
         </Link>
 
         <div className="flex flex-wrap items-center gap-2">
-          {Boolean(ipo.externalId) && (
+          {Boolean(ipo.externalId) && !ipo.archived && (
             <Button
               variant="outline"
               size="xs"

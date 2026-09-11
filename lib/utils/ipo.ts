@@ -165,6 +165,7 @@ export function formatIsoDate(
  * Checks if an imported IPO's synced data is older than maxAgeHours (defaults to 24h).
  */
 export function isIpoSyncStale(ipo: Ipo, maxAgeHours = 24): boolean {
+  if (ipo.archived) return false
   if (!ipo.externalId) return false
   if (!ipo.lastSyncedAt) return true
 
