@@ -111,7 +111,8 @@ export function ApplicationTable({
   }
 
   const handleToggleSettlement = async (app: Application) => {
-    const nextStatus = app.settlementStatus === "settled" ? "pending" : "settled"
+    const nextStatus =
+      app.settlementStatus === "settled" ? "pending" : "settled"
     try {
       await updateApplicationSettlement(userId, app.id, nextStatus)
       toast.add({
@@ -440,12 +441,16 @@ export function ApplicationTable({
                     e.stopPropagation()
                     handleToggleSettlement(app)
                   }}
-                  className="mt-0.5 inline-flex items-center gap-1 cursor-pointer"
-                  title={isSettled ? "Click to revert to pending" : "Click to mark as settled"}
+                  className="mt-0.5 inline-flex cursor-pointer items-center gap-1"
+                  title={
+                    isSettled
+                      ? "Click to revert to pending"
+                      : "Click to mark as settled"
+                  }
                 >
                   <Badge
                     variant={isSettled ? "success" : "warning"}
-                    className="px-1.5 py-0 text-[9px] font-medium tracking-tight hover:opacity-80 transition-opacity"
+                    className="px-1.5 py-0 text-[9px] font-medium tracking-tight transition-opacity hover:opacity-80"
                   >
                     {isSettled ? "Settled" : "Unsettled"}
                   </Badge>
@@ -527,7 +532,9 @@ export function ApplicationTable({
                     </DropdownMenuItem>
                   )}
                   {app.status === "sold" && account?.type === "other" && (
-                    <DropdownMenuItem onClick={() => handleToggleSettlement(app)}>
+                    <DropdownMenuItem
+                      onClick={() => handleToggleSettlement(app)}
+                    >
                       {app.settlementStatus === "settled" ? (
                         <>
                           <RotateCcw data-icon="inline-start" />

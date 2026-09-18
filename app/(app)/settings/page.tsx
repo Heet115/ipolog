@@ -43,8 +43,10 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast } from "@/components/ui/toast"
+import { usePageTitle } from "@/hooks/use-page-title"
 
 export default function SettingsPage() {
+  usePageTitle("Settings")
   const { user, updateDisplayName, changePassword } = useAuth()
 
   // Profile Form State
@@ -66,8 +68,9 @@ export default function SettingsPage() {
   // Copy UID State
   const [copiedUid, setCopiedUid] = React.useState(false)
 
-  const userInitial =
-    (displayName || user?.email || "U").charAt(0).toUpperCase()
+  const userInitial = (displayName || user?.email || "U")
+    .charAt(0)
+    .toUpperCase()
 
   const isPasswordProvider =
     user?.providerData.some((p) => p.providerId === "password") ?? false
@@ -163,7 +166,8 @@ export default function SettingsPage() {
       setConfirmPassword("")
     } catch (err: unknown) {
       console.error("Failed to change password:", err)
-      let message = "Failed to update password. Please verify your current password."
+      let message =
+        "Failed to update password. Please verify your current password."
       if (err instanceof Error) {
         if (
           err.message.includes("auth/invalid-credential") ||
@@ -221,7 +225,8 @@ export default function SettingsPage() {
           Account Settings
         </h1>
         <p className="text-xs text-muted-foreground">
-          Manage your personal profile, display name, and login security credentials.
+          Manage your personal profile, display name, and login security
+          credentials.
         </p>
       </div>
 
@@ -276,8 +281,8 @@ export default function SettingsPage() {
                     className="max-w-md"
                   />
                   <FieldDescription className="pb-2">
-                    This name is shown in the sidebar navigation, header, and generated
-                    settlement ledgers.
+                    This name is shown in the sidebar navigation, header, and
+                    generated settlement ledgers.
                   </FieldDescription>
                 </Field>
               </FieldGroup>
@@ -290,11 +295,16 @@ export default function SettingsPage() {
               <Button
                 type="submit"
                 size="xs"
-                disabled={isSavingProfile || !hasNameChanged || !displayName.trim()}
+                disabled={
+                  isSavingProfile || !hasNameChanged || !displayName.trim()
+                }
               >
                 {isSavingProfile ? (
                   <>
-                    <Loader2 data-icon="inline-start" className="size-3.5 animate-spin" />
+                    <Loader2
+                      data-icon="inline-start"
+                      className="size-3.5 animate-spin"
+                    />
                     Saving...
                   </>
                 ) : (
@@ -323,9 +333,9 @@ export default function SettingsPage() {
                 <ShieldCheck className="size-4 text-primary" />
                 <AlertTitle>Authenticated via Google Single Sign-On</AlertTitle>
                 <AlertDescription>
-                  Your account is secured with Google OAuth. Your password and two-factor
-                  authentication are managed directly inside your Google Account
-                  security dashboard.
+                  Your account is secured with Google OAuth. Your password and
+                  two-factor authentication are managed directly inside your
+                  Google Account security dashboard.
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -335,7 +345,9 @@ export default function SettingsPage() {
                 <FieldGroup className="gap-4 pb-2">
                   {/* Current Password */}
                   <Field>
-                    <FieldLabel htmlFor="current-password">Current Password</FieldLabel>
+                    <FieldLabel htmlFor="current-password">
+                      Current Password
+                    </FieldLabel>
                     <InputGroup className="max-w-md">
                       <InputGroupInput
                         id="current-password"
@@ -349,9 +361,13 @@ export default function SettingsPage() {
                       <InputGroupAddon align="inline-end">
                         <InputGroupButton
                           size="icon-xs"
-                          onClick={() => setShowCurrentPassword((prev) => !prev)}
+                          onClick={() =>
+                            setShowCurrentPassword((prev) => !prev)
+                          }
                           aria-label={
-                            showCurrentPassword ? "Hide password" : "Show password"
+                            showCurrentPassword
+                              ? "Hide password"
+                              : "Show password"
                           }
                         >
                           {showCurrentPassword ? (
@@ -397,8 +413,8 @@ export default function SettingsPage() {
                       </InputGroupAddon>
                     </InputGroup>
                     <FieldDescription>
-                      Must be at least 6 characters with a combination of letters and
-                      numbers.
+                      Must be at least 6 characters with a combination of
+                      letters and numbers.
                     </FieldDescription>
                   </Field>
 
@@ -421,7 +437,9 @@ export default function SettingsPage() {
                       <InputGroupAddon align="inline-end">
                         <InputGroupButton
                           size="icon-xs"
-                          onClick={() => setShowConfirmPassword((prev) => !prev)}
+                          onClick={() =>
+                            setShowConfirmPassword((prev) => !prev)
+                          }
                           aria-label={
                             showConfirmPassword
                               ? "Hide password"
@@ -498,7 +516,9 @@ export default function SettingsPage() {
           <CardContent>
             <div className="grid gap-3 text-xs sm:grid-cols-2">
               <div className="flex flex-col gap-1 rounded-none border border-border/70 p-2.5">
-                <span className="text-[11px] text-muted-foreground">Account UID</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Account UID
+                </span>
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate font-mono text-[11px] text-foreground">
                     {user?.uid || "N/A"}
@@ -520,7 +540,9 @@ export default function SettingsPage() {
               </div>
 
               <div className="flex flex-col gap-1 rounded-none border border-border/70 p-2.5">
-                <span className="text-[11px] text-muted-foreground">Auth Provider</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Auth Provider
+                </span>
                 <div className="flex items-center gap-1.5 pt-0.5">
                   <ShieldCheck className="size-3.5 text-muted-foreground" />
                   <span className="font-medium text-foreground">
@@ -530,7 +552,9 @@ export default function SettingsPage() {
               </div>
 
               <div className="flex flex-col gap-1 rounded-none border border-border/70 p-2.5">
-                <span className="text-[11px] text-muted-foreground">Joined On</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Joined On
+                </span>
                 <div className="flex items-center gap-1.5 pt-0.5">
                   <Calendar className="size-3.5 text-muted-foreground" />
                   <span className="font-mono text-[11px] text-foreground">
@@ -540,7 +564,9 @@ export default function SettingsPage() {
               </div>
 
               <div className="flex flex-col gap-1 rounded-none border border-border/70 p-2.5">
-                <span className="text-[11px] text-muted-foreground">Last Sign In</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Last Sign In
+                </span>
                 <div className="flex items-center gap-1.5 pt-0.5">
                   <Clock className="size-3.5 text-muted-foreground" />
                   <span className="font-mono text-[11px] text-foreground">

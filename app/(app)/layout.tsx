@@ -37,9 +37,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <AppSidebar />
         <SidebarInset>
           <Header />
-          <div className="mx-auto w-full max-w-7xl flex-1 p-4 sm:p-6 md:p-8">
+          <main
+            id="main-content"
+            tabIndex={-1}
+            className="mx-auto w-full max-w-7xl flex-1 p-4 outline-none sm:p-6 md:p-8"
+          >
             {children}
-          </div>
+          </main>
         </SidebarInset>
       </SidebarProvider>
     </AutoRefreshProvider>

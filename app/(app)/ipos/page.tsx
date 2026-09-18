@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, FileText, Download, RefreshCw } from "lucide-react"
+import {
+  Plus,
+  FileText,
+  Download,
+  RefreshCw,
+  AlertTriangle,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "@/components/ui/toast"
@@ -22,9 +28,11 @@ import { useAuth } from "@/lib/firebase/auth-context"
 import { getIpos } from "@/lib/firebase/ipos"
 import { getApplications } from "@/lib/firebase/applications"
 import { isIpoSyncStale } from "@/lib/utils/ipo"
+import { usePageTitle } from "@/hooks/use-page-title"
 import type { Ipo, Application } from "@/types"
 
 export default function IposPage() {
+  usePageTitle("My IPOs")
   const { user } = useAuth()
   const router = useRouter()
 
@@ -35,21 +43,12 @@ export default function IposPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [ipoToEdit, setIpoToEdit] = useState<Ipo | null>(null)
   const [syncingAll, setSyncingAll] = useState(false)
+  const [fetchError, setFetchError] = useState(false)
+  const [fetchTrigger, setFetchTrigger] = useState(0)
 
-  const reloadData = useCallback(async () => {
-    if (!user) return
-    try {
-      const [iposData, appsData] = await Promise.all([
-        getIpos(user.uid, true),
-        getApplications(user.uid),
-      ])
-      const validIpoIds = new Set(iposData.map((i) => i.id))
-      setIpos(iposData)
-      setApplications(appsData.filter((a) => validIpoIds.has(a.ipoId)))
-    } catch (err) {
-      console.error("Failed to load IPOs and applications:", err)
-    }
-  }, [user])
+  const reloadData = useCallback(() => {
+    setFetchTrigger((prev) => prev + 1)
+  }, [])
 
   useEffect(() => {
     const handleAutoRefreshed = () => {
@@ -77,6 +76,7 @@ export default function IposPage() {
       .catch((err) => {
         console.error("Failed to load IPOs:", err)
         if (!ignore) {
+          setFetchError(true)
           setLoading(false)
         }
       })
@@ -84,7 +84,7 @@ export default function IposPage() {
     return () => {
       ignore = true
     }
-  }, [user])
+  }, [user, fetchTrigger])
 
   const handleSyncAll = async () => {
     if (!user) return
@@ -202,7 +202,33 @@ export default function IposPage() {
         </div>
       </div>
 
-      {loading ? (
+      {fetchError ? (
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <AlertTriangle className="size-6 text-destructive" />
+            </EmptyMedia>
+            <EmptyTitle>Failed to load data</EmptyTitle>
+            <EmptyDescription>
+              Something went wrong while loading your IPOs. Please check your
+              connection and try again.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button
+              size="sm"
+              onClick={() => {
+                setLoading(true)
+                setFetchError(false)
+                setFetchTrigger((prev) => prev + 1)
+              }}
+            >
+              <RefreshCw data-icon="inline-start" className="size-3.5" />
+              Retry
+            </Button>
+          </EmptyContent>
+        </Empty>
+      ) : loading ? (
         <IpoListSkeleton />
       ) : ipos.length === 0 ? (
         <Empty>

@@ -23,7 +23,10 @@ import {
   type UserCredential,
 } from "firebase/auth"
 import { auth } from "@/lib/firebase/firebase"
-import { createOrUpdateUserProfile, updateUserDisplayName } from "@/lib/firebase/user"
+import {
+  createOrUpdateUserProfile,
+  updateUserDisplayName,
+} from "@/lib/firebase/user"
 
 interface AuthContextValue {
   user: User | null

@@ -139,7 +139,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       <SidebarMenuButton
                         isActive={isActive}
                         tooltip={item.title}
-                        render={<Link href={item.url} onClick={handleNavClick} />}
+                        render={
+                          <Link href={item.url} onClick={handleNavClick} />
+                        }
                       >
                         <item.icon className="size-4" />
                         <span>{item.title}</span>
@@ -205,15 +207,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <DropdownMenuItem render={<Link href="/accounts" onClick={handleNavClick} />}>
+                    <DropdownMenuItem
+                      render={
+                        <Link href="/accounts" onClick={handleNavClick} />
+                      }
+                    >
                       <UserCheck data-icon="inline-start" />
                       Manage Accounts
                     </DropdownMenuItem>
-                    <DropdownMenuItem render={<Link href="/bank-accounts" onClick={handleNavClick} />}>
+                    <DropdownMenuItem
+                      render={
+                        <Link href="/bank-accounts" onClick={handleNavClick} />
+                      }
+                    >
                       <Building2 data-icon="inline-start" />
                       Bank ASBA Limits
                     </DropdownMenuItem>
-                    <DropdownMenuItem render={<Link href="/settings" onClick={handleNavClick} />}>
+                    <DropdownMenuItem
+                      render={
+                        <Link href="/settings" onClick={handleNavClick} />
+                      }
+                    >
                       <Settings data-icon="inline-start" />
                       Settings
                     </DropdownMenuItem>

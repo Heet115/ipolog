@@ -75,6 +75,7 @@ export function Header() {
         <Button
           size="xs"
           className="h-8 gap-1 text-xs font-semibold"
+          aria-label="Add IPO"
           render={<Link href="/ipos" />}
         >
           <Plus data-icon="inline-start" className="size-3.5" />

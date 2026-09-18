@@ -31,6 +31,7 @@ import {
   EmptyMedia,
   EmptyTitle,
   EmptyDescription,
+  EmptyContent,
 } from "@/components/ui/empty"
 import {
   AlertDialog,
@@ -456,7 +457,8 @@ export function AccountList({
         <div className="relative w-full sm:max-w-xs md:max-w-sm">
           <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search account name, notes..."
+            placeholder="Search accounts or PAN..."
+            aria-label="Search application accounts"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 w-full bg-background pl-8 text-xs"
@@ -478,10 +480,12 @@ export function AccountList({
           )}
 
           {/* View Mode Toggle */}
-          <div className="flex h-8 items-center rounded-none border border-border bg-background p-0.5">
+          <div className="flex h-8 shrink-0 items-center rounded-none border border-border bg-background p-0.5">
             <button
               type="button"
               onClick={() => setViewMode("grid")}
+              aria-label="Grid view"
+              aria-pressed={viewMode === "grid"}
               className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold transition-all ${
                 viewMode === "grid"
                   ? "bg-foreground text-background"
@@ -494,6 +498,8 @@ export function AccountList({
             <button
               type="button"
               onClick={() => setViewMode("table")}
+              aria-label="Table view"
+              aria-pressed={viewMode === "table"}
               className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold transition-all ${
                 viewMode === "table"
                   ? "bg-foreground text-background"
@@ -520,6 +526,13 @@ export function AccountList({
                 : "Add application accounts to start recording applications"}
             </EmptyDescription>
           </EmptyHeader>
+          {search && (
+            <EmptyContent>
+              <Button variant="outline" size="sm" onClick={() => setSearch("")}>
+                Clear Search
+              </Button>
+            </EmptyContent>
+          )}
         </Empty>
       ) : viewMode === "table" ? (
         <DataTable
@@ -857,7 +870,7 @@ function AccountCard({
         {!isMy && summary.pendingReceivables > 0 && (
           <div className="flex items-center justify-between gap-2 rounded-none border border-warning/40 bg-warning/10 p-2 text-xs">
             <div className="flex flex-col">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
                 Pending Settlement
               </span>
               <span className="font-mono font-bold text-foreground">

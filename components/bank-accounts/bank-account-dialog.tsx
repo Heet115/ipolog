@@ -86,7 +86,9 @@ function BankAccountForm({
   const [last4, setLast4] = useState(bankAccountToEdit?.last4 ?? "")
   const [upiId, setUpiId] = useState(bankAccountToEdit?.upiId ?? "")
   const [asbaLimit, setAsbaLimit] = useState<string>(
-    bankAccountToEdit?.asbaLimit != null ? String(bankAccountToEdit.asbaLimit) : ""
+    bankAccountToEdit?.asbaLimit != null
+      ? String(bankAccountToEdit.asbaLimit)
+      : ""
   )
   const [notes, setNotes] = useState(bankAccountToEdit?.notes ?? "")
   const [loading, setLoading] = useState(false)
@@ -112,7 +114,9 @@ function BankAccountForm({
       return
     }
 
-    const parsedAsbaLimit = asbaLimit.trim() ? Number(asbaLimit.trim()) : undefined
+    const parsedAsbaLimit = asbaLimit.trim()
+      ? Number(asbaLimit.trim())
+      : undefined
     if (
       parsedAsbaLimit !== undefined &&
       (isNaN(parsedAsbaLimit) || parsedAsbaLimit < 0)
@@ -248,7 +252,8 @@ function BankAccountForm({
             className="font-mono"
           />
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Set your bank balance or capital limit. You will be alerted if total blocked funds across concurrent active IPOs exceed this threshold.
+            Set your bank balance or capital limit. You will be alerted if total
+            blocked funds across concurrent active IPOs exceed this threshold.
           </p>
         </Field>
 

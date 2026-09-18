@@ -151,9 +151,9 @@ function SettlementForm({
   const [note, setNote] = useState<string>("")
   const [copied, setCopied] = useState(false)
   const [copiedUpi, setCopiedUpi] = useState(false)
-  const [settlementStatus, setSettlementStatus] = useState<"pending" | "settled">(
-    application.settlementStatus || "pending"
-  )
+  const [settlementStatus, setSettlementStatus] = useState<
+    "pending" | "settled"
+  >(application.settlementStatus || "pending")
   const [updatingSettlement, setUpdatingSettlement] = useState(false)
 
   // Switch bank account handler
@@ -340,16 +340,16 @@ function SettlementForm({
       {/* Settlement Payment Status Banner */}
       <div
         className={cn(
-          "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 rounded-none border text-xs",
+          "flex flex-col gap-3 rounded-none border p-3 text-xs sm:flex-row sm:items-center sm:justify-between",
           settlementStatus === "settled"
             ? "border-emerald-500/50 bg-emerald-500/10"
             : "border-amber-500/50 bg-amber-500/10"
         )}
       >
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex min-w-0 items-center gap-2.5">
           <div
             className={cn(
-              "flex size-8 items-center justify-center rounded-none border shrink-0",
+              "flex size-8 shrink-0 items-center justify-center rounded-none border",
               settlementStatus === "settled"
                 ? "border-emerald-500/60 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                 : "border-amber-500/60 bg-amber-500/20 text-amber-600 dark:text-amber-400"
@@ -361,21 +361,19 @@ function SettlementForm({
               <Clock className="size-4" />
             )}
           </div>
-          <div className="flex flex-col min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-foreground">
-                Payment Status:
-              </span>
+          <div className="flex min-w-0 flex-col">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-bold text-foreground">Payment Status:</span>
               <Badge
                 variant={settlementStatus === "settled" ? "success" : "warning"}
-                className="font-semibold text-[10px] px-1.5 py-0 capitalize"
+                className="px-1.5 py-0 text-[10px] font-semibold capitalize"
               >
                 {settlementStatus === "settled"
                   ? "Settled / Payment Received"
                   : "Pending Payment"}
               </Badge>
             </div>
-            <span className="text-[11px] text-muted-foreground truncate">
+            <span className="truncate text-[11px] text-muted-foreground">
               {settlementStatus === "settled"
                 ? `Net payout of ${formatCurrency(calculation.amountToSendUser)} marked as received${
                     application.settledAt
@@ -393,10 +391,10 @@ function SettlementForm({
           disabled={updatingSettlement}
           onClick={handleToggleSettlement}
           className={cn(
-            "h-8 text-xs font-semibold shrink-0",
+            "h-8 shrink-0 text-xs font-semibold",
             settlementStatus === "settled"
-              ? "bg-background text-foreground border border-border hover:bg-muted"
-              : "bg-emerald-600 hover:bg-emerald-700 text-white"
+              ? "border border-border bg-background text-foreground hover:bg-muted"
+              : "bg-emerald-600 text-white hover:bg-emerald-700"
           )}
         >
           {settlementStatus === "settled" ? (

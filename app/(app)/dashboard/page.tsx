@@ -13,6 +13,7 @@ import {
   Download,
   Sparkles,
   AlertTriangle,
+  RefreshCw,
 } from "lucide-react"
 import {
   Card,
@@ -59,6 +60,7 @@ import { exportPortfolioSummaryCsv } from "@/lib/utils/export-csv"
 import { formatCurrency, formatDate, getIpoStatus } from "@/lib/utils/ipo"
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts"
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton"
+import { usePageTitle } from "@/hooks/use-page-title"
 import type {
   Ipo,
   Application,
@@ -68,6 +70,7 @@ import type {
 } from "@/types"
 
 export default function DashboardPage() {
+  usePageTitle("Dashboard")
   const { user } = useAuth()
 
   const [ipos, setIpos] = useState<Ipo[]>([])
@@ -75,6 +78,9 @@ export default function DashboardPage() {
   const [accounts, setAccounts] = useState<ApplicationAccount[]>([])
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
   const [loading, setLoading] = useState(true)
+
+  const [fetchError, setFetchError] = useState(false)
+  const [fetchTrigger, setFetchTrigger] = useState(0)
 
   useEffect(() => {
     let ignore = false
@@ -106,6 +112,7 @@ export default function DashboardPage() {
       .catch((err) => {
         console.error("Failed to load dashboard data:", err)
         if (!ignore) {
+          setFetchError(true)
           setLoading(false)
         }
       })
@@ -113,10 +120,40 @@ export default function DashboardPage() {
     return () => {
       ignore = true
     }
-  }, [user])
+  }, [user, fetchTrigger])
 
   if (loading) {
     return <DashboardSkeleton />
+  }
+
+  if (fetchError) {
+    return (
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <AlertTriangle className="size-6 text-destructive" />
+          </EmptyMedia>
+          <EmptyTitle>Failed to load data</EmptyTitle>
+          <EmptyDescription>
+            Something went wrong while loading your dashboard. Please check your
+            connection and try again.
+          </EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button
+            size="sm"
+            onClick={() => {
+              setLoading(true)
+              setFetchError(false)
+              setFetchTrigger((prev) => prev + 1)
+            }}
+          >
+            <RefreshCw data-icon="inline-start" className="size-3.5" />
+            Retry
+          </Button>
+        </EmptyContent>
+      </Empty>
+    )
   }
 
   const metrics = calculateDashboardMetrics(ipos, applications, accounts)
@@ -265,12 +302,14 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2 font-bold text-destructive">
               <AlertTriangle className="size-4 shrink-0" />
               <span>
-                ASBA Capital Limit Warning: Blocked funds exceed available balance in {exceededWarnings.length} bank account{exceededWarnings.length > 1 ? "s" : ""}.
+                ASBA Capital Limit Warning: Blocked funds exceed available
+                balance in {exceededWarnings.length} bank account
+                {exceededWarnings.length > 1 ? "s" : ""}.
               </span>
             </div>
             <Link
               href="/bank-accounts"
-              className="text-[11px] font-semibold text-primary hover:underline shrink-0"
+              className="shrink-0 text-[11px] font-semibold text-primary hover:underline"
             >
               Manage Bank Accounts →
             </Link>
@@ -294,9 +333,10 @@ export default function DashboardPage() {
                 </span>
                 <Badge
                   variant="destructive"
-                  className="font-mono text-[9px] px-1.5 py-0 font-semibold"
+                  className="px-1.5 py-0 font-mono text-[9px] font-semibold"
                 >
-                  Over by {formatCurrency(w.exceededAmount)} ({w.utilizationPercent}%)
+                  Over by {formatCurrency(w.exceededAmount)} (
+                  {w.utilizationPercent}%)
                 </Badge>
                 {w.activeIpoNames.length > 0 && (
                   <span className="text-[10px] text-muted-foreground">

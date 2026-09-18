@@ -585,9 +585,7 @@ export function calculateReceivablesSummary(
 
     const profitSharePercent = account.profitSharePercent || 0
     const ownerProfitShare =
-      grossProfit > 0
-        ? Math.round((grossProfit * profitSharePercent) / 100)
-        : 0
+      grossProfit > 0 ? Math.round((grossProfit * profitSharePercent) / 100) : 0
     const yourProfitShare =
       grossProfit > 0 ? grossProfit - ownerProfitShare : grossProfit
     const amountToSendUser = saleProceeds - ownerProfitShare

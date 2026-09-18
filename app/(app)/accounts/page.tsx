@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Plus, Users } from "lucide-react"
+import { Plus, Users, AlertTriangle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -20,14 +20,18 @@ import { getApplicationAccounts } from "@/lib/firebase/accounts"
 import { getApplications } from "@/lib/firebase/applications"
 import { getIpos } from "@/lib/firebase/ipos"
 import type { ApplicationAccount, Application, Ipo } from "@/types"
+import { usePageTitle } from "@/hooks/use-page-title"
 
 export default function AccountsPage() {
+  usePageTitle("Application Accounts")
   const { user } = useAuth()
 
   const [accounts, setAccounts] = useState<ApplicationAccount[]>([])
   const [applications, setApplications] = useState<Application[]>([])
   const [ipos, setIpos] = useState<Ipo[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
+  const [fetchTrigger, setFetchTrigger] = useState(0)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [accountToEdit, setAccountToEdit] = useState<ApplicationAccount | null>(
     null
@@ -77,6 +81,7 @@ export default function AccountsPage() {
       .catch((err) => {
         console.error("Failed to load application accounts:", err)
         if (!ignore) {
+          setFetchError(true)
           setLoading(false)
         }
       })
@@ -84,7 +89,7 @@ export default function AccountsPage() {
     return () => {
       ignore = true
     }
-  }, [user])
+  }, [user, fetchTrigger])
 
   const handleAddClick = () => {
     setAccountToEdit(null)
@@ -114,7 +119,33 @@ export default function AccountsPage() {
         </Button>
       </div>
 
-      {loading ? (
+      {fetchError ? (
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <AlertTriangle className="size-6 text-destructive" />
+            </EmptyMedia>
+            <EmptyTitle>Failed to load data</EmptyTitle>
+            <EmptyDescription>
+              Something went wrong while loading your accounts. Please check
+              your connection and try again.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button
+              size="sm"
+              onClick={() => {
+                setLoading(true)
+                setFetchError(false)
+                setFetchTrigger((prev) => prev + 1)
+              }}
+            >
+              <RefreshCw data-icon="inline-start" className="size-3.5" />
+              Retry
+            </Button>
+          </EmptyContent>
+        </Empty>
+      ) : loading ? (
         <AccountListSkeleton />
       ) : accounts.length === 0 ? (
         <Empty>

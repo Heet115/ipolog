@@ -32,6 +32,7 @@ import {
   EmptyMedia,
   EmptyTitle,
   EmptyDescription,
+  EmptyContent,
 } from "@/components/ui/empty"
 import {
   AlertDialog,
@@ -287,14 +288,14 @@ export function BankAccountList({
             {isExceeded ? (
               <Badge
                 variant="destructive"
-                className="font-mono text-[9px] px-1.5 py-0"
+                className="px-1.5 py-0 font-mono text-[9px]"
               >
                 Exceeded by {formatCurrency(blocked - bank.asbaLimit)}
               </Badge>
             ) : isNear ? (
               <Badge
                 variant="warning"
-                className="font-mono text-[9px] px-1.5 py-0"
+                className="px-1.5 py-0 font-mono text-[9px]"
               >
                 {utilPercent}% utilized
               </Badge>
@@ -400,7 +401,10 @@ export function BankAccountList({
           <div className="flex items-center gap-2 font-bold text-destructive">
             <AlertTriangle className="size-4 shrink-0" />
             <span>
-              ASBA Capital Limit Exceeded: Blocked funds exceed available balance across concurrent active IPOs for {exceededWarnings.length} bank account{exceededWarnings.length > 1 ? "s" : ""}.
+              ASBA Capital Limit Exceeded: Blocked funds exceed available
+              balance across concurrent active IPOs for{" "}
+              {exceededWarnings.length} bank account
+              {exceededWarnings.length > 1 ? "s" : ""}.
             </span>
           </div>
           <div className="flex flex-col gap-1.5 pl-6">
@@ -422,9 +426,10 @@ export function BankAccountList({
                 </span>
                 <Badge
                   variant="destructive"
-                  className="font-mono text-[9px] px-1.5 py-0 font-semibold"
+                  className="px-1.5 py-0 font-mono text-[9px] font-semibold"
                 >
-                  Over by {formatCurrency(w.exceededAmount)} ({w.utilizationPercent}%)
+                  Over by {formatCurrency(w.exceededAmount)} (
+                  {w.utilizationPercent}%)
                 </Badge>
                 {w.activeIpoNames.length > 0 && (
                   <span className="text-[10px] text-muted-foreground">
@@ -506,6 +511,13 @@ export function BankAccountList({
                 : "Add bank accounts to easily assign funding accounts to applications"}
             </EmptyDescription>
           </EmptyHeader>
+          {search && (
+            <EmptyContent>
+              <Button variant="outline" size="sm" onClick={() => setSearch("")}>
+                Clear Search
+              </Button>
+            </EmptyContent>
+          )}
         </Empty>
       ) : viewMode === "table" ? (
         <DataTable
@@ -762,7 +774,7 @@ function BankAccountCard({
         {hasLimit && (
           <div
             className={cn(
-              "flex flex-col gap-1.5 p-2 rounded-none border text-xs",
+              "flex flex-col gap-1.5 rounded-none border p-2 text-xs",
               isExceeded
                 ? "border-destructive/50 bg-destructive/10"
                 : isNear
@@ -773,11 +785,13 @@ function BankAccountCard({
             <div className="flex items-center justify-between text-[11px]">
               <div className="flex items-center gap-1 font-semibold">
                 {isExceeded && (
-                  <AlertTriangle className="size-3 text-destructive shrink-0" />
+                  <AlertTriangle className="size-3 shrink-0 text-destructive" />
                 )}
                 <span
                   className={
-                    isExceeded ? "text-destructive font-bold" : "text-muted-foreground"
+                    isExceeded
+                      ? "font-bold text-destructive"
+                      : "text-muted-foreground"
                   }
                 >
                   ASBA Capital Limit:
@@ -800,14 +814,14 @@ function BankAccountCard({
               )}
             />
 
-            <div className="flex items-center justify-between text-[10px] font-mono">
+            <div className="flex items-center justify-between font-mono text-[10px]">
               <span
                 className={cn(
                   "font-semibold",
                   isExceeded
-                    ? "text-destructive font-bold"
+                    ? "font-bold text-destructive"
                     : isNear
-                      ? "text-amber-500 font-semibold"
+                      ? "font-semibold text-amber-500"
                       : "text-muted-foreground"
                 )}
               >

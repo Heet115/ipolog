@@ -891,6 +891,7 @@ function BulkApplicationForm({
                   disabled={defaultLots <= 1}
                   onClick={() => applyGlobalLots(defaultLots - 1)}
                   className="px-2 py-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  aria-label="Decrease default lots"
                 >
                   <Minus className="size-3" />
                 </button>
@@ -900,12 +901,14 @@ function BulkApplicationForm({
                   step="1"
                   value={defaultLots}
                   onChange={(e) => applyGlobalLots(Number(e.target.value))}
+                  aria-label="Default lots"
                   className="h-6 [appearance:textfield] border-0 p-0 text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
                 <button
                   type="button"
                   onClick={() => applyGlobalLots(defaultLots + 1)}
                   className="px-2 py-1 text-muted-foreground hover:text-foreground"
+                  aria-label="Increase default lots"
                 >
                   <Plus className="size-3" />
                 </button>
@@ -951,17 +954,23 @@ function BulkApplicationForm({
 
           {/* ASBA Limit Warning for Current Batch */}
           {bankAsbaBreaches.length > 0 && (
-            <div className="flex flex-col gap-1.5 p-2.5 rounded-none border border-destructive/60 bg-destructive/10 text-xs">
+            <div className="flex flex-col gap-1.5 rounded-none border border-destructive/60 bg-destructive/10 p-2.5 text-xs">
               <div className="flex items-center gap-1.5 font-bold text-destructive">
                 <AlertTriangle className="size-3.5 shrink-0" />
                 <span>
-                  ASBA Capital Limit Warning: Selected bank account(s) will exceed balance limit
+                  ASBA Capital Limit Warning: Selected bank account(s) will
+                  exceed balance limit
                 </span>
               </div>
-              <div className="flex flex-col gap-1 text-[11px] text-foreground pl-5">
+              <div className="flex flex-col gap-1 pl-5 text-[11px] text-foreground">
                 {bankAsbaBreaches.map((b) => (
-                  <div key={b.bank.id} className="flex flex-wrap items-center gap-1.5">
-                    <span className="font-semibold">{formatBankAccount(b.bank)}:</span>
+                  <div
+                    key={b.bank.id}
+                    className="flex flex-wrap items-center gap-1.5"
+                  >
+                    <span className="font-semibold">
+                      {formatBankAccount(b.bank)}:
+                    </span>
                     <span>
                       Total blocked will become{" "}
                       <span className="font-mono font-bold text-destructive">
@@ -974,7 +983,7 @@ function BulkApplicationForm({
                     </span>
                     <Badge
                       variant="destructive"
-                      className="text-[9px] px-1 py-0 font-mono"
+                      className="px-1 py-0 font-mono text-[9px]"
                     >
                       Exceeds by {formatCurrency(b.exceededAmount)}
                     </Badge>

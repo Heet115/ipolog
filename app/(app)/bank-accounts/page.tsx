@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Plus, Landmark } from "lucide-react"
+import { Plus, Landmark, AlertTriangle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Empty,
@@ -12,6 +12,7 @@ import {
   EmptyContent,
 } from "@/components/ui/empty"
 import { BankAccountDialog } from "@/components/bank-accounts/bank-account-dialog"
+import { usePageTitle } from "@/hooks/use-page-title"
 import { BankAccountList } from "@/components/bank-accounts/bank-account-list"
 import { BankListSkeleton } from "@/components/bank-accounts/bank-skeleton"
 import { toast } from "@/components/ui/toast"
@@ -22,12 +23,15 @@ import { getIpos } from "@/lib/firebase/ipos"
 import type { BankAccount, Application, Ipo } from "@/types"
 
 export default function BankAccountsPage() {
+  usePageTitle("Bank Accounts")
   const { user } = useAuth()
 
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
   const [applications, setApplications] = useState<Application[]>([])
   const [ipos, setIpos] = useState<Ipo[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
+  const [fetchTrigger, setFetchTrigger] = useState(0)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [bankAccountToEdit, setBankAccountToEdit] =
     useState<BankAccount | null>(null)
@@ -76,6 +80,7 @@ export default function BankAccountsPage() {
       .catch((err) => {
         console.error("Failed to load bank accounts:", err)
         if (!ignore) {
+          setFetchError(true)
           setLoading(false)
         }
       })
@@ -83,7 +88,7 @@ export default function BankAccountsPage() {
     return () => {
       ignore = true
     }
-  }, [user])
+  }, [user, fetchTrigger])
 
   const handleAddClick = () => {
     setBankAccountToEdit(null)
@@ -112,7 +117,33 @@ export default function BankAccountsPage() {
         </Button>
       </div>
 
-      {loading ? (
+      {fetchError ? (
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <AlertTriangle className="size-6 text-destructive" />
+            </EmptyMedia>
+            <EmptyTitle>Failed to load data</EmptyTitle>
+            <EmptyDescription>
+              Something went wrong while loading your bank accounts. Please
+              check your connection and try again.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button
+              size="sm"
+              onClick={() => {
+                setLoading(true)
+                setFetchError(false)
+                setFetchTrigger((prev) => prev + 1)
+              }}
+            >
+              <RefreshCw data-icon="inline-start" className="size-3.5" />
+              Retry
+            </Button>
+          </EmptyContent>
+        </Empty>
+      ) : loading ? (
         <BankListSkeleton />
       ) : bankAccounts.length === 0 ? (
         <Empty>

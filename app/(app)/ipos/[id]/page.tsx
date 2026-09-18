@@ -11,6 +11,7 @@ import {
   ArchiveRestore,
   Trash2,
   FileText,
+  AlertTriangle,
   Plus,
   Layers,
   RefreshCw,
@@ -77,6 +78,7 @@ import {
   calculateIpoProfitSummary,
 } from "@/lib/calculations/financials"
 import type { Ipo, Application, ApplicationAccount, BankAccount } from "@/types"
+import { usePageTitle } from "@/hooks/use-page-title"
 
 export default function IpoDetailPage() {
   const params = useParams()
@@ -86,11 +88,13 @@ export default function IpoDetailPage() {
   const ipoId = typeof params?.id === "string" ? params.id : ""
 
   const [ipo, setIpo] = useState<Ipo | null>(null)
+  usePageTitle(ipo?.name ?? "IPO Details")
   const [applications, setApplications] = useState<Application[]>([])
   const [accounts, setAccounts] = useState<ApplicationAccount[]>([])
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [fetchError, setFetchError] = useState(false)
 
   // Dialog states
   const [editIpoOpen, setEditIpoOpen] = useState(false)
@@ -126,7 +130,7 @@ export default function IpoDetailPage() {
       }
     } catch (err) {
       console.error("Failed to load IPO details:", err)
-      setNotFound(true)
+      setFetchError(true)
     } finally {
       setLoading(false)
     }
@@ -153,7 +157,11 @@ export default function IpoDetailPage() {
             setBankAccounts(banksData)
 
             // Auto-refresh in background if imported IPO data is older than 24 hours and not archived
-            if (ipoData.externalId && !ipoData.archived && isIpoSyncStale(ipoData, 24)) {
+            if (
+              ipoData.externalId &&
+              !ipoData.archived &&
+              isIpoSyncStale(ipoData, 24)
+            ) {
               user.getIdToken().then((token) => {
                 fetch(`/api/ipos/${ipoData.id}/sync`, {
                   method: "POST",
@@ -177,7 +185,7 @@ export default function IpoDetailPage() {
       .catch((err) => {
         console.error("Failed to load IPO details:", err)
         if (!ignore) {
-          setNotFound(true)
+          setFetchError(true)
           setLoading(false)
         }
       })
@@ -282,6 +290,45 @@ export default function IpoDetailPage() {
 
   if (loading) {
     return <IpoDetailSkeleton />
+  }
+
+  if (fetchError) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Link
+          href="/ipos"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" />
+          Back to My IPOs
+        </Link>
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <AlertTriangle className="size-6 text-destructive" />
+            </EmptyMedia>
+            <EmptyTitle>Failed to load data</EmptyTitle>
+            <EmptyDescription>
+              Something went wrong while loading this IPO. Please check your
+              connection and try again.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button
+              size="sm"
+              onClick={() => {
+                setLoading(true)
+                setFetchError(false)
+                reloadData()
+              }}
+            >
+              <RefreshCw data-icon="inline-start" className="size-3.5" />
+              Retry
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </div>
+    )
   }
 
   if (notFound || !ipo) {
