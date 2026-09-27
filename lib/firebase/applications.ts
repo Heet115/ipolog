@@ -8,9 +8,12 @@ import {
   query,
   orderBy,
   where,
+  limit,
+  getCountFromServer,
   serverTimestamp,
   type DocumentData,
   type QueryDocumentSnapshot,
+  type QueryConstraint,
   type Timestamp,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase/firebase"
@@ -81,14 +84,110 @@ export async function getApplicationsByIpo(
   return snap.docs.map(docToApplication)
 }
 
+export interface GetApplicationsOptions {
+  ipoId?: string
+  accountId?: string
+  bankAccountId?: string
+  status?: ApplicationStatus
+  settlementStatus?: "pending" | "settled"
+  limitCount?: number
+}
+
 /**
- * Fetches all applications for a user.
+ * Fetches applications for a user with optional query filters and limits.
+ * Falls back safely to client-side filtering if composite indexes are building.
  */
-export async function getApplications(userId: string): Promise<Application[]> {
+export async function getApplications(
+  userId: string,
+  options?: GetApplicationsOptions
+): Promise<Application[]> {
   const appsRef = collection(db, "users", userId, "applications")
-  const q = query(appsRef, orderBy("createdAt", "desc"))
-  const snap = await getDocs(q)
-  return snap.docs.map(docToApplication)
+  const constraints: QueryConstraint[] = []
+
+  if (options?.ipoId) {
+    constraints.push(where("ipoId", "==", options.ipoId))
+  }
+  if (options?.accountId) {
+    constraints.push(where("accountId", "==", options.accountId))
+  }
+  if (options?.bankAccountId) {
+    constraints.push(where("bankAccountId", "==", options.bankAccountId))
+  }
+  if (options?.status) {
+    constraints.push(where("status", "==", options.status))
+  }
+  if (options?.settlementStatus) {
+    constraints.push(where("settlementStatus", "==", options.settlementStatus))
+  }
+
+  constraints.push(orderBy("createdAt", "desc"))
+
+  if (options?.limitCount && options.limitCount > 0) {
+    constraints.push(limit(options.limitCount))
+  }
+
+  try {
+    const q = query(appsRef, ...constraints)
+    const snap = await getDocs(q)
+    return snap.docs.map(docToApplication)
+  } catch (err) {
+    console.warn("Fallback to base query for getApplications:", err)
+    const fallbackQ = query(appsRef, orderBy("createdAt", "desc"))
+    const snap = await getDocs(fallbackQ)
+    let apps = snap.docs.map(docToApplication)
+
+    if (options?.ipoId) apps = apps.filter((a) => a.ipoId === options.ipoId)
+    if (options?.accountId)
+      apps = apps.filter((a) => a.accountId === options.accountId)
+    if (options?.bankAccountId)
+      apps = apps.filter((a) => a.bankAccountId === options.bankAccountId)
+    if (options?.status) apps = apps.filter((a) => a.status === options.status)
+    if (options?.settlementStatus)
+      apps = apps.filter((a) => a.settlementStatus === options.settlementStatus)
+    if (options?.limitCount && options.limitCount > 0)
+      apps = apps.slice(0, options.limitCount)
+
+    return apps
+  }
+}
+
+/**
+ * Fast aggregation: counts total applications for an account with zero document payload overhead.
+ */
+export async function getAccountApplicationsCount(
+  userId: string,
+  accountId: string
+): Promise<number> {
+  const appsRef = collection(db, "users", userId, "applications")
+  const q = query(appsRef, where("accountId", "==", accountId))
+  const snap = await getCountFromServer(q)
+  return snap.data().count
+}
+
+/**
+ * Fast aggregation: counts total applications for a bank account with zero document payload overhead.
+ */
+export async function getBankApplicationsCount(
+  userId: string,
+  bankAccountId: string
+): Promise<number> {
+  const appsRef = collection(db, "users", userId, "applications")
+  const q = query(appsRef, where("bankAccountId", "==", bankAccountId))
+  const snap = await getCountFromServer(q)
+  return snap.data().count
+}
+
+/**
+ * Fast aggregation: counts total applications for an IPO with zero document payload overhead.
+ */
+export async function getIpoApplicationsCount(
+  userId: string,
+  ipoId: string
+): Promise<number> {
+  const appsRef = collection(db, "users", userId, "applications")
+  const q = query(appsRef, where("ipoId", "==", ipoId))
+  const snap = await getCountFromServer(q)
+  return snap.data().count
 }
 
 /**

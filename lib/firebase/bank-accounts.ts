@@ -155,3 +155,5 @@ export async function deleteBankAccount(
   const bankAccountRef = doc(db, "users", userId, "bankAccounts", bankAccountId)
   await deleteDoc(bankAccountRef)
 }
+
+export { getBankApplicationsCount } from "@/lib/firebase/applications"

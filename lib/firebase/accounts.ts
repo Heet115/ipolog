@@ -175,3 +175,5 @@ export async function deleteApplicationAccount(
   const accountRef = doc(db, "users", userId, "applicationAccounts", accountId)
   await deleteDoc(accountRef)
 }
+
+export { getAccountApplicationsCount } from "@/lib/firebase/applications"

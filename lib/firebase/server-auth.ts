@@ -5,9 +5,38 @@ export interface AuthenticatedUser {
   email?: string
 }
 
+interface CachedAuth {
+  user: AuthenticatedUser
+  expiresAt: number
+}
+
+// In-memory token verification cache (5-minute TTL)
+const authCache = new Map<string, CachedAuth>()
+
+function getCachedAuth(token: string): AuthenticatedUser | null {
+  const cached = authCache.get(token)
+  if (!cached) return null
+  if (Date.now() > cached.expiresAt) {
+    authCache.delete(token)
+    return null
+  }
+  return cached.user
+}
+
+function setCachedAuth(token: string, user: AuthenticatedUser): void {
+  if (authCache.size > 1000) {
+    const oldestKey = authCache.keys().next().value
+    if (oldestKey) authCache.delete(oldestKey)
+  }
+  authCache.set(token, {
+    user,
+    expiresAt: Date.now() + 5 * 60 * 1000,
+  })
+}
+
 /**
  * Verifies a Firebase Auth ID Token sent in the Authorization Bearer header.
- * Uses Google's official Firebase Identity Toolkit REST API endpoint.
+ * Uses Google's official Firebase Identity Toolkit REST API endpoint with in-memory caching.
  */
 export async function verifyServerAuth(
   request: NextRequest
@@ -21,6 +50,12 @@ export async function verifyServerAuth(
   const idToken = authHeader.slice(7).trim()
   if (!idToken) {
     return null
+  }
+
+  // Check cache first to avoid redundant external network calls
+  const cachedUser = getCachedAuth(idToken)
+  if (cachedUser) {
+    return cachedUser
   }
 
   const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
@@ -48,14 +83,13 @@ export async function verifyServerAuth(
 
     const data = await res.json()
     const user = data.users?.[0]
-    if (!user || !user.localId) {
-      return null
-    }
-
-    return {
+    const authenticatedUser: AuthenticatedUser = {
       uid: user.localId,
       email: user.email,
     }
+
+    setCachedAuth(idToken, authenticatedUser)
+    return authenticatedUser
   } catch (error) {
     console.error("Server auth verification failed:", error)
     return null

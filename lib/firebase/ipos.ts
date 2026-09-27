@@ -15,7 +15,10 @@ import {
   type Timestamp,
 } from "firebase/firestore"
 import { db } from "@/lib/firebase/firebase"
-import { deleteApplicationsByIpo } from "@/lib/firebase/applications"
+import {
+  deleteApplicationsByIpo,
+  getIpoApplicationsCount,
+} from "@/lib/firebase/applications"
 import type { Ipo, IpoType } from "@/types"
 
 function docToIpo(docSnap: DocumentSnapshot<DocumentData>): Ipo {
@@ -58,21 +61,34 @@ function docToIpo(docSnap: DocumentSnapshot<DocumentData>): Ipo {
 
 /**
  * Fetches all IPOs for a user, ordered by creation date descending.
+ * Uses native compound index query when filtering active IPOs, with graceful fallback.
  */
 export async function getIpos(
   userId: string,
   includeArchived = false
 ): Promise<Ipo[]> {
   const iposRef = collection(db, "users", userId, "ipos")
-  const q = query(iposRef, orderBy("createdAt", "desc"))
-  const snap = await getDocs(q)
-  const allIpos = snap.docs.map(docToIpo)
 
   if (includeArchived) {
-    return allIpos
+    const q = query(iposRef, orderBy("createdAt", "desc"))
+    const snap = await getDocs(q)
+    return snap.docs.map(docToIpo)
   }
 
-  return allIpos.filter((ipo) => !ipo.archived)
+  try {
+    const q = query(
+      iposRef,
+      where("archived", "==", false),
+      orderBy("createdAt", "desc")
+    )
+    const snap = await getDocs(q)
+    return snap.docs.map(docToIpo)
+  } catch (err) {
+    console.warn("Fallback to in-memory filter for getIpos:", err)
+    const fallbackQ = query(iposRef, orderBy("createdAt", "desc"))
+    const fallbackSnap = await getDocs(fallbackQ)
+    return fallbackSnap.docs.map(docToIpo).filter((ipo) => !ipo.archived)
+  }
 }
 
 /**
@@ -375,3 +391,5 @@ export async function updateIpoPrices(
 
   await updateDoc(ipoRef, payload)
 }
+
+export { getIpoApplicationsCount }
