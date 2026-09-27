@@ -870,7 +870,7 @@ export default function DashboardPage() {
       {/* 5. Main Power Layout (Left 2 Spans, Right 1 Span) */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left Column (Span 2): IPO Pipeline + Application Ledger */}
-        <div className="flex flex-col gap-6 lg:col-span-2">
+        <div className="flex flex-col gap-6 lg:col-span-3">
           {/* Active IPO Pipeline Card with Filters */}
           <Card className="rounded-none border border-border/70 shadow-xs">
             <CardHeader className="flex flex-col gap-3 border-b border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
@@ -1196,11 +1196,6 @@ export default function DashboardPage() {
               )}
             </CardContent>
           </Card>
-        </div>
-
-        {/* Right Column (Span 1): Visual Charts & ASBA Liquidity Hub */}
-        <div className="flex flex-col gap-6">
-          {/* Charts Visualizer */}
           <DashboardCharts metrics={metrics} />
         </div>
       </div>
