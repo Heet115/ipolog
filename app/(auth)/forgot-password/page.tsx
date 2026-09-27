@@ -58,7 +58,7 @@ export default function ForgotPasswordPage() {
   return (
     <Card className="w-full border-border/80 shadow-lg">
       <CardHeader className="pb-3 text-center">
-        <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/25">
+        <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-none bg-primary text-primary-foreground shadow-md shadow-primary/25">
           <TrendingUp className="size-5.5" />
         </div>
         <CardTitle className="font-heading text-xl font-bold tracking-tight">
@@ -72,7 +72,7 @@ export default function ForgotPasswordPage() {
       <CardContent className="flex flex-col gap-4">
         {submitted ? (
           <div className="flex flex-col gap-4 text-center">
-            <div className="mx-auto flex size-11 items-center justify-center rounded-xl border border-success/30 bg-success/10 text-success shadow-xs">
+            <div className="mx-auto flex size-11 items-center justify-center rounded-none border border-success/30 bg-success/10 text-success shadow-xs">
               <CheckCircle2 className="size-5" />
             </div>
             <div className="flex flex-col gap-1.5">

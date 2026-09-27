@@ -115,7 +115,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground"
                 tooltip="IPOLOG Dashboard"
               >
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs shadow-primary/25">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-none bg-primary text-primary-foreground shadow-xs shadow-primary/25">
                   <TrendingUp className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
@@ -266,7 +266,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent
-                  className="w-56 rounded-xl border border-border p-1 text-xs shadow-lg"
+                  className="w-56 rounded-none border border-border p-1 text-xs shadow-lg"
                   side={isMobile ? "bottom" : "right"}
                   align="end"
                   sideOffset={4}
@@ -274,8 +274,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <DropdownMenuGroup>
                     <DropdownMenuLabel className="p-0 font-normal">
                       <div className="flex items-center gap-2.5 px-1 py-1.5 text-left text-sm">
-                        <Avatar className="size-8 rounded-lg border border-border">
-                          <AvatarFallback className="rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                        <Avatar className="size-8 rounded-none border border-border">
+                          <AvatarFallback className="rounded-none bg-primary/10 text-xs font-bold text-primary">
                             {userInitial}
                           </AvatarFallback>
                         </Avatar>

@@ -12,6 +12,7 @@ import {
 } from "recharts"
 import {
   Card,
+  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -29,7 +30,7 @@ import type { DashboardMetrics } from "@/lib/calculations/financials"
 const financialChartConfig = {
   amount: {
     label: "Amount",
-    color: "var(--primary)",
+    color: "var(--chart-1)",
   },
   blocked: {
     label: "Currently Blocked",
@@ -37,7 +38,7 @@ const financialChartConfig = {
   },
   invested: {
     label: "Total Invested",
-    color: "var(--success)",
+    color: "var(--chart-2)",
   },
   profit: {
     label: "Your Realized Profit",
@@ -45,7 +46,7 @@ const financialChartConfig = {
   },
   shared: {
     label: "Profit Shared",
-    color: "var(--info)",
+    color: "var(--chart-4)",
   },
   refund: {
     label: "Expected Refund",
@@ -86,7 +87,7 @@ export function DashboardCharts({ metrics }: DashboardChartsProps) {
     {
       name: "Invested",
       amount: metrics.totalInvested,
-      fill: "var(--success)",
+      fill: "var(--chart-2)",
     },
     {
       name: "Net Profit",
@@ -96,7 +97,7 @@ export function DashboardCharts({ metrics }: DashboardChartsProps) {
     {
       name: "Shared",
       amount: metrics.totalProfitShared,
-      fill: "var(--info)",
+      fill: "var(--chart-4)",
     },
     {
       name: "Refunds",
@@ -133,134 +134,136 @@ export function DashboardCharts({ metrics }: DashboardChartsProps) {
   }
 
   return (
-    <Card className="rounded-none border border-border/60">
+    <Card className="rounded-none border border-border/70 shadow-xs">
       <Tabs defaultValue="capital" className="w-full">
         <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 p-4 pb-3">
           <div>
-            <CardTitle className="text-sm font-bold">
+            <CardTitle className="text-sm font-bold tracking-tight">
               Portfolio Visualizer
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-xs text-muted-foreground">
               Capital distribution & application breakdown
             </CardDescription>
           </div>
           <TabsList className="h-7 text-xs">
-            <TabsTrigger value="capital" className="px-2 py-0.5 text-[11px]">
+            <TabsTrigger value="capital" className="px-2.5 py-0.5 text-xs font-medium">
               Capital
             </TabsTrigger>
-            <TabsTrigger value="status" className="px-2 py-0.5 text-[11px]">
+            <TabsTrigger value="status" className="px-2.5 py-0.5 text-xs font-medium">
               Status
             </TabsTrigger>
           </TabsList>
         </CardHeader>
 
-        {/* Tab 1: Capital Distribution */}
-        <TabsContent value="capital" className="m-0 p-4 pt-3">
-          {financialData.length === 0 ? (
-            <div className="flex h-[180px] items-center justify-center text-xs text-muted-foreground">
-              No financial activity recorded yet
-            </div>
-          ) : (
-            <ChartContainer
-              config={financialChartConfig}
-              className="h-[180px] w-full"
-            >
-              <BarChart
-                data={financialData}
-                margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis
-                  dataKey="name"
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={10}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  fontSize={10}
-                  tickFormatter={(val) =>
-                    `₹${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`
-                  }
-                />
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      formatter={(val) => formatCurrency(Number(val))}
-                    />
-                  }
-                />
-                <Bar dataKey="amount" radius={[0, 0, 0, 0]}>
-                  {financialData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ChartContainer>
-          )}
-        </TabsContent>
-
-        {/* Tab 2: Application Outcomes */}
-        <TabsContent value="status" className="m-0 p-4 pt-3">
-          {statusData.length === 0 ? (
-            <div className="flex h-[180px] items-center justify-center text-xs text-muted-foreground">
-              No applications recorded yet
-            </div>
-          ) : (
-            <div className="flex h-[180px] flex-col items-center justify-around gap-4 sm:flex-row">
+        <CardContent className="p-0">
+          {/* Tab 1: Capital Distribution */}
+          <TabsContent value="capital" className="m-0 p-4 pt-3">
+            {financialData.length === 0 ? (
+              <div className="flex h-[180px] items-center justify-center text-xs text-muted-foreground">
+                No financial activity recorded yet
+              </div>
+            ) : (
               <ChartContainer
-                config={statusChartConfig}
-                className="h-[140px] w-[140px]"
+                config={financialChartConfig}
+                className="h-[180px] w-full"
               >
-                <PieChart>
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Pie
-                    data={statusData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={38}
-                    outerRadius={62}
-                    paddingAngle={2}
-                  >
-                    {statusData.map((entry, index) => (
-                      <Cell key={`pie-cell-${index}`} fill={entry.fill} />
+                <BarChart
+                  data={financialData}
+                  margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
+                  <XAxis
+                    dataKey="name"
+                    tickLine={false}
+                    axisLine={false}
+                    fontSize={11}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    fontSize={10}
+                    tickFormatter={(val) =>
+                      `₹${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`
+                    }
+                  />
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        formatter={(val) => formatCurrency(Number(val))}
+                      />
+                    }
+                  />
+                  <Bar dataKey="amount" radius={[0, 0, 0, 0]}>
+                    {financialData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
-                  </Pie>
-                </PieChart>
+                  </Bar>
+                </BarChart>
               </ChartContainer>
+            )}
+          </TabsContent>
 
-              {/* Legend with percentages */}
-              <div className="flex flex-col gap-1.5 text-xs">
-                {statusData.map((item) => {
-                  const pct = (
-                    (item.value / Math.max(1, metrics.totalApplications)) *
-                    100
-                  ).toFixed(0)
-                  return (
-                    <div
-                      key={item.name}
-                      className="flex items-center justify-between gap-3 text-[11px]"
+          {/* Tab 2: Application Outcomes */}
+          <TabsContent value="status" className="m-0 p-4 pt-3">
+            {statusData.length === 0 ? (
+              <div className="flex h-[180px] items-center justify-center text-xs text-muted-foreground">
+                No applications recorded yet
+              </div>
+            ) : (
+              <div className="flex h-[180px] flex-col items-center justify-around gap-4 sm:flex-row">
+                <ChartContainer
+                  config={statusChartConfig}
+                  className="h-[140px] w-[140px]"
+                >
+                  <PieChart>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Pie
+                      data={statusData}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={38}
+                      outerRadius={62}
+                      paddingAngle={3}
                     >
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="size-2 rounded-none"
-                          style={{ backgroundColor: item.fill }}
-                        />
-                        <span className="text-muted-foreground">
-                          {item.name}:
+                      {statusData.map((entry, index) => (
+                        <Cell key={`pie-cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ChartContainer>
+
+                {/* Legend with percentages */}
+                <div className="flex flex-col gap-2 text-xs">
+                  {statusData.map((item) => {
+                    const pct = (
+                      (item.value / Math.max(1, metrics.totalApplications)) *
+                      100
+                    ).toFixed(0)
+                    return (
+                      <div
+                        key={item.name}
+                        className="flex items-center justify-between gap-4 text-xs"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="size-2.5 rounded-full"
+                            style={{ backgroundColor: item.fill }}
+                          />
+                          <span className="text-muted-foreground">
+                            {item.name}:
+                          </span>
+                        </div>
+                        <span className="font-mono font-semibold text-foreground">
+                          {item.value} ({pct}%)
                         </span>
                       </div>
-                      <span className="font-mono font-semibold text-foreground">
-                        {item.value} ({pct}%)
-                      </span>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )}
-        </TabsContent>
+            )}
+          </TabsContent>
+        </CardContent>
       </Tabs>
     </Card>
   )

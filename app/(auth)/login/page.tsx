@@ -110,7 +110,7 @@ export default function LoginPage() {
   return (
     <Card className="w-full border-border/80 shadow-lg">
       <CardHeader className="pb-3 text-center">
-        <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/25">
+        <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-none bg-primary text-primary-foreground shadow-md shadow-primary/25">
           <TrendingUp className="size-5.5" />
         </div>
         <CardTitle className="font-heading text-xl font-bold tracking-tight">
