@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, CheckCircle2 } from "lucide-react"
+import { ArrowLeft, CheckCircle2, TrendingUp } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -56,13 +56,15 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <Card className="w-full rounded-none border border-border/80 bg-card">
-      <CardHeader className="pb-2 text-center">
-        <div className="mx-auto mb-3 flex size-9 items-center justify-center rounded-none border border-border bg-muted/40 text-sm font-black tracking-tighter text-foreground">
-          IPO
+    <Card className="w-full border-border/80 shadow-lg">
+      <CardHeader className="pb-3 text-center">
+        <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/25">
+          <TrendingUp className="size-5.5" />
         </div>
-        <CardTitle className="text-lg font-bold">Reset your password</CardTitle>
-        <CardDescription className="text-xs">
+        <CardTitle className="font-heading text-xl font-bold tracking-tight">
+          Reset your password
+        </CardTitle>
+        <CardDescription className="text-xs text-muted-foreground">
           Enter your email address and we will send you a link to reset your
           password
         </CardDescription>
@@ -70,22 +72,22 @@ export default function ForgotPasswordPage() {
       <CardContent className="flex flex-col gap-4">
         {submitted ? (
           <div className="flex flex-col gap-4 text-center">
-            <div className="mx-auto flex size-10 items-center justify-center rounded-none border border-border bg-muted/30 text-success">
+            <div className="mx-auto flex size-11 items-center justify-center rounded-xl border border-success/30 bg-success/10 text-success shadow-xs">
               <CheckCircle2 className="size-5" />
             </div>
-            <div className="flex flex-col gap-1">
-              <p className="text-xs font-medium text-foreground">
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm font-semibold text-foreground">
                 Email sent successfully
               </p>
               <p className="text-xs text-muted-foreground">
                 We sent a password reset link to{" "}
                 <strong className="text-foreground">{email}</strong>. Please
-                check your spam folder if you do not see it.
+                check your inbox or spam folder.
               </p>
             </div>
             <Button
               variant="outline"
-              className="w-full text-xs"
+              className="w-full font-medium shadow-2xs"
               onClick={() => setSubmitted(false)}
             >
               Send again
@@ -93,7 +95,7 @@ export default function ForgotPasswordPage() {
             <div className="pt-2">
               <Link
                 href="/login"
-                className="inline-flex items-center gap-1.5 text-xs text-primary underline-offset-4 hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary underline-offset-4 hover:underline"
               >
                 <ArrowLeft />
                 Back to Sign in
@@ -108,10 +110,12 @@ export default function ForgotPasswordPage() {
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="email">Email</FieldLabel>
+                  <FieldLabel htmlFor="email" className="text-xs font-medium">
+                    Email
+                  </FieldLabel>
                   <Input
                     id="email"
                     type="email"
@@ -125,16 +129,20 @@ export default function ForgotPasswordPage() {
                 </Field>
               </FieldGroup>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full font-semibold shadow-xs"
+                disabled={loading}
+              >
                 {loading && <Spinner data-icon="inline-start" />}
                 {loading ? "Sending link..." : "Send Reset Link"}
               </Button>
             </form>
 
-            <div className="text-center">
+            <div className="text-center pt-1">
               <Link
                 href="/login"
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 <ArrowLeft />
                 Back to Sign in

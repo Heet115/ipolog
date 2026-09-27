@@ -58,12 +58,12 @@ export function CommandMenu() {
         variant="outline"
         size="sm"
         onClick={() => setOpen(true)}
-        className="relative h-8 w-full max-w-[180px] justify-start bg-background text-xs text-muted-foreground sm:w-56"
+        className="relative h-8 w-full max-w-[160px] justify-start rounded-lg border-border/80 bg-muted/30 text-xs text-muted-foreground transition-colors hover:bg-muted/60 sm:w-56"
       >
-        <Search className="mr-2 size-3.5" />
-        <span className="truncate">Search IPOs, pages...</span>
-        <kbd className="pointer-events-none absolute top-1.5 right-1.5 hidden h-5 items-center gap-1 rounded-none border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 select-none sm:flex">
-          <span className="text-xs">⌘</span>K
+        <Search data-icon="inline-start" className="opacity-70" />
+        <span className="truncate">Search or jump to...</span>
+        <kbd className="pointer-events-none absolute top-1.5 right-1.5 hidden h-5 items-center gap-0.5 rounded-md border border-border/80 bg-muted/60 px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 select-none sm:flex">
+          <span className="text-[11px]">⌘</span>K
         </kbd>
       </Button>
 
@@ -77,25 +77,25 @@ export function CommandMenu() {
             <CommandItem
               onSelect={() => runCommand(() => router.push("/dashboard"))}
             >
-              <LayoutDashboard className="mr-2 size-4 text-muted-foreground" />
+              <LayoutDashboard className="text-muted-foreground" />
               <span>Dashboard</span>
             </CommandItem>
             <CommandItem
               onSelect={() => runCommand(() => router.push("/ipos"))}
             >
-              <FileText className="mr-2 size-4 text-muted-foreground" />
+              <FileText className="text-muted-foreground" />
               <span>My IPOs</span>
             </CommandItem>
             <CommandItem
               onSelect={() => runCommand(() => router.push("/accounts"))}
             >
-              <Users className="mr-2 size-4 text-muted-foreground" />
+              <Users className="text-muted-foreground" />
               <span>Application Accounts</span>
             </CommandItem>
             <CommandItem
               onSelect={() => runCommand(() => router.push("/bank-accounts"))}
             >
-              <Landmark className="mr-2 size-4 text-muted-foreground" />
+              <Landmark className="text-muted-foreground" />
               <span>Bank Accounts</span>
             </CommandItem>
           </CommandGroup>
@@ -107,19 +107,19 @@ export function CommandMenu() {
             <CommandItem
               onSelect={() => runCommand(() => router.push("/ipos"))}
             >
-              <Plus className="mr-2 size-4 text-muted-foreground" />
+              <Plus className="text-muted-foreground" />
               <span>Add New IPO</span>
             </CommandItem>
             <CommandItem
               onSelect={() => runCommand(() => router.push("/accounts"))}
             >
-              <Plus className="mr-2 size-4 text-muted-foreground" />
+              <Plus className="text-muted-foreground" />
               <span>Add Application Account</span>
             </CommandItem>
             <CommandItem
               onSelect={() => runCommand(() => router.push("/bank-accounts"))}
             >
-              <Plus className="mr-2 size-4 text-muted-foreground" />
+              <Plus className="text-muted-foreground" />
               <span>Add Bank Account</span>
             </CommandItem>
           </CommandGroup>
@@ -136,7 +136,7 @@ export function CommandMenu() {
                       runCommand(() => router.push(`/ipos/${ipo.id}`))
                     }
                   >
-                    <FileText className="mr-2 size-4 text-muted-foreground" />
+                    <FileText className="text-muted-foreground" />
                     <span className="font-medium">{ipo.name}</span>
                     <span className="ml-2 font-mono text-[10px] text-muted-foreground uppercase">
                       ({ipo.type})

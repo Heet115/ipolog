@@ -18,7 +18,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, TrendingUp } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field"
@@ -121,13 +121,15 @@ export default function SignupPage() {
   }
 
   return (
-    <Card className="w-full rounded-none border border-border/80 bg-card">
-      <CardHeader className="pb-2 text-center">
-        <div className="mx-auto mb-3 flex size-9 items-center justify-center rounded-none border border-border bg-muted/40 text-sm font-black tracking-tighter text-foreground">
-          IPO
+    <Card className="w-full border-border/80 shadow-lg">
+      <CardHeader className="pb-3 text-center">
+        <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/25">
+          <TrendingUp className="size-5.5" />
         </div>
-        <CardTitle className="text-lg font-bold">Create your account</CardTitle>
-        <CardDescription className="text-xs">
+        <CardTitle className="font-heading text-xl font-bold tracking-tight">
+          Create your account
+        </CardTitle>
+        <CardDescription className="text-xs text-muted-foreground">
           Start tracking your IPO applications and profit sharing today
         </CardDescription>
       </CardHeader>
@@ -138,10 +140,12 @@ export default function SignupPage() {
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="email">Email</FieldLabel>
+              <FieldLabel htmlFor="email" className="text-xs font-medium">
+                Email
+              </FieldLabel>
               <Input
                 id="email"
                 type="email"
@@ -155,7 +159,9 @@ export default function SignupPage() {
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="password">Password</FieldLabel>
+              <FieldLabel htmlFor="password" className="text-xs font-medium">
+                Password
+              </FieldLabel>
               <InputGroup>
                 <InputGroupInput
                   id="password"
@@ -182,7 +188,10 @@ export default function SignupPage() {
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="confirmPassword">
+              <FieldLabel
+                htmlFor="confirmPassword"
+                className="text-xs font-medium"
+              >
                 Confirm Password
               </FieldLabel>
               <InputGroup>
@@ -213,7 +222,7 @@ export default function SignupPage() {
 
           <Button
             type="submit"
-            className="w-full"
+            className="w-full font-semibold shadow-xs"
             disabled={loading || googleLoading}
           >
             {loading && <Spinner data-icon="inline-start" />}
@@ -223,7 +232,7 @@ export default function SignupPage() {
 
         <div className="relative my-2 flex items-center justify-center">
           <Separator className="w-full" />
-          <span className="absolute bg-card px-2 text-[10px] text-muted-foreground uppercase">
+          <span className="absolute bg-card px-2.5 text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
             Or continue with
           </span>
         </div>
@@ -231,7 +240,7 @@ export default function SignupPage() {
         <Button
           type="button"
           variant="outline"
-          className="w-full"
+          className="w-full font-medium shadow-2xs"
           onClick={handleGoogleSignIn}
           disabled={loading || googleLoading}
         >
@@ -257,14 +266,14 @@ export default function SignupPage() {
               />
             </svg>
           )}
-          Google
+          Continue with Google
         </Button>
 
         <p className="text-center text-xs text-muted-foreground">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="font-medium text-primary underline-offset-4 hover:underline"
+            className="font-semibold text-primary underline-offset-4 hover:underline"
           >
             Sign in
           </Link>

@@ -34,15 +34,18 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between gap-2 border-b bg-background/95 px-4 backdrop-blur-md transition-[width,height] ease-linear">
+    <header className="sticky top-0 z-30 flex h-(--header-height,3.5rem) shrink-0 items-center justify-between gap-3 border-b border-border/70 bg-background/90 px-4 backdrop-blur-md transition-[width,height] ease-linear sm:px-6">
       {/* Left: Sidebar Trigger, Separator & Breadcrumbs */}
-      <div className="flex items-center gap-2">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 h-4" />
+      <div className="flex items-center gap-2.5 min-w-0">
+        <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
+        <Separator orientation="vertical" className="mr-1 h-4 bg-border/80" />
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem className="hidden sm:inline-flex">
-              <BreadcrumbLink render={<Link href="/dashboard" />}>
+              <BreadcrumbLink
+                className="font-medium text-muted-foreground transition-colors hover:text-foreground"
+                render={<Link href="/dashboard" />}
+              >
                 IPOLOG
               </BreadcrumbLink>
             </BreadcrumbItem>
@@ -52,18 +55,25 @@ export function Header() {
             {isIpoDetail ? (
               <>
                 <BreadcrumbItem>
-                  <BreadcrumbLink render={<Link href="/ipos" />}>
+                  <BreadcrumbLink
+                    className="font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    render={<Link href="/ipos" />}
+                  >
                     My IPOs
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{getPageTitle()}</BreadcrumbPage>
+                  <BreadcrumbPage className="font-semibold text-foreground">
+                    {getPageTitle()}
+                  </BreadcrumbPage>
                 </BreadcrumbItem>
               </>
             ) : (
               <BreadcrumbItem>
-                <BreadcrumbPage>{getPageTitle()}</BreadcrumbPage>
+                <BreadcrumbPage className="font-semibold text-foreground">
+                  {getPageTitle()}
+                </BreadcrumbPage>
               </BreadcrumbItem>
             )}
           </BreadcrumbList>
@@ -73,12 +83,13 @@ export function Header() {
       {/* Right Controls: Quick Add IPO & Theme Toggle */}
       <div className="flex items-center gap-2">
         <Button
-          size="xs"
-          className="h-8 gap-1 text-xs font-semibold"
+          size="sm"
+          className="shadow-xs font-semibold"
           aria-label="Add IPO"
+          nativeButton={false}
           render={<Link href="/ipos" />}
         >
-          <Plus data-icon="inline-start" className="size-3.5" />
+          <Plus data-icon="inline-start" />
           <span className="hidden sm:inline">Add IPO</span>
         </Button>
         <ThemeToggle />

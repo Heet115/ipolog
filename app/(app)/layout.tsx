@@ -33,17 +33,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <AutoRefreshProvider>
-      <SidebarProvider defaultOpen={true}>
-        <AppSidebar />
-        <SidebarInset>
+      <SidebarProvider
+        defaultOpen={true}
+        style={
+          {
+            "--sidebar-width": "calc(var(--spacing) * 64)",
+            "--header-height": "calc(var(--spacing) * 14)",
+          } as React.CSSProperties
+        }
+      >
+        <AppSidebar variant="inset" />
+        <SidebarInset id="main-content" tabIndex={-1} className="outline-none">
           <Header />
-          <main
-            id="main-content"
-            tabIndex={-1}
-            className="mx-auto w-full max-w-7xl flex-1 p-4 outline-none sm:p-6 md:p-8"
-          >
+          <div className="flex flex-1 flex-col gap-4 p-4 sm:p-6 lg:gap-6 lg:p-8">
             {children}
-          </main>
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </AutoRefreshProvider>

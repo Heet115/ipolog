@@ -16,6 +16,8 @@ import {
   Settings,
 } from "lucide-react"
 
+import { cn } from "@/lib/utils"
+
 import {
   Sidebar,
   SidebarContent,
@@ -27,7 +29,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -36,6 +37,7 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -51,7 +53,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useAuth } from "@/lib/firebase/auth-context"
 
-const navItems = [
+const platformNav = [
   {
     title: "Dashboard",
     url: "/dashboard",
@@ -62,16 +64,22 @@ const navItems = [
     url: "/ipos",
     icon: Layers,
   },
+]
+
+const managementNav = [
   {
-    title: "Application Accounts",
+    title: "Accounts",
     url: "/accounts",
     icon: Users,
   },
   {
-    title: "Bank Accounts",
+    title: "Bank & ASBA",
     url: "/bank-accounts",
     icon: Landmark,
   },
+]
+
+const secondaryNav = [
   {
     title: "Settings",
     url: "/settings",
@@ -97,24 +105,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <>
       <Sidebar collapsible="icon" variant="inset" {...props}>
-        {/* Sidebar Header: Brand & Workspace */}
-        <SidebarHeader className="border-b border-sidebar-border/60 p-3">
+        {/* Workspace Brand Switcher */}
+        <SidebarHeader className="p-2">
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
                 size="lg"
                 render={<Link href="/dashboard" onClick={handleNavClick} />}
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground"
                 tooltip="IPOLOG Dashboard"
               >
-                <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-none bg-foreground text-background shadow-xs">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xs shadow-primary/25">
                   <TrendingUp className="size-4" />
                 </div>
-                <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate font-heading text-sm font-black tracking-tight text-foreground">
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold tracking-tight text-foreground">
                     IPOLOG
                   </span>
-                  <span className="truncate font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
+                  <span className="truncate text-xs text-muted-foreground font-normal">
                     Portfolio Manager
                   </span>
                 </div>
@@ -123,13 +131,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarHeader>
 
-        {/* Sidebar Content: Platform Navigation */}
+        {/* Navigation Groups */}
         <SidebarContent>
+          {/* Platform Group */}
           <SidebarGroup>
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-[10px] font-semibold tracking-wider text-muted-foreground/70 uppercase">
+              Platform
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {navItems.map((item) => {
+                {platformNav.map((item) => {
                   const isActive =
                     pathname === item.url ||
                     (item.url !== "/dashboard" && pathname.startsWith(item.url))
@@ -139,11 +150,81 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       <SidebarMenuButton
                         isActive={isActive}
                         tooltip={item.title}
+                        className={cn(
+                          "transition-colors duration-150",
+                          isActive && "font-semibold"
+                        )}
                         render={
                           <Link href={item.url} onClick={handleNavClick} />
                         }
                       >
-                        <item.icon className="size-4" />
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          {/* Management Group */}
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-[10px] font-semibold tracking-wider text-muted-foreground/70 uppercase">
+              Management
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {managementNav.map((item) => {
+                  const isActive = pathname === item.url || pathname.startsWith(item.url)
+
+                  return (
+                    <SidebarMenuItem key={item.url}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        tooltip={item.title}
+                        className={cn(
+                          "transition-colors duration-150",
+                          isActive && "font-semibold"
+                        )}
+                        render={
+                          <Link href={item.url} onClick={handleNavClick} />
+                        }
+                      >
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          {/* Preferences Group (pinned to bottom) */}
+          <SidebarGroup className="mt-auto">
+            <SidebarGroupLabel className="text-[10px] font-semibold tracking-wider text-muted-foreground/70 uppercase">
+              Preferences
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {secondaryNav.map((item) => {
+                  const isActive = pathname === item.url
+
+                  return (
+                    <SidebarMenuItem key={item.url}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        tooltip={item.title}
+                        className={cn(
+                          "transition-colors duration-150",
+                          isActive && "font-semibold"
+                        )}
+                        render={
+                          <Link href={item.url} onClick={handleNavClick} />
+                        }
+                      >
+                        <item.icon />
                         <span>{item.title}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -154,8 +235,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
         </SidebarContent>
 
-        {/* Sidebar Footer: User Profile & Menu */}
-        <SidebarFooter className="border-t border-sidebar-border/60 p-2">
+        {/* User Profile Footer */}
+        <SidebarFooter className="p-2">
           <SidebarMenu>
             <SidebarMenuItem>
               <DropdownMenu>
@@ -163,48 +244,52 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   render={
                     <SidebarMenuButton
                       size="lg"
-                      className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                      className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground"
                       tooltip={userName}
                     />
                   }
                 >
-                  <Avatar className="size-7 shrink-0 rounded-full border border-sidebar-border">
-                    <AvatarFallback className="bg-muted text-[10px] font-bold text-foreground">
+                  <Avatar className="size-8 rounded-lg border border-sidebar-border">
+                    <AvatarFallback className="rounded-lg bg-primary/10 text-xs font-bold text-primary">
                       {userInitial}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="grid flex-1 text-left text-xs leading-tight">
+                  <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold text-foreground">
                       {userName}
                     </span>
-                    <span className="truncate font-mono text-[10px] text-muted-foreground">
+                    <span className="truncate text-xs text-muted-foreground">
                       {user?.email}
                     </span>
                   </div>
-                  <ChevronsUpDown className="ml-auto size-3.5 text-muted-foreground" />
+                  <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent
-                  className="w-56 text-xs"
+                  className="w-56 rounded-xl border border-border p-1 text-xs shadow-lg"
                   side={isMobile ? "bottom" : "right"}
                   align="end"
-                  sideOffset={6}
+                  sideOffset={4}
                 >
-                  <div className="flex items-center gap-2 p-2 text-left text-xs">
-                    <Avatar className="size-7 shrink-0 rounded-full border border-border">
-                      <AvatarFallback className="bg-muted text-[10px] font-bold text-foreground">
-                        {userInitial}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="grid flex-1 text-left leading-tight">
-                      <span className="truncate font-semibold text-foreground">
-                        {userName}
-                      </span>
-                      <span className="truncate font-mono text-[10px] text-muted-foreground">
-                        {user?.email}
-                      </span>
-                    </div>
-                  </div>
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="p-0 font-normal">
+                      <div className="flex items-center gap-2.5 px-1 py-1.5 text-left text-sm">
+                        <Avatar className="size-8 rounded-lg border border-border">
+                          <AvatarFallback className="rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                            {userInitial}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="grid flex-1 text-left leading-tight">
+                          <span className="truncate font-semibold text-foreground">
+                            {userName}
+                          </span>
+                          <span className="truncate text-xs text-muted-foreground">
+                            {user?.email}
+                          </span>
+                        </div>
+                      </div>
+                    </DropdownMenuLabel>
+                  </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
                     <DropdownMenuItem
@@ -247,9 +332,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
-
-        {/* Sidebar Rail: hover/drag edge handle */}
-        <SidebarRail />
       </Sidebar>
 
       {/* Sign Out Confirmation Alert Dialog */}
