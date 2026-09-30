@@ -44,6 +44,7 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { toast } from "@/components/ui/toast"
 import { createApplicationsBatch } from "@/lib/firebase/applications"
+import { sortAccounts } from "@/lib/firebase/accounts"
 import {
   calculateSharesApplied,
   calculateAmountApplied,
@@ -164,9 +165,18 @@ function BulkApplicationForm({
     existingApplications.map((a) => a.accountId)
   )
 
-  const activeAccounts = accounts.filter((a) => !a.archived)
-  const myAccounts = activeAccounts.filter((a) => a.type === "my")
-  const otherAccounts = activeAccounts.filter((a) => a.type === "other")
+  const activeAccounts = useMemo(
+    () => sortAccounts(accounts.filter((a) => !a.archived)),
+    [accounts]
+  )
+  const myAccounts = useMemo(
+    () => activeAccounts.filter((a) => a.type === "my"),
+    [activeAccounts]
+  )
+  const otherAccounts = useMemo(
+    () => activeAccounts.filter((a) => a.type === "other"),
+    [activeAccounts]
+  )
   const activeBankAccounts = bankAccounts.filter((b) => !b.archived)
 
   const accountMap = useMemo(
@@ -518,7 +528,18 @@ function BulkApplicationForm({
   const totalAmount = totalLots * ipo.lotSize * ipo.issuePrice
 
   const sortedSelectedAccountIds = useMemo(() => {
-    if (!sortColumn) return selectedAccountIds
+    if (!sortColumn) {
+      return [...selectedAccountIds].sort((idA, idB) => {
+        const accA = accountMap.get(idA)
+        const accB = accountMap.get(idB)
+        const ai = accA?.sortIndex ?? Number.MAX_SAFE_INTEGER
+        const bi = accB?.sortIndex ?? Number.MAX_SAFE_INTEGER
+        if (ai !== bi) return ai - bi
+        const at = accA?.createdAt?.toMillis?.() ?? 0
+        const bt = accB?.createdAt?.toMillis?.() ?? 0
+        return at - bt
+      })
+    }
 
     const list = [...selectedAccountIds]
     list.sort((idA, idB) => {
@@ -722,12 +743,19 @@ function BulkApplicationForm({
                               }
                             />
                             <div className="min-w-0 flex-1">
-                              <span
-                                className="block truncate text-xs font-semibold text-foreground"
-                                title={account.name}
-                              >
-                                {account.name}
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className="block truncate text-xs font-semibold text-foreground"
+                                  title={account.name}
+                                >
+                                  {account.name}
+                                </span>
+                                {account.sortIndex !== undefined && (
+                                  <span className="font-mono text-[9px] text-muted-foreground">
+                                    #{account.sortIndex + 1}
+                                  </span>
+                                )}
+                              </div>
                               <span className="block truncate text-[10px] text-muted-foreground">
                                 Self Account
                               </span>
@@ -780,12 +808,19 @@ function BulkApplicationForm({
                               }
                             />
                             <div className="min-w-0 flex-1">
-                              <span
-                                className="block truncate text-xs font-semibold text-foreground"
-                                title={account.name}
-                              >
-                                {account.name}
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className="block truncate text-xs font-semibold text-foreground"
+                                  title={account.name}
+                                >
+                                  {account.name}
+                                </span>
+                                {account.sortIndex !== undefined && (
+                                  <span className="font-mono text-[9px] text-muted-foreground">
+                                    #{account.sortIndex + 1}
+                                  </span>
+                                )}
+                              </div>
                               <span className="block truncate text-[10px] text-muted-foreground">
                                 {account.profitSharePercent}% profit share
                               </span>

@@ -313,14 +313,20 @@ function EditApplicationForm({
                 <SelectTrigger className="h-8 w-full bg-background text-xs">
                   <SelectValue placeholder="Select bank">
                     {(val) => {
-                      const b = activeBanks.find((acc) => acc.id === val)
+                      const b = activeBanks.find(
+                        (acc) => acc.id === (val || bankAccountId)
+                      )
                       return b ? formatBankAccount(b) : "Select bank"
                     }}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {activeBanks.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
+                    <SelectItem
+                      key={b.id}
+                      value={b.id}
+                      label={formatBankAccount(b)}
+                    >
                       {formatBankAccount(b)}
                     </SelectItem>
                   ))}

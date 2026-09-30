@@ -490,3 +490,92 @@ export async function recordSaleBulk(
 
   await batch.commit()
 }
+
+/**
+ * Batch deletes multiple applications in a single atomic batch write.
+ */
+export async function deleteApplicationsBatch(
+  userId: string,
+  applicationIds: string[]
+): Promise<void> {
+  if (applicationIds.length === 0) return
+
+  const CHUNK_SIZE = 450
+  for (let i = 0; i < applicationIds.length; i += CHUNK_SIZE) {
+    const chunk = applicationIds.slice(i, i + CHUNK_SIZE)
+    const batch = writeBatch(db)
+    chunk.forEach((id) => {
+      const ref = doc(db, "users", userId, "applications", id)
+      batch.delete(ref)
+    })
+    await batch.commit()
+  }
+}
+
+/**
+ * Batch updates funding bank account for multiple applications.
+ */
+export async function updateApplicationsBankBatch(
+  userId: string,
+  applicationIds: string[],
+  bankAccountId: string
+): Promise<void> {
+  if (applicationIds.length === 0) return
+
+  const CHUNK_SIZE = 450
+  const now = serverTimestamp()
+  for (let i = 0; i < applicationIds.length; i += CHUNK_SIZE) {
+    const chunk = applicationIds.slice(i, i + CHUNK_SIZE)
+    const batch = writeBatch(db)
+    chunk.forEach((id) => {
+      const ref = doc(db, "users", userId, "applications", id)
+      batch.update(ref, { bankAccountId, updatedAt: now })
+    })
+    await batch.commit()
+  }
+}
+
+export interface StatusUpdateBatchItem {
+  applicationId: string
+  status: ApplicationStatus
+  allottedLots?: number
+  allottedShares?: number
+}
+
+/**
+ * Batch updates application status for multiple applications.
+ */
+export async function updateApplicationsStatusBatch(
+  userId: string,
+  updates: StatusUpdateBatchItem[]
+): Promise<void> {
+  if (updates.length === 0) return
+
+  const CHUNK_SIZE = 450
+  const now = serverTimestamp()
+  for (let i = 0; i < updates.length; i += CHUNK_SIZE) {
+    const chunk = updates.slice(i, i + CHUNK_SIZE)
+    const batch = writeBatch(db)
+    chunk.forEach((item) => {
+      const ref = doc(db, "users", userId, "applications", item.applicationId)
+      const payload: Record<string, unknown> = {
+        status: item.status,
+        updatedAt: now,
+      }
+      if (item.status === "allotted") {
+        if (item.allottedLots !== undefined) payload.allottedLots = item.allottedLots
+        if (item.allottedShares !== undefined) payload.allottedShares = item.allottedShares
+      } else if (item.status === "not_allotted" || item.status === "pending") {
+        payload.allottedLots = 0
+        payload.allottedShares = 0
+        payload.sharesSold = 0
+        payload.salePrice = 0
+        payload.saleDate = null
+        payload.settlementStatus = null
+        payload.settledAt = null
+      }
+      batch.update(ref, payload)
+    })
+    await batch.commit()
+  }
+}

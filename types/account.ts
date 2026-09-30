@@ -19,6 +19,9 @@ export interface ApplicationAccount {
 
   notes?: string
 
+  /** User-defined display order. Persisted in Firestore. Lower = higher in list. */
+  sortIndex?: number
+
   archived: boolean
 
   createdAt: Timestamp

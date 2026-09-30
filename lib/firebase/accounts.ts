@@ -6,6 +6,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  writeBatch,
   query,
   orderBy,
   where,
@@ -31,6 +32,7 @@ function docToAccount(
     dematAccount: data.dematAccount || undefined,
     phoneNumber: data.phoneNumber || undefined,
     notes: data.notes || "",
+    sortIndex: data.sortIndex ?? undefined,
     archived: Boolean(data.archived),
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
@@ -38,7 +40,21 @@ function docToAccount(
 }
 
 /**
- * Fetches all application accounts for the given user, ordered by creation date.
+ * Sorts accounts by user-defined sortIndex (ascending), with createdAt fallback.
+ */
+export function sortAccounts(accounts: ApplicationAccount[]): ApplicationAccount[] {
+  return [...accounts].sort((a, b) => {
+    const ai = a.sortIndex ?? Number.MAX_SAFE_INTEGER
+    const bi = b.sortIndex ?? Number.MAX_SAFE_INTEGER
+    if (ai !== bi) return ai - bi
+    const at = a.createdAt?.toMillis?.() ?? 0
+    const bt = b.createdAt?.toMillis?.() ?? 0
+    return at - bt
+  })
+}
+
+/**
+ * Fetches all application accounts for the given user, ordered by user-defined sortIndex (or creation date).
  */
 export async function getApplicationAccounts(
   userId: string,
@@ -56,7 +72,8 @@ export async function getApplicationAccounts(
   }
 
   const snap = await getDocs(q)
-  return snap.docs.map(docToAccount)
+  const list = snap.docs.map(docToAccount)
+  return sortAccounts(list)
 }
 
 /**
@@ -72,6 +89,7 @@ export async function createApplicationAccount(
     dematAccount?: string
     phoneNumber?: string
     notes?: string
+    sortIndex?: number
   }
 ): Promise<string> {
   const accountsRef = collection(db, "users", userId, "applicationAccounts")
@@ -90,6 +108,7 @@ export async function createApplicationAccount(
     updatedAt: serverTimestamp(),
   }
 
+  if (data.sortIndex !== undefined) payload.sortIndex = data.sortIndex
   if (data.pan) payload.pan = data.pan.trim().toUpperCase()
   if (data.dematAccount) payload.dematAccount = data.dematAccount.trim()
   if (data.phoneNumber) payload.phoneNumber = data.phoneNumber.trim()
@@ -112,6 +131,7 @@ export async function updateApplicationAccount(
     dematAccount: string | null
     phoneNumber: string | null
     notes: string
+    sortIndex: number
     archived: boolean
   }>
 ): Promise<void> {
@@ -120,6 +140,8 @@ export async function updateApplicationAccount(
   const updatePayload: Record<string, unknown> = {
     updatedAt: serverTimestamp(),
   }
+
+  if (data.sortIndex !== undefined) updatePayload.sortIndex = data.sortIndex
 
   if (data.name !== undefined) updatePayload.name = data.name.trim()
   if (data.type !== undefined) updatePayload.type = data.type
@@ -174,6 +196,25 @@ export async function deleteApplicationAccount(
 ): Promise<void> {
   const accountRef = doc(db, "users", userId, "applicationAccounts", accountId)
   await deleteDoc(accountRef)
+}
+
+/**
+ * Batch-updates the sortIndex field for a list of accounts.
+ * @param orderedIds - Account IDs in the desired display order (index 0 = top).
+ */
+export async function updateAccountSortOrder(
+  userId: string,
+  orderedIds: string[]
+): Promise<void> {
+  const batch = writeBatch(db)
+  const now = serverTimestamp()
+
+  orderedIds.forEach((accountId, index) => {
+    const ref = doc(db, "users", userId, "applicationAccounts", accountId)
+    batch.update(ref, { sortIndex: index, updatedAt: now })
+  })
+
+  await batch.commit()
 }
 
 export { getAccountApplicationsCount } from "@/lib/firebase/applications"
