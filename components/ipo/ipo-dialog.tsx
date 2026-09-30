@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Calculator, Plus, Edit2 } from "lucide-react"
+import { Calculator, Edit2 } from "lucide-react"
 import { Timestamp } from "firebase/firestore"
 import {
   Dialog,
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { toast } from "@/components/ui/toast"
-import { createIpo, updateIpo } from "@/lib/firebase/ipos"
+import { updateIpo } from "@/lib/firebase/ipos"
 import { formatCurrency } from "@/lib/utils/ipo"
 import { KNOWN_REGISTRARS, detectRegistrar } from "@/lib/utils/registrars"
 import type { Ipo, IpoType } from "@/types"
@@ -46,33 +46,29 @@ export function IpoDialog({
   ipoToEdit,
   onSuccess,
 }: IpoDialogProps) {
+  if (!ipoToEdit) return null
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-xl md:max-w-2xl">
         <DialogHeader className="border-b border-border/60 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-primary/10 text-primary">
-              {ipoToEdit ? (
-                <Edit2 className="size-4" />
-              ) : (
-                <Plus className="size-4" />
-              )}
+              <Edit2 className="size-4" />
             </div>
             <div>
               <DialogTitle className="text-base font-bold">
-                {ipoToEdit ? "Edit IPO Details" : "Add New IPO"}
+                Edit IPO Details
               </DialogTitle>
               <DialogDescription className="text-xs">
-                {ipoToEdit
-                  ? "Update IPO pricing, lot size, key dates, or registrar."
-                  : "Record a new IPO to track applications and profit sharing."}
+                Update IPO pricing, lot size, key dates, or registrar.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <IpoForm
-          key={ipoToEdit?.id ?? "new"}
+          key={ipoToEdit.id}
           userId={userId}
           ipoToEdit={ipoToEdit}
           onCancel={() => onOpenChange(false)}
@@ -93,11 +89,10 @@ function IpoForm({
   onSuccess,
 }: {
   userId: string
-  ipoToEdit?: Ipo | null
+  ipoToEdit: Ipo
   onCancel: () => void
   onSuccess: (id?: string) => void
 }) {
-  const isEditing = Boolean(ipoToEdit)
 
   const [name, setName] = useState(ipoToEdit?.name ?? "")
   const [companyName, setCompanyName] = useState(ipoToEdit?.companyName ?? "")
@@ -176,57 +171,29 @@ function IpoForm({
     setLoading(true)
 
     try {
-      if (isEditing && ipoToEdit) {
-        await updateIpo(userId, ipoToEdit.id, {
-          name: name.trim(),
-          companyName: companyName.trim(),
-          type,
-          issuePrice: numIssuePrice,
-          priceBandMin: priceBandMin ? parseFloat(priceBandMin) : undefined,
-          priceBandMax: priceBandMax ? parseFloat(priceBandMax) : undefined,
-          lotSize: numLotSize,
-          openDate: openDate ? Timestamp.fromDate(openDate) : null,
-          closeDate: closeDate ? Timestamp.fromDate(closeDate) : null,
-          allotmentDate: allotmentDate
-            ? Timestamp.fromDate(allotmentDate)
-            : null,
-          listingDate: listingDate ? Timestamp.fromDate(listingDate) : null,
-          registrar: registrar.trim() || null,
-          registrarUrl: registrarUrl.trim() || null,
-          notes: notes.trim(),
-        })
-        toast.add({
-          title: "IPO updated successfully",
-          type: "success",
-        })
-        onSuccess(ipoToEdit.id)
-      } else {
-        const newId = await createIpo(userId, {
-          name: name.trim(),
-          companyName: companyName.trim(),
-          type,
-          issuePrice: numIssuePrice,
-          priceBandMin: priceBandMin ? parseFloat(priceBandMin) : undefined,
-          priceBandMax: priceBandMax ? parseFloat(priceBandMax) : undefined,
-          lotSize: numLotSize,
-          openDate: openDate ? Timestamp.fromDate(openDate) : undefined,
-          closeDate: closeDate ? Timestamp.fromDate(closeDate) : undefined,
-          allotmentDate: allotmentDate
-            ? Timestamp.fromDate(allotmentDate)
-            : undefined,
-          listingDate: listingDate
-            ? Timestamp.fromDate(listingDate)
-            : undefined,
-          registrar: registrar.trim() || undefined,
-          registrarUrl: registrarUrl.trim() || undefined,
-          notes: notes.trim(),
-        })
-        toast.add({
-          title: "IPO created successfully",
-          type: "success",
-        })
-        onSuccess(newId)
-      }
+      await updateIpo(userId, ipoToEdit.id, {
+        name: name.trim(),
+        companyName: companyName.trim() || undefined,
+        type,
+        issuePrice: numIssuePrice,
+        priceBandMin: priceBandMin ? parseFloat(priceBandMin) : undefined,
+        priceBandMax: priceBandMax ? parseFloat(priceBandMax) : undefined,
+        lotSize: numLotSize,
+        openDate: openDate ? Timestamp.fromDate(openDate) : null,
+        closeDate: closeDate ? Timestamp.fromDate(closeDate) : null,
+        allotmentDate: allotmentDate
+          ? Timestamp.fromDate(allotmentDate)
+          : null,
+        listingDate: listingDate ? Timestamp.fromDate(listingDate) : null,
+        registrar: registrar.trim() || null,
+        registrarUrl: registrarUrl.trim() || null,
+        notes: notes.trim(),
+      })
+      toast.add({
+        title: "IPO updated successfully",
+        type: "success",
+      })
+      onSuccess(ipoToEdit.id)
     } catch (err: unknown) {
       console.error(err)
       setError("Failed to save IPO. Please try again.")
@@ -528,13 +495,7 @@ function IpoForm({
           className="rounded-none text-xs"
         >
           {loading && <Spinner data-icon="inline-start" />}
-          {loading
-            ? isEditing
-              ? "Updating..."
-              : "Creating..."
-            : isEditing
-              ? "Save Changes"
-              : "Create IPO"}
+          {loading ? "Updating..." : "Save Changes"}
         </Button>
       </DialogFooter>
     </form>

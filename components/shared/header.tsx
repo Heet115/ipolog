@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Plus } from "lucide-react"
+import { Download } from "lucide-react"
 
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -80,17 +80,17 @@ export function Header() {
         </Breadcrumb>
       </div>
 
-      {/* Right Controls: Quick Add IPO & Theme Toggle */}
+      {/* Right Controls: Quick Import IPO & Theme Toggle */}
       <div className="flex items-center gap-2">
         <Button
           size="sm"
           className="font-semibold shadow-xs"
-          aria-label="Add IPO"
+          aria-label="Import IPO"
           nativeButton={false}
-          render={<Link href="/ipos" />}
+          render={<Link href="/ipos?import=true" />}
         >
-          <Plus data-icon="inline-start" />
-          <span className="hidden sm:inline">Add IPO</span>
+          <Download data-icon="inline-start" />
+          <span className="hidden sm:inline">Import IPO</span>
         </Button>
         <ThemeToggle />
       </div>

@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import {
-  Plus,
   FileText,
   Download,
   RefreshCw,
@@ -40,7 +39,12 @@ export default function IposPage() {
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [importOpen, setImportOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.location.search.includes("import=true")
+    }
+    return false
+  })
   const [ipoToEdit, setIpoToEdit] = useState<Ipo | null>(null)
   const [syncingAll, setSyncingAll] = useState(false)
   const [fetchError, setFetchError] = useState(false)
@@ -124,21 +128,13 @@ export default function IposPage() {
     }
   }
 
-  const handleAddClick = () => {
-    setIpoToEdit(null)
-    setDialogOpen(true)
-  }
-
   const handleEditClick = (ipo: Ipo) => {
     setIpoToEdit(ipo)
     setDialogOpen(true)
   }
 
-  const handleSuccess = (newIpoId?: string) => {
+  const handleSuccess = () => {
     reloadData()
-    if (newIpoId && !ipoToEdit) {
-      router.push(`/ipos/${newIpoId}`)
-    }
   }
 
   const activeIpos = ipos.filter((i) => !i.archived)
@@ -208,21 +204,12 @@ export default function IposPage() {
             </Button>
           )}
           <Button
-            variant="outline"
             size="sm"
             onClick={() => setImportOpen(true)}
             className="rounded-none text-xs"
           >
             <Download data-icon="inline-start" />
             Import from Upstox
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleAddClick}
-            className="rounded-none text-xs"
-          >
-            <Plus data-icon="inline-start" />
-            Add IPO Manually
           </Button>
         </div>
       </div>
@@ -328,24 +315,18 @@ export default function IposPage() {
             </EmptyMedia>
             <EmptyTitle>No IPOs tracked yet</EmptyTitle>
             <EmptyDescription>
-              Import an upcoming or open IPO from Upstox, or manually add an IPO
-              to begin recording multi-account applications and tracking
-              allotments.
+              Import an upcoming or open IPO from Upstox to begin recording
+              multi-account applications and tracking allotments.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent className="flex flex-row items-center justify-center gap-2">
             <Button
-              variant="outline"
               size="sm"
               className="rounded-none"
               onClick={() => setImportOpen(true)}
             >
               <Download data-icon="inline-start" />
               Import from Upstox
-            </Button>
-            <Button size="sm" className="rounded-none" onClick={handleAddClick}>
-              <Plus data-icon="inline-start" />
-              Add IPO Manually
             </Button>
           </EmptyContent>
         </Empty>
@@ -359,16 +340,21 @@ export default function IposPage() {
         />
       )}
 
-      {/* Add / Edit Dialog */}
+      {/* Edit Dialog & Import Dialog */}
       {user && (
         <>
-          <IpoDialog
-            open={dialogOpen}
-            onOpenChange={setDialogOpen}
-            userId={user.uid}
-            ipoToEdit={ipoToEdit}
-            onSuccess={handleSuccess}
-          />
+          {ipoToEdit && (
+            <IpoDialog
+              open={dialogOpen}
+              onOpenChange={(open) => {
+                setDialogOpen(open)
+                if (!open) setIpoToEdit(null)
+              }}
+              userId={user.uid}
+              ipoToEdit={ipoToEdit}
+              onSuccess={handleSuccess}
+            />
+          )}
           <ImportIpoDialog
             open={importOpen}
             onOpenChange={setImportOpen}

@@ -465,11 +465,11 @@ export default function DashboardPage() {
           <Button
             size="sm"
             nativeButton={false}
-            render={<Link href="/ipos" />}
+            render={<Link href="/ipos?import=true" />}
             className="shadow-sm"
           >
-            <Plus data-icon="inline-start" />
-            Add IPO
+            <Download data-icon="inline-start" />
+            Import IPO
           </Button>
         </div>
       </div>
