@@ -352,7 +352,13 @@ export default function IpoDetailPage() {
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button size="sm" variant="outline" render={<Link href="/ipos" />}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-none"
+              nativeButton={false}
+              render={<Link href="/ipos" />}
+            >
               Back to My IPOs
             </Button>
           </EmptyContent>
@@ -921,11 +927,17 @@ export default function IpoDetailPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={deleting}
+              className="rounded-none text-xs"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={handleDelete}
               disabled={deleting}
+              className="rounded-none text-xs"
             >
               {deleting ? "Deleting..." : "Delete IPO"}
             </AlertDialogAction>

@@ -16,11 +16,16 @@ import {
   FolderOpen,
   LayoutGrid,
   Table as TableIcon,
+  X,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   DropdownMenu,
@@ -377,15 +382,31 @@ export function IpoList({
       {/* Controls Bar: Search, Status Filters & View Toggle */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {/* Search Input */}
-        <div className="relative w-full sm:max-w-xs md:max-w-sm">
-          <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search IPO name, company, notes..."
-            aria-label="Search IPOs"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-8 w-full bg-background pl-8 text-xs"
-          />
+        <div className="w-full sm:max-w-xs md:max-w-sm">
+          <InputGroup className="h-8">
+            <InputGroupAddon align="inline-start">
+              <Search className="size-3.5 text-muted-foreground" />
+            </InputGroupAddon>
+            <InputGroupInput
+              placeholder="Search IPO name, company, notes..."
+              aria-label="Search IPOs"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="text-xs"
+            />
+            {search && (
+              <InputGroupAddon align="inline-end">
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="Clear search"
+                >
+                  <X className="size-3" />
+                </button>
+              </InputGroupAddon>
+            )}
+          </InputGroup>
         </div>
 
         {/* Filters Group + View Toggle */}
@@ -697,7 +718,8 @@ export function IpoList({
                     <Button
                       size="xs"
                       variant="outline"
-                      className="h-7 text-xs"
+                      className="h-7 rounded-none text-xs"
+                      nativeButton={false}
                       render={<Link href={`/ipos/${ipo.id}`} />}
                     >
                       Workspace
@@ -726,11 +748,17 @@ export function IpoList({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={deleting}
+              className="rounded-none text-xs"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={handleDelete}
               disabled={deleting}
+              className="rounded-none text-xs"
             >
               {deleting ? "Deleting..." : "Delete IPO"}
             </AlertDialogAction>

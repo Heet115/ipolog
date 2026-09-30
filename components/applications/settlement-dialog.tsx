@@ -38,7 +38,6 @@ import {
   InputGroupButton,
 } from "@/components/ui/input-group"
 import { Card, CardContent } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/lib/firebase/auth-context"
 import { updateApplicationSettlement } from "@/lib/firebase/applications"
@@ -75,16 +74,20 @@ export function SettlementDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-xl md:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base font-bold">
-            <MessageSquare className="size-4 text-success" />
-            WhatsApp Settlement — {account?.name || "Account Owner"}
-          </DialogTitle>
-          <DialogDescription className="text-xs">
-            Generate a settlement breakdown for {ipo.name}. Payouts credited to
-            the account owner can be transferred back to your UPI after keeping
-            their share.
-          </DialogDescription>
+        <DialogHeader className="border-b border-border/60 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-primary/10 text-primary">
+              <MessageSquare className="size-4" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold">
+                WhatsApp Settlement — {account?.name || "Account Owner"}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Generate settlement breakdown and UPI share message for {ipo.name}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         {open && (
@@ -588,20 +591,24 @@ function SettlementForm({
         </Card>
       </div>
 
-      <Separator />
-
       {/* Footer Actions */}
-      <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <Button type="button" variant="outline" size="sm" onClick={onClose}>
+      <DialogFooter className="flex flex-col-reverse gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-between">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onClose}
+          className="rounded-none text-xs"
+        >
           Close
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={handleCopyMessage}
-            className="text-xs"
+            className="rounded-none text-xs"
           >
             {copied ? (
               <>
@@ -622,7 +629,7 @@ function SettlementForm({
             type="button"
             size="sm"
             onClick={handleSendWhatsApp}
-            className="bg-emerald-600 text-xs text-white hover:bg-emerald-700"
+            className="rounded-none bg-success text-xs text-success-foreground hover:bg-success/90"
           >
             <MessageSquare className="size-3.5" data-icon="inline-start" />
             Open in WhatsApp

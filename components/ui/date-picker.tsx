@@ -37,7 +37,7 @@ export function DatePicker({
     : null
 
   return (
-    <div className={cn("flex items-center gap-1", className)}>
+    <div className={cn("relative flex w-full min-w-0 items-center", className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           render={
@@ -46,16 +46,20 @@ export function DatePicker({
               size="sm"
               disabled={disabled}
               className={cn(
-                "h-8 w-full justify-start px-2.5 text-left text-xs font-normal",
+                "h-8 w-full justify-start rounded-none px-2.5 text-left text-xs font-normal",
+                date && !disabled ? "pr-8" : "",
                 !date && "text-muted-foreground"
               )}
             />
           }
         >
-          <CalendarIcon className="mr-2 size-3.5 opacity-70" />
-          {formattedDate || <span>{placeholder}</span>}
+          <CalendarIcon className="mr-2 size-3.5 shrink-0 opacity-70" />
+          <span className="truncate">{formattedDate || placeholder}</span>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent
+          className="w-auto rounded-none border border-border p-0"
+          align="start"
+        >
           <Calendar
             mode="single"
             selected={date || undefined}
@@ -72,11 +76,16 @@ export function DatePicker({
           type="button"
           variant="ghost"
           size="icon-xs"
-          className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
-          onClick={() => onDateChange?.(undefined)}
+          className="absolute right-1 top-1/2 z-10 size-6 -translate-y-1/2 rounded-none p-0 text-muted-foreground hover:text-foreground"
+          onClick={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+            onDateChange?.(undefined)
+          }}
           title="Clear date"
         >
           <X className="size-3" />
+          <span className="sr-only">Clear date</span>
         </Button>
       )}
     </div>

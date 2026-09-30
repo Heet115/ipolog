@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import {
   Select,
@@ -264,34 +263,40 @@ export function CheckAllotmentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[92svh] flex-col gap-3.5 p-5 sm:max-w-xl md:max-w-2xl lg:max-w-3xl">
         {/* Header */}
-        <DialogHeader className="gap-1">
+        <DialogHeader className="border-b border-border/60 pb-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <DialogTitle className="truncate text-base font-bold">
-                Check Allotment — {ipo.name}
-              </DialogTitle>
-              {ipo.type && (
-                <Badge
-                  variant={ipo.type === "sme" ? "warning" : "secondary"}
-                  className="shrink-0 px-1.5 py-0 font-mono text-[10px] uppercase"
-                >
-                  {ipo.type}
-                </Badge>
-              )}
+            <div className="flex min-w-0 items-center gap-2.5">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-primary/10 text-primary">
+                <CheckCircle2 className="size-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <DialogTitle className="truncate text-base font-bold">
+                    Check Allotment — {ipo.name}
+                  </DialogTitle>
+                  {ipo.type && (
+                    <Badge
+                      variant={ipo.type === "sme" ? "default" : "secondary"}
+                      className="shrink-0 px-1.5 py-0 font-mono text-[9px] uppercase"
+                    >
+                      {ipo.type}
+                    </Badge>
+                  )}
+                </div>
+                <DialogDescription className="text-xs">
+                  Verify allotment on the registrar portal with 1-click PAN & Demat copy
+                </DialogDescription>
+              </div>
             </div>
             <div className="flex shrink-0 items-center gap-1.5 font-mono text-xs">
-              <Badge variant="outline" className="px-2 py-0.5 text-[11px]">
+              <Badge variant="outline" className="rounded-none px-2 py-0.5 text-[11px]">
                 Issue: {formatCurrency(ipo.issuePrice)}
               </Badge>
-              <Badge variant="secondary" className="px-2 py-0.5 text-[11px]">
+              <Badge variant="secondary" className="rounded-none px-2 py-0.5 text-[11px]">
                 {totalCount} {totalCount === 1 ? "App" : "Apps"}
               </Badge>
             </div>
           </div>
-          <DialogDescription className="text-xs">
-            Verify allotment on the registrar portal with 1-click PAN & Demat
-            copy, then record status instantly.
-          </DialogDescription>
         </DialogHeader>
 
         {/* Section 1: Compact Registrar Bar */}
@@ -359,7 +364,8 @@ export function CheckAllotmentDialog({
                   />
                 }
                 size="sm"
-                className="h-7 shrink-0 bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90"
+                nativeButton={false}
+                className="h-7 shrink-0 rounded-none bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90"
               >
                 <span>Open Portal</span>
                 <ExternalLink className="size-3" data-icon="inline-end" />
@@ -381,7 +387,8 @@ export function CheckAllotmentDialog({
               }
               variant="outline"
               size="sm"
-              className="h-7 shrink-0 bg-background text-xs font-medium"
+              nativeButton={false}
+              className="h-7 shrink-0 rounded-none bg-background text-xs font-medium"
               title="Official BSE Allotment Status Check Portal"
             >
               <span>BSE Check</span>
@@ -438,10 +445,10 @@ export function CheckAllotmentDialog({
               variant={statusFilter === "pending" ? "default" : "outline"}
               size="xs"
               onClick={() => setStatusFilter("pending")}
-              className="h-6 text-[11px]"
+              className="h-6 rounded-none text-[11px]"
             >
               <Clock
-                className="size-3 text-amber-500"
+                className="size-3 text-warning-foreground"
                 data-icon="inline-start"
               />
               Pending ({pendingCount})
@@ -451,10 +458,10 @@ export function CheckAllotmentDialog({
               variant={statusFilter === "allotted" ? "default" : "outline"}
               size="xs"
               onClick={() => setStatusFilter("allotted")}
-              className="h-6 text-[11px]"
+              className="h-6 rounded-none text-[11px]"
             >
               <CheckCircle2
-                className="size-3 text-emerald-500"
+                className="size-3 text-success"
                 data-icon="inline-start"
               />
               Allotted ({allottedCount})
@@ -551,7 +558,7 @@ export function CheckAllotmentDialog({
                   className={cn(
                     "flex shrink-0 flex-col gap-2.5 rounded-none border p-3 transition-all sm:flex-row sm:items-center sm:justify-between",
                     isAllotted
-                      ? "border-emerald-500/40 bg-emerald-500/5"
+                      ? "border-success/40 bg-success/5"
                       : isNotAllotted
                         ? "border-border/60 bg-muted/15"
                         : "border-border bg-card"
@@ -720,9 +727,9 @@ export function CheckAllotmentDialog({
                       }
                       onClick={() => handleUpdateStatus(app.id, "allotted")}
                       className={cn(
-                        "h-7 gap-1 text-xs font-semibold",
+                        "h-7 rounded-none gap-1 text-xs font-semibold",
                         isAllotted
-                          ? "border-transparent bg-emerald-600 text-white hover:bg-emerald-700"
+                          ? "border-transparent bg-success text-success-foreground hover:bg-success/90"
                           : "text-muted-foreground hover:text-foreground"
                       )}
                     >
@@ -765,10 +772,8 @@ export function CheckAllotmentDialog({
           )}
         </div>
 
-        <Separator />
-
         {/* Footer */}
-        <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <DialogFooter className="flex flex-col-reverse gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="font-mono text-[11px] text-muted-foreground">
             {verifiedCount} of {totalCount} applications verified (
             {progressPercent}%)
@@ -778,6 +783,7 @@ export function CheckAllotmentDialog({
             variant="outline"
             size="sm"
             onClick={() => onOpenChange(false)}
+            className="rounded-none text-xs"
           >
             Done
           </Button>

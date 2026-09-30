@@ -11,6 +11,7 @@ import {
   ArrowUp,
   ArrowDown,
   AlertTriangle,
+  Layers,
 } from "lucide-react"
 import {
   Dialog,
@@ -570,20 +571,30 @@ function BulkApplicationForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <DialogHeader>
+      <DialogHeader className="border-b border-border/60 pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <DialogTitle className="max-w-md truncate">
-            Record Applications — {ipo.name}
-          </DialogTitle>
-          <Badge variant="outline" className="font-mono text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-primary/10 text-primary">
+              <Layers className="size-4" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold">
+                Record Applications — {ipo.name}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                {step === 1
+                  ? "Select investor accounts, bidding category, and funding banks"
+                  : "Review application lots, verify ASBA limits, and submit"}
+              </DialogDescription>
+            </div>
+          </div>
+          <Badge
+            variant="outline"
+            className="rounded-none font-mono text-xs"
+          >
             Step {step} of 2
           </Badge>
         </div>
-        <DialogDescription>
-          {step === 1
-            ? "Select accounts to apply with. You can set default bidding category (Retail, sHNI, bHNI) and banks."
-            : "Assign lot sizes, quota category, and funding bank accounts, review live totals, and confirm."}
-        </DialogDescription>
       </DialogHeader>
 
       {error && (
@@ -802,12 +813,13 @@ function BulkApplicationForm({
             </>
           )}
 
-          <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
+          <DialogFooter className="flex flex-col-reverse gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={onCancel}
               size="sm"
+              className="rounded-none text-xs"
             >
               Cancel
             </Button>
@@ -816,6 +828,7 @@ function BulkApplicationForm({
               onClick={handleProceedToStep2}
               disabled={selectedAccountIds.length === 0}
               size="sm"
+              className="rounded-none text-xs"
             >
               Next: Assign Banks, Quota & Lots
               <ArrowRight data-icon="inline-end" />
@@ -1255,13 +1268,14 @@ function BulkApplicationForm({
             </div>
           </div>
 
-          <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
+          <DialogFooter className="flex flex-col-reverse gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={() => setStep(1)}
               disabled={loading}
               size="sm"
+              className="rounded-none text-xs"
             >
               <ArrowLeft data-icon="inline-start" />
               Back to Accounts
@@ -1271,6 +1285,7 @@ function BulkApplicationForm({
               onClick={handleSubmit}
               disabled={loading}
               size="sm"
+              className="rounded-none text-xs"
             >
               {loading && <Spinner data-icon="inline-start" />}
               {loading ? (

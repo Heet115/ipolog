@@ -4,6 +4,16 @@ import { Card, CardContent } from "@/components/ui/card"
 export function IpoListSkeleton() {
   return (
     <div className="flex flex-col gap-5">
+      {/* 4 Summary Strip Cards Skeleton */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex flex-col gap-1 border border-border/70 bg-card p-3">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-6 w-24" />
+          </div>
+        ))}
+      </div>
+
       {/* Controls Bar Skeleton */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <Skeleton className="h-8 w-full max-w-sm" />

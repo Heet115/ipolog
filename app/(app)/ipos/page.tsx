@@ -27,7 +27,7 @@ import { IpoListSkeleton } from "@/components/ipo/ipo-skeleton"
 import { useAuth } from "@/lib/firebase/auth-context"
 import { getIpos } from "@/lib/firebase/ipos"
 import { getApplications } from "@/lib/firebase/applications"
-import { isIpoSyncStale } from "@/lib/utils/ipo"
+import { isIpoSyncStale, getIpoStatus } from "@/lib/utils/ipo"
 import { usePageTitle } from "@/hooks/use-page-title"
 import type { Ipo, Application } from "@/types"
 
@@ -145,17 +145,37 @@ export default function IposPage() {
   const importedCount = activeIpos.filter((i) => Boolean(i.externalId)).length
   const staleCount = activeIpos.filter((i) => isIpoSyncStale(i)).length
 
+  const openCount = activeIpos.filter(
+    (i) => getIpoStatus(i).status === "open"
+  ).length
+  const upcomingCount = activeIpos.filter(
+    (i) => getIpoStatus(i).status === "upcoming"
+  ).length
+  const allotmentPendingCount = activeIpos.filter(
+    (i) => getIpoStatus(i).status === "allotment_pending"
+  ).length
+  const smeCount = activeIpos.filter((i) => i.type === "sme").length
+  const mainboardCount = activeIpos.filter((i) => i.type === "mainboard").length
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-foreground">My IPOs</h1>
+      <div className="flex flex-col gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              My IPOs
+            </h1>
+            <Badge
+              variant="secondary"
+              className="rounded-none px-2 py-0.5 font-mono text-[11px]"
+            >
+              {activeIpos.length} Active
+            </Badge>
             {importedCount > 0 && (
               <Badge
                 variant="outline"
-                className="font-mono text-[10px] text-muted-foreground"
+                className="rounded-none border-primary/30 font-mono text-[10px] text-muted-foreground"
                 title="Imported IPOs are refreshed automatically every 24 hours"
               >
                 Auto-sync: 24h
@@ -163,8 +183,7 @@ export default function IposPage() {
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Track and manage IPO applications, allotments, and market
-            performance
+            Track issue timelines, multi-account bids, allotments, and listing gains
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -174,7 +193,7 @@ export default function IposPage() {
               size="sm"
               onClick={handleSyncAll}
               disabled={syncingAll}
-              className="text-xs"
+              className="rounded-none text-xs"
             >
               <RefreshCw
                 className={`size-3.5 ${syncingAll ? "animate-spin" : ""}`}
@@ -191,19 +210,88 @@ export default function IposPage() {
             variant="outline"
             size="sm"
             onClick={() => setImportOpen(true)}
+            className="rounded-none text-xs"
           >
             <Download data-icon="inline-start" />
             Import from Upstox
           </Button>
-          <Button size="sm" onClick={handleAddClick}>
+          <Button
+            size="sm"
+            onClick={handleAddClick}
+            className="rounded-none text-xs"
+          >
             <Plus data-icon="inline-start" />
             Add IPO Manually
           </Button>
         </div>
       </div>
 
+      {/* Quick Summary Strip (rendered when IPOs exist) */}
+      {!loading && !fetchError && ipos.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="flex flex-col gap-0.5 border border-border/70 bg-card p-3">
+            <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+              Pipeline Active
+            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-mono text-xl font-bold text-foreground">
+                {activeIpos.length}
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                ({mainboardCount} MB • {smeCount} SME)
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-0.5 border border-border/70 bg-card p-3">
+            <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+              Open for Bidding
+            </span>
+            <div className="flex items-center gap-1.5">
+              {openCount > 0 && (
+                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              )}
+              <span className="font-mono text-xl font-bold text-foreground">
+                {openCount}
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                {upcomingCount > 0 ? `+ ${upcomingCount} upcoming` : "live now"}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-0.5 border border-border/70 bg-card p-3">
+            <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+              Allotment Awaited
+            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-mono text-xl font-bold text-foreground">
+                {allotmentPendingCount}
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                issues pending
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-0.5 border border-border/70 bg-card p-3">
+            <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+              Total Applications
+            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-mono text-xl font-bold text-foreground">
+                {applications.length}
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                bids across accounts
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {fetchError ? (
-        <Empty>
+        <Empty className="border border-border/70">
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <AlertTriangle className="size-6 text-destructive" />
@@ -217,6 +305,7 @@ export default function IposPage() {
           <EmptyContent>
             <Button
               size="sm"
+              className="rounded-none"
               onClick={() => {
                 setLoading(true)
                 setFetchError(false)
@@ -231,27 +320,32 @@ export default function IposPage() {
       ) : loading ? (
         <IpoListSkeleton />
       ) : ipos.length === 0 ? (
-        <Empty>
+        <Empty className="border border-border/70">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <FileText />
+              <FileText className="size-6 text-muted-foreground" />
             </EmptyMedia>
             <EmptyTitle>No IPOs tracked yet</EmptyTitle>
             <EmptyDescription>
               Import an upcoming or open IPO from Upstox, or manually add an IPO
-              to begin recording applications.
+              to begin recording multi-account applications and tracking allotments.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent className="flex flex-row items-center justify-center gap-2">
             <Button
               variant="outline"
               size="sm"
+              className="rounded-none"
               onClick={() => setImportOpen(true)}
             >
               <Download data-icon="inline-start" />
               Import from Upstox
             </Button>
-            <Button size="sm" onClick={handleAddClick}>
+            <Button
+              size="sm"
+              className="rounded-none"
+              onClick={handleAddClick}
+            >
               <Plus data-icon="inline-start" />
               Add IPO Manually
             </Button>

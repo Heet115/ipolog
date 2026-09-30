@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Trash2 } from "lucide-react"
+import { Trash2, Edit2 } from "lucide-react"
 import { Timestamp } from "firebase/firestore"
 import {
   Dialog,
@@ -84,13 +84,20 @@ export function EditApplicationDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-lg md:max-w-xl">
-        <DialogHeader>
-          <DialogTitle className="max-w-md truncate">
-            Edit Application — {account?.name}
-          </DialogTitle>
-          <DialogDescription className="break-words">
-            Modify lots, funding bank account, or notes for this application.
-          </DialogDescription>
+        <DialogHeader className="border-b border-border/60 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-primary/10 text-primary">
+              <Edit2 className="size-4" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold">
+                Edit Application — {account?.name || "Account"}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Modify lots, quota category, funding bank account, or notes for {ipo.name}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         {open && application && (
@@ -438,13 +445,13 @@ function EditApplicationForm({
           </Field>
         </FieldGroup>
 
-        <DialogFooter className="flex flex-col items-stretch justify-between gap-2 border-t pt-3 sm:flex-row sm:items-center">
+        <DialogFooter className="flex flex-col-reverse items-stretch justify-between gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setConfirmDeleteOpen(true)}
-            className="border-destructive/30 text-destructive hover:bg-destructive/10"
+            className="rounded-none border-destructive/30 text-xs text-destructive hover:bg-destructive/10"
             disabled={loading || deleting}
           >
             <Trash2 data-icon="inline-start" />
@@ -458,10 +465,16 @@ function EditApplicationForm({
               onClick={onCancel}
               disabled={loading || deleting}
               size="sm"
+              className="rounded-none text-xs"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || deleting} size="sm">
+            <Button
+              type="submit"
+              disabled={loading || deleting}
+              size="sm"
+              className="rounded-none text-xs"
+            >
               {loading && <Spinner data-icon="inline-start" />}
               {loading ? "Saving..." : "Save Changes"}
             </Button>
@@ -481,11 +494,17 @@ function EditApplicationForm({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel
+              disabled={deleting}
+              className="rounded-none text-xs"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={handleDelete}
               disabled={deleting}
+              className="rounded-none text-xs"
             >
               {deleting ? "Deleting..." : "Delete Application"}
             </AlertDialogAction>

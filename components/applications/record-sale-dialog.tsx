@@ -52,14 +52,20 @@ export function RecordSaleDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-lg md:max-w-xl">
-        <DialogHeader>
-          <DialogTitle className="max-w-md truncate">
-            Record Sale — {account?.name}
-          </DialogTitle>
-          <DialogDescription className="break-words">
-            Record exit / sale price and calculate profit sharing for {ipo.name}
-            .
-          </DialogDescription>
+        <DialogHeader className="border-b border-border/60 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-primary/10 text-primary">
+              <TrendingUp className="size-4" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold">
+                Record Sale — {account?.name || "Account"}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Record exit / sale price and calculate profit sharing for {ipo.name}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         {open && application && (
@@ -385,17 +391,23 @@ function RecordSaleForm({
         />
       </Field>
 
-      <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
+      <DialogFooter className="flex flex-col-reverse gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={loading}
           size="sm"
+          className="rounded-none text-xs"
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={loading} size="sm">
+        <Button
+          type="submit"
+          disabled={loading}
+          size="sm"
+          className="rounded-none text-xs"
+        >
           {loading && <Spinner data-icon="inline-start" />}
           {loading ? (
             "Recording Sale..."

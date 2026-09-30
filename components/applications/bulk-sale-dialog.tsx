@@ -377,19 +377,25 @@ function BulkSaleForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <DialogHeader>
+      <DialogHeader className="border-b border-border/60 pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <DialogTitle className="max-w-md truncate">
-            Bulk Exit / Sale — {ipo.name}
-          </DialogTitle>
-          <Badge variant="outline" className="font-mono text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-primary/10 text-primary">
+              <TrendingUp className="size-4" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold">
+                Bulk Exit / Sale — {ipo.name}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Record exit prices across allotted accounts and calculate realized returns
+              </DialogDescription>
+            </div>
+          </div>
+          <Badge variant="outline" className="rounded-none font-mono text-xs">
             Issue: {formatCurrency(ipo.issuePrice)}
           </Badge>
         </div>
-        <DialogDescription>
-          Record listing-day exit across multiple accounts simultaneously and
-          commit in a single transaction.
-        </DialogDescription>
       </DialogHeader>
 
       {error && (
@@ -671,13 +677,14 @@ function BulkSaleForm({
         </div>
       </div>
 
-      <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
+      <DialogFooter className="flex flex-col-reverse gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={loading}
           size="sm"
+          className="rounded-none text-xs"
         >
           Cancel
         </Button>
@@ -685,6 +692,7 @@ function BulkSaleForm({
           type="submit"
           disabled={loading || selectedCount === 0}
           size="sm"
+          className="rounded-none text-xs"
         >
           {loading && <Spinner data-icon="inline-start" />}
           {loading ? (

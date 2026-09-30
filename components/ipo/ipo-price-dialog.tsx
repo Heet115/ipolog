@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { DollarSign } from "lucide-react"
+import { BadgeIndianRupeeIcon } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -38,14 +38,20 @@ export function IpoPriceDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-md md:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="max-w-md truncate">
-            Update Market Prices — {ipo.name}
-          </DialogTitle>
-          <DialogDescription className="text-xs break-words">
-            Set the listing opening price or current market price (CMP) to track
-            unrealized and listing gains.
-          </DialogDescription>
+        <DialogHeader className="border-b border-border/60 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-primary/10 text-primary">
+              <BadgeIndianRupeeIcon className="size-4" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold">
+                Update Market Prices — {ipo.name}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Set listing price or current market price (CMP) to track returns
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         {open && (
@@ -195,23 +201,29 @@ function IpoPriceForm({
         </div>
       </FieldGroup>
 
-      <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
+      <DialogFooter className="flex flex-col-reverse gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={loading}
           size="sm"
+          className="rounded-none text-xs"
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={loading} size="sm">
+        <Button
+          type="submit"
+          disabled={loading}
+          size="sm"
+          className="rounded-none text-xs"
+        >
           {loading && <Spinner data-icon="inline-start" />}
           {loading ? (
             "Saving..."
           ) : (
             <>
-              <DollarSign data-icon="inline-start" />
+              <BadgeIndianRupeeIcon data-icon="inline-start" />
               Update Prices
             </>
           )}

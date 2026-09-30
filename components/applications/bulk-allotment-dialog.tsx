@@ -414,20 +414,25 @@ function BulkAllotmentForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <DialogHeader className="pb-1">
+      <DialogHeader className="border-b border-border/60 pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <DialogTitle className="max-w-md truncate">
-            Update Allotment — {ipo.name}
-          </DialogTitle>
-          <Badge variant="outline" className="font-mono text-xs uppercase">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-primary/10 text-primary">
+              <CheckCircle2 className="size-4" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold">
+                Update Allotment — {ipo.name}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Record allotment status across applications and track invested vs refund capital
+              </DialogDescription>
+            </div>
+          </div>
+          <Badge variant="outline" className="rounded-none font-mono text-xs uppercase">
             {ipo.lotSize} sh/lot • {formatCurrency(ipo.issuePrice)}
           </Badge>
         </div>
-        <DialogDescription>
-          Record allotment results across all {applications.length} accounts.
-          Allotted shares convert to invested funds; unallotted funds are marked
-          for refund.
-        </DialogDescription>
       </DialogHeader>
 
       {error && (
@@ -841,17 +846,23 @@ function BulkAllotmentForm({
         </Table>
       </div>
 
-      <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
+      <DialogFooter className="flex flex-col-reverse gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={onClose}
           disabled={loading}
           size="sm"
+          className="rounded-none text-xs"
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={loading} size="sm">
+        <Button
+          type="submit"
+          disabled={loading}
+          size="sm"
+          className="rounded-none text-xs"
+        >
           {loading && <Spinner data-icon="inline-start" />}
           {loading ? "Saving Allotments..." : "Save Allotments"}
         </Button>
@@ -868,13 +879,16 @@ function BulkAllotmentForm({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-none text-xs">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={() => {
                 handleResetToPending()
                 setConfirmResetOpen(false)
               }}
+              className="rounded-none text-xs"
             >
               Reset All
             </AlertDialogAction>

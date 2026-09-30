@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Calculator } from "lucide-react"
+import { Calculator, Plus, Edit2 } from "lucide-react"
 import { Timestamp } from "firebase/firestore"
 import {
   Dialog,
@@ -49,15 +49,26 @@ export function IpoDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-xl md:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="max-w-md truncate">
-            {ipoToEdit ? "Edit IPO Details" : "Add New IPO"}
-          </DialogTitle>
-          <DialogDescription className="break-words">
-            {ipoToEdit
-              ? "Update IPO pricing, lot size, key dates, or registrar."
-              : "Record a new IPO to track applications and profit sharing."}
-          </DialogDescription>
+        <DialogHeader className="border-b border-border/60 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-primary/10 text-primary">
+              {ipoToEdit ? (
+                <Edit2 className="size-4" />
+              ) : (
+                <Plus className="size-4" />
+              )}
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold">
+                {ipoToEdit ? "Edit IPO Details" : "Add New IPO"}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                {ipoToEdit
+                  ? "Update IPO pricing, lot size, key dates, or registrar."
+                  : "Record a new IPO to track applications and profit sharing."}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         {open && (
@@ -501,17 +512,23 @@ function IpoForm({
         </Field>
       </FieldGroup>
 
-      <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
+      <DialogFooter className="flex flex-col-reverse gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={loading}
           size="sm"
+          className="rounded-none text-xs"
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={loading} size="sm">
+        <Button
+          type="submit"
+          disabled={loading}
+          size="sm"
+          className="rounded-none text-xs"
+        >
           {loading && <Spinner data-icon="inline-start" />}
           {loading
             ? isEditing

@@ -56,7 +56,6 @@ import { getApplicationAccounts } from "@/lib/firebase/accounts"
 import { getBankAccounts } from "@/lib/firebase/bank-accounts"
 import {
   calculateDashboardMetrics,
-  calculateBankMoneySummary,
   calculateApplicationProfit,
   checkBankAsbaLimits,
   calculateReceivablesSummary,
