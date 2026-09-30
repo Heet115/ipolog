@@ -54,18 +54,16 @@ export function IpoPriceDialog({
           </div>
         </DialogHeader>
 
-        {open && (
-          <IpoPriceForm
-            key={ipo.id}
-            userId={userId}
-            ipo={ipo}
-            onCancel={() => onOpenChange(false)}
-            onSuccess={() => {
-              onSuccess()
-              onOpenChange(false)
-            }}
-          />
-        )}
+        <IpoPriceForm
+          key={ipo.id}
+          userId={userId}
+          ipo={ipo}
+          onCancel={() => onOpenChange(false)}
+          onSuccess={() => {
+            onSuccess()
+            onOpenChange(false)
+          }}
+        />
       </DialogContent>
     </Dialog>
   )

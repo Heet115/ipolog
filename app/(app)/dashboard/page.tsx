@@ -423,7 +423,7 @@ export default function DashboardPage() {
               variant="outline"
               className="gap-1.5 rounded-none border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-medium text-foreground"
             >
-              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="size-1.5 rounded-none bg-primary animate-pulse" />
               Live Portfolio
             </Badge>
           </div>

@@ -68,7 +68,7 @@ export function RecordSaleDialog({
           </div>
         </DialogHeader>
 
-        {open && application && (
+        {application && (
           <RecordSaleForm
             key={application.id}
             userId={userId}

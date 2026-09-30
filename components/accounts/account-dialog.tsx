@@ -66,18 +66,16 @@ export function AccountDialog({
           </div>
         </DialogHeader>
 
-        {open && (
-          <AccountForm
-            key={accountToEdit?.id ?? "new"}
-            userId={userId}
-            accountToEdit={accountToEdit}
-            onCancel={() => onOpenChange(false)}
-            onSuccess={() => {
-              onSuccess()
-              onOpenChange(false)
-            }}
-          />
-        )}
+        <AccountForm
+          key={accountToEdit?.id ?? "new"}
+          userId={userId}
+          accountToEdit={accountToEdit}
+          onCancel={() => onOpenChange(false)}
+          onSuccess={() => {
+            onSuccess()
+            onOpenChange(false)
+          }}
+        />
       </DialogContent>
     </Dialog>
   )

@@ -357,11 +357,11 @@ export function AccountList({
             <Button
               variant="ghost"
               size="icon-xs"
-              className="size-6 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500"
+              className="size-6 text-muted-foreground hover:bg-success/10 hover:text-success"
               title={`Mark all ${summary?.unsettledSoldApplicationsCount} settled`}
               onClick={() => handleSettleAll(account)}
             >
-              <CheckCheck className="size-3 text-emerald-600 dark:text-emerald-400" />
+              <CheckCheck className="size-3 text-success" />
               <span className="sr-only">Settle All</span>
             </Button>
           </div>
@@ -410,7 +410,7 @@ export function AccountList({
                   <DropdownMenuItem onClick={() => handleSettleAll(account)}>
                     <CheckCheck
                       data-icon="inline-start"
-                      className="text-emerald-600 dark:text-emerald-400"
+                      className="text-success"
                     />
                     Settle All (
                     {
@@ -799,7 +799,7 @@ function AccountCard({
                   <DropdownMenuItem onClick={onSettleAll}>
                     <CheckCheck
                       data-icon="inline-start"
-                      className="text-emerald-600 dark:text-emerald-400"
+                      className="text-success"
                     />
                     Settle All ({summary.unsettledSoldApplicationsCount})
                   </DropdownMenuItem>

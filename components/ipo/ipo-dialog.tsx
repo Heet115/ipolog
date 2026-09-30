@@ -71,18 +71,16 @@ export function IpoDialog({
           </div>
         </DialogHeader>
 
-        {open && (
-          <IpoForm
-            key={ipoToEdit?.id ?? "new"}
-            userId={userId}
-            ipoToEdit={ipoToEdit}
-            onCancel={() => onOpenChange(false)}
-            onSuccess={(id) => {
-              onSuccess(id)
-              onOpenChange(false)
-            }}
-          />
-        )}
+        <IpoForm
+          key={ipoToEdit?.id ?? "new"}
+          userId={userId}
+          ipoToEdit={ipoToEdit}
+          onCancel={() => onOpenChange(false)}
+          onSuccess={(id) => {
+            onSuccess(id)
+            onOpenChange(false)
+          }}
+        />
       </DialogContent>
     </Dialog>
   )

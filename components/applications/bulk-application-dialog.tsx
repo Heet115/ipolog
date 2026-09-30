@@ -94,21 +94,19 @@ export function BulkApplicationDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-2xl md:max-w-3xl lg:max-w-4xl">
-        {open && (
-          <BulkApplicationForm
-            key={ipo.id}
-            userId={userId}
-            ipo={ipo}
-            existingApplications={existingApplications}
-            accounts={accounts}
-            bankAccounts={bankAccounts}
-            onCancel={() => onOpenChange(false)}
-            onSuccess={() => {
-              onOpenChange(false)
-              onSuccess()
-            }}
-          />
-        )}
+        <BulkApplicationForm
+          key={ipo.id}
+          userId={userId}
+          ipo={ipo}
+          existingApplications={existingApplications}
+          accounts={accounts}
+          bankAccounts={bankAccounts}
+          onCancel={() => onOpenChange(false)}
+          onSuccess={() => {
+            onOpenChange(false)
+            onSuccess()
+          }}
+        />
       </DialogContent>
     </Dialog>
   )

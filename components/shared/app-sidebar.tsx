@@ -249,8 +249,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     />
                   }
                 >
-                  <Avatar className="size-8 rounded-lg border border-sidebar-border">
-                    <AvatarFallback className="rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                  <Avatar className="size-8 rounded-none border border-sidebar-border">
+                    <AvatarFallback className="rounded-none bg-primary/10 text-xs font-bold text-primary">
                       {userInitial}
                     </AvatarFallback>
                   </Avatar>

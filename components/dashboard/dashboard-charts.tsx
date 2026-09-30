@@ -246,7 +246,7 @@ export function DashboardCharts({ metrics }: DashboardChartsProps) {
                       >
                         <div className="flex items-center gap-2">
                           <span
-                            className="size-2.5 rounded-full"
+                            className="size-2.5 rounded-none"
                             style={{ backgroundColor: item.fill }}
                           />
                           <span className="text-muted-foreground">

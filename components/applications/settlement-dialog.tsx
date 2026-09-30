@@ -90,7 +90,7 @@ export function SettlementDialog({
           </div>
         </DialogHeader>
 
-        {open && (
+        {application && (
           <SettlementForm
             application={application}
             ipo={ipo}

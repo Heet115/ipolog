@@ -244,8 +244,8 @@ export default function SettingsPage() {
             <CardContent className="flex flex-col gap-6">
               {/* Avatar & Email preview */}
               <div className="flex items-center gap-4">
-                <Avatar className="size-14 shrink-0 rounded-full border border-border">
-                  <AvatarFallback className="bg-muted text-base font-bold text-foreground">
+                <Avatar className="size-14 shrink-0 rounded-none border border-border">
+                  <AvatarFallback className="rounded-none bg-primary/10 text-base font-bold text-primary">
                     {userInitial}
                   </AvatarFallback>
                 </Avatar>

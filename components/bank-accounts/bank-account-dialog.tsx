@@ -63,18 +63,16 @@ export function BankAccountDialog({
           </div>
         </DialogHeader>
 
-        {open && (
-          <BankAccountForm
-            key={bankAccountToEdit?.id ?? "new"}
-            userId={userId}
-            bankAccountToEdit={bankAccountToEdit}
-            onCancel={() => onOpenChange(false)}
-            onSuccess={() => {
-              onSuccess()
-              onOpenChange(false)
-            }}
-          />
-        )}
+        <BankAccountForm
+          key={bankAccountToEdit?.id ?? "new"}
+          userId={userId}
+          bankAccountToEdit={bankAccountToEdit}
+          onCancel={() => onOpenChange(false)}
+          onSuccess={() => {
+            onSuccess()
+            onOpenChange(false)
+          }}
+        />
       </DialogContent>
     </Dialog>
   )

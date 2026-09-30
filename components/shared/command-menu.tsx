@@ -58,11 +58,11 @@ export function CommandMenu() {
         variant="outline"
         size="sm"
         onClick={() => setOpen(true)}
-        className="relative h-8 w-full max-w-[160px] justify-start rounded-lg border-border/80 bg-muted/30 text-xs text-muted-foreground transition-colors hover:bg-muted/60 sm:w-56"
+        className="relative h-8 w-full max-w-[160px] justify-start rounded-none border-border/80 bg-muted/30 text-xs text-muted-foreground transition-colors hover:bg-muted/60 sm:w-56"
       >
         <Search data-icon="inline-start" className="opacity-70" />
         <span className="truncate">Search or jump to...</span>
-        <kbd className="pointer-events-none absolute top-1.5 right-1.5 hidden h-5 items-center gap-0.5 rounded-md border border-border/80 bg-muted/60 px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 select-none sm:flex">
+        <kbd className="pointer-events-none absolute top-1.5 right-1.5 hidden h-5 items-center gap-0.5 rounded-none border border-border/80 bg-muted/60 px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 select-none sm:flex">
           <span className="text-[11px]">⌘</span>K
         </kbd>
       </Button>

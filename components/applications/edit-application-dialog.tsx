@@ -100,7 +100,7 @@ export function EditApplicationDialog({
           </div>
         </DialogHeader>
 
-        {open && application && (
+        {application && (
           <EditApplicationForm
             key={application.id}
             userId={userId}

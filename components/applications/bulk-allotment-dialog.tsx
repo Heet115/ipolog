@@ -92,21 +92,19 @@ export function BulkAllotmentDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-2xl md:max-w-3xl lg:max-w-4xl">
-        {open && (
-          <BulkAllotmentForm
-            key={ipo.id}
-            userId={userId}
-            ipo={ipo}
-            applications={applications}
-            accounts={accounts}
-            bankAccounts={bankAccounts}
-            onClose={() => onOpenChange(false)}
-            onSuccess={() => {
-              onOpenChange(false)
-              onSuccess()
-            }}
-          />
-        )}
+        <BulkAllotmentForm
+          key={ipo.id}
+          userId={userId}
+          ipo={ipo}
+          applications={applications}
+          accounts={accounts}
+          bankAccounts={bankAccounts}
+          onClose={() => onOpenChange(false)}
+          onSuccess={() => {
+            onOpenChange(false)
+            onSuccess()
+          }}
+        />
       </DialogContent>
     </Dialog>
   )

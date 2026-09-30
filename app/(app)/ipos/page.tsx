@@ -249,7 +249,7 @@ export default function IposPage() {
             </span>
             <div className="flex items-center gap-1.5">
               {openCount > 0 && (
-                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="size-1.5 rounded-none bg-primary animate-pulse" />
               )}
               <span className="font-mono text-xl font-bold text-foreground">
                 {openCount}
