@@ -139,7 +139,7 @@ export default function ForgotPasswordPage() {
               </Button>
             </form>
 
-            <div className="text-center pt-1">
+            <div className="pt-1 text-center">
               <Link
                 href="/login"
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"

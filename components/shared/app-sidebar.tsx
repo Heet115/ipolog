@@ -122,7 +122,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <span className="truncate font-semibold tracking-tight text-foreground">
                     IPOLOG
                   </span>
-                  <span className="truncate text-xs text-muted-foreground font-normal">
+                  <span className="truncate text-xs font-normal text-muted-foreground">
                     Portfolio Manager
                   </span>
                 </div>
@@ -176,7 +176,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarGroupContent>
               <SidebarMenu>
                 {managementNav.map((item) => {
-                  const isActive = pathname === item.url || pathname.startsWith(item.url)
+                  const isActive =
+                    pathname === item.url || pathname.startsWith(item.url)
 
                   return (
                     <SidebarMenuItem key={item.url}>

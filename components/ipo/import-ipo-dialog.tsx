@@ -199,7 +199,7 @@ export function ImportIpoDialog({
     return filteredIpos.filter((item) =>
       Boolean(
         existingMap.get(`upstox:${item.externalId}`) ||
-          existingMap.get(`name:${item.name.toLowerCase().trim()}`)
+        existingMap.get(`name:${item.name.toLowerCase().trim()}`)
       )
     ).length
   }, [filteredIpos, existingMap])
@@ -273,9 +273,9 @@ export function ImportIpoDialog({
         return (
           <Badge
             variant="default"
-            className="flex items-center gap-1 rounded-none px-1.5 py-0 font-mono text-[10px] font-bold uppercase tracking-wider"
+            className="flex items-center gap-1 rounded-none px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider uppercase"
           >
-            <span className="size-1.5 rounded-none bg-primary-foreground animate-pulse" />
+            <span className="size-1.5 animate-pulse rounded-none bg-primary-foreground" />
             Open Now
           </Badge>
         )
@@ -283,7 +283,7 @@ export function ImportIpoDialog({
         return (
           <Badge
             variant="info"
-            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold uppercase tracking-wider"
+            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider uppercase"
           >
             Upcoming
           </Badge>
@@ -292,7 +292,7 @@ export function ImportIpoDialog({
         return (
           <Badge
             variant="outline"
-            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
+            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
           >
             Closed
           </Badge>
@@ -301,7 +301,7 @@ export function ImportIpoDialog({
         return (
           <Badge
             variant="secondary"
-            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold uppercase tracking-wider"
+            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider uppercase"
           >
             Listed
           </Badge>
@@ -315,7 +315,7 @@ export function ImportIpoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[92svh] w-full flex-col gap-0 overflow-hidden rounded-none border border-border bg-card p-0 shadow-2xl sm:max-w-3xl md:max-w-4xl">
         {/* Terminal Header */}
-        <DialogHeader className="border-b border-border/60 bg-muted/20 py-3 pl-4 pr-14 sm:py-3.5 sm:pl-6 sm:pr-16">
+        <DialogHeader className="border-b border-border/60 bg-muted/20 py-3 pr-14 pl-4 sm:py-3.5 sm:pr-16 sm:pl-6">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-none border border-primary/20 bg-primary/10 text-primary">
@@ -328,13 +328,14 @@ export function ImportIpoDialog({
                   </DialogTitle>
                   <Badge
                     variant="outline"
-                    className="hidden rounded-none border-primary/30 bg-primary/5 font-mono text-[10px] font-bold uppercase tracking-wider text-primary sm:inline-flex"
+                    className="hidden rounded-none border-primary/30 bg-primary/5 font-mono text-[10px] font-bold tracking-wider text-primary uppercase sm:inline-flex"
                   >
                     Live Exchange Feed
                   </Badge>
                 </div>
                 <DialogDescription className="truncate text-xs text-muted-foreground">
-                  Official NSE/BSE pipeline with automated lot metrics, dates, and direct sync
+                  Official NSE/BSE pipeline with automated lot metrics, dates,
+                  and direct sync
                 </DialogDescription>
               </div>
             </div>
@@ -348,7 +349,9 @@ export function ImportIpoDialog({
                 className="h-7 gap-1.5 rounded-none font-mono text-xs"
                 title="Refresh exchange feed"
               >
-                <RefreshCw className={cn("size-3", loading && "animate-spin")} />
+                <RefreshCw
+                  className={cn("size-3", loading && "animate-spin")}
+                />
                 <span className="hidden sm:inline">Refresh</span>
               </Button>
             </div>
@@ -425,16 +428,16 @@ export function ImportIpoDialog({
                   type="button"
                   onClick={() => setStatus(tab.id)}
                   className={cn(
-                    "relative flex shrink-0 items-center gap-1.5 rounded-none px-3.5 py-2 font-mono text-xs font-semibold uppercase tracking-wider transition-all",
+                    "relative flex shrink-0 items-center gap-1.5 rounded-none px-3.5 py-2 font-mono text-xs font-semibold tracking-wider uppercase transition-all",
                     isActive
-                      ? "border-b-2 border-primary bg-primary/10 text-primary font-bold"
+                      ? "border-b-2 border-primary bg-primary/10 font-bold text-primary"
                       : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   )}
                 >
                   <Icon className="size-3.5" />
                   <span>{tab.label}</span>
                   {tab.id === "open" && (
-                    <span className="size-1.5 rounded-none bg-primary animate-pulse" />
+                    <span className="size-1.5 animate-pulse rounded-none bg-primary" />
                   )}
                 </button>
               )
@@ -535,14 +538,13 @@ export function ImportIpoDialog({
 
                 // Calculations
                 const effectiveMaxPrice =
-                  ipo.priceBandMax ||
-                  ipo.issuePrice ||
-                  ipo.priceBandMin ||
-                  0
+                  ipo.priceBandMax || ipo.issuePrice || ipo.priceBandMin || 0
                 const minLotAmount = effectiveMaxPrice * (ipo.lotSize || 0)
                 const listingGainPercent =
                   ipo.listingPrice !== undefined && effectiveMaxPrice > 0
-                    ? ((ipo.listingPrice - effectiveMaxPrice) / effectiveMaxPrice) * 100
+                    ? ((ipo.listingPrice - effectiveMaxPrice) /
+                        effectiveMaxPrice) *
+                      100
                     : undefined
 
                 const priceDisplay =
@@ -562,7 +564,7 @@ export function ImportIpoDialog({
                     className={cn(
                       "group relative flex flex-col justify-between gap-3.5 rounded-none border p-4 transition-all duration-150",
                       isImported
-                        ? "border-border/70 border-l-2 border-l-primary/70 bg-muted/10 hover:border-primary/50"
+                        ? "border-l-2 border-border/70 border-l-primary/70 bg-muted/10 hover:border-primary/50"
                         : "border-border/80 bg-card hover:border-primary/60 hover:shadow-xs"
                     )}
                   >
@@ -577,14 +579,16 @@ export function ImportIpoDialog({
                           {ipo.symbol && (
                             <Badge
                               variant="outline"
-                              className="rounded-none font-mono text-[10px] font-bold uppercase tracking-wider"
+                              className="rounded-none font-mono text-[10px] font-bold tracking-wider uppercase"
                             >
                               {ipo.symbol}
                             </Badge>
                           )}
                           <Badge
-                            variant={ipo.type === "mainboard" ? "default" : "warning"}
-                            className="rounded-none font-mono text-[10px] font-bold uppercase tracking-wider"
+                            variant={
+                              ipo.type === "mainboard" ? "default" : "warning"
+                            }
+                            className="rounded-none font-mono text-[10px] font-bold tracking-wider uppercase"
                           >
                             {ipo.type === "mainboard" ? "Mainboard" : "SME"}
                           </Badge>
@@ -665,10 +669,10 @@ export function ImportIpoDialog({
                     </div>
 
                     {/* Financial Metric Strip (4 Columns) */}
-                    <div className="grid grid-cols-2 gap-2 border-t border-border/50 pt-2.5 sm:grid-cols-4 sm:gap-3 text-xs">
+                    <div className="grid grid-cols-2 gap-2 border-t border-border/50 pt-2.5 text-xs sm:grid-cols-4 sm:gap-3">
                       {/* Col 1: Price Band */}
                       <div className="flex flex-col gap-0.5 rounded-none border border-border/40 bg-muted/20 p-2">
-                        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                        <span className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
                           Price Band
                         </span>
                         <span className="font-mono text-xs font-bold text-foreground sm:text-sm">
@@ -678,16 +682,18 @@ export function ImportIpoDialog({
 
                       {/* Col 2: Min Application (1 Lot) */}
                       <div className="flex flex-col gap-0.5 rounded-none border border-border/40 bg-muted/20 p-2">
-                        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                        <span className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
                           Min Lot (1 Lot)
                         </span>
                         <span className="font-mono text-xs text-foreground">
                           {ipo.lotSize ? (
                             <>
-                              <span className="font-bold">{ipo.lotSize}</span> shares
+                              <span className="font-bold">{ipo.lotSize}</span>{" "}
+                              shares
                               {minLotAmount > 0 && (
                                 <span className="text-muted-foreground">
-                                  {" "}• ~{formatCurrency(minLotAmount)}
+                                  {" "}
+                                  • ~{formatCurrency(minLotAmount)}
                                 </span>
                               )}
                             </>
@@ -699,7 +705,7 @@ export function ImportIpoDialog({
 
                       {/* Col 3: Issue Size & Subscription */}
                       <div className="flex flex-col gap-0.5 rounded-none border border-border/40 bg-muted/20 p-2">
-                        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                        <span className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
                           Issue / Sub
                         </span>
                         <div className="flex flex-wrap items-center gap-1.5">
@@ -720,7 +726,7 @@ export function ImportIpoDialog({
 
                       {/* Col 4: Issue Window / Timeline */}
                       <div className="flex flex-col gap-0.5 rounded-none border border-border/40 bg-muted/20 p-2">
-                        <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                        <span className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
                           Bidding Window
                         </span>
                         <span className="truncate font-mono text-xs text-foreground">
@@ -735,14 +741,17 @@ export function ImportIpoDialog({
                     {(ipo.allotmentDate ||
                       ipo.listingDate ||
                       ipo.registrarName ||
-                      (ipo.listingPrice !== undefined && ipo.listingPrice > 0) ||
+                      (ipo.listingPrice !== undefined &&
+                        ipo.listingPrice > 0) ||
                       ipo.rhpUrl) && (
                       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-2 text-[11px] text-muted-foreground">
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                           {ipo.allotmentDate && (
                             <span className="flex items-center gap-1">
                               <Calendar className="size-3 text-muted-foreground/70" />
-                              <span className="text-muted-foreground">Allotment:</span>
+                              <span className="text-muted-foreground">
+                                Allotment:
+                              </span>
                               <span className="font-mono font-medium text-foreground">
                                 {formatIsoDate(ipo.allotmentDate)}
                               </span>
@@ -751,7 +760,9 @@ export function ImportIpoDialog({
                           {ipo.listingDate && (
                             <span className="flex items-center gap-1">
                               <TrendingUp className="size-3 text-muted-foreground/70" />
-                              <span className="text-muted-foreground">Listing:</span>
+                              <span className="text-muted-foreground">
+                                Listing:
+                              </span>
                               <span className="font-mono font-medium text-foreground">
                                 {formatIsoDate(ipo.listingDate)}
                               </span>
@@ -759,7 +770,9 @@ export function ImportIpoDialog({
                           )}
                           {ipo.registrarName && (
                             <span className="hidden items-center gap-1 sm:inline-flex">
-                              <span className="text-muted-foreground">Registrar:</span>
+                              <span className="text-muted-foreground">
+                                Registrar:
+                              </span>
                               <span className="max-w-[160px] truncate font-medium text-foreground">
                                 {ipo.registrarName}
                               </span>
@@ -778,24 +791,25 @@ export function ImportIpoDialog({
                           )}
                         </div>
 
-                        {ipo.listingPrice !== undefined && ipo.listingPrice > 0 && (
-                          <span className="font-mono font-semibold text-primary">
-                            Listed @ {formatCurrency(ipo.listingPrice)}
-                            {listingGainPercent !== undefined && (
-                              <span
-                                className={
-                                  listingGainPercent >= 0
-                                    ? "text-primary"
-                                    : "text-destructive"
-                                }
-                              >
-                                {" "}
-                                ({listingGainPercent >= 0 ? "+" : ""}
-                                {listingGainPercent.toFixed(1)}%)
-                              </span>
-                            )}
-                          </span>
-                        )}
+                        {ipo.listingPrice !== undefined &&
+                          ipo.listingPrice > 0 && (
+                            <span className="font-mono font-semibold text-primary">
+                              Listed @ {formatCurrency(ipo.listingPrice)}
+                              {listingGainPercent !== undefined && (
+                                <span
+                                  className={
+                                    listingGainPercent >= 0
+                                      ? "text-primary"
+                                      : "text-destructive"
+                                  }
+                                >
+                                  {" "}
+                                  ({listingGainPercent >= 0 ? "+" : ""}
+                                  {listingGainPercent.toFixed(1)}%)
+                                </span>
+                              )}
+                            </span>
+                          )}
                       </div>
                     )}
                   </div>
@@ -810,7 +824,8 @@ export function ImportIpoDialog({
           <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
             <span className="size-1.5 rounded-none bg-primary" />
             <span>
-              {filteredIpos.length} {filteredIpos.length === 1 ? "issue" : "issues"} available
+              {filteredIpos.length}{" "}
+              {filteredIpos.length === 1 ? "issue" : "issues"} available
               {importedCount > 0 && ` • ${importedCount} already in tracker`}
             </span>
           </div>

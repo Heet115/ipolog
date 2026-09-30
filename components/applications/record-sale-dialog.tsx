@@ -62,7 +62,8 @@ export function RecordSaleDialog({
                 Record Sale — {account?.name || "Account"}
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Record exit / sale price and calculate profit sharing for {ipo.name}
+                Record exit / sale price and calculate profit sharing for{" "}
+                {ipo.name}
               </DialogDescription>
             </div>
           </div>

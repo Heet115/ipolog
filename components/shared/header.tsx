@@ -36,7 +36,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 flex h-(--header-height,3.5rem) shrink-0 items-center justify-between gap-3 border-b border-border/70 bg-background/90 px-4 backdrop-blur-md transition-[width,height] ease-linear sm:px-6">
       {/* Left: Sidebar Trigger, Separator & Breadcrumbs */}
-      <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex min-w-0 items-center gap-2.5">
         <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
         <Separator orientation="vertical" className="mr-1 h-4 bg-border/80" />
         <Breadcrumb>
@@ -84,7 +84,7 @@ export function Header() {
       <div className="flex items-center gap-2">
         <Button
           size="sm"
-          className="shadow-xs font-semibold"
+          className="font-semibold shadow-xs"
           aria-label="Add IPO"
           nativeButton={false}
           render={<Link href="/ipos" />}

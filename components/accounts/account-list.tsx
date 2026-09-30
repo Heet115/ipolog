@@ -650,8 +650,8 @@ export function AccountList({
                 </AlertDialogTitle>
                 <AlertDialogDescription className="text-xs">
                   Are you sure you want to permanently delete{" "}
-                  <strong>{accountToDelete?.name}</strong>? This action cannot be
-                  undone.
+                  <strong>{accountToDelete?.name}</strong>? This action cannot
+                  be undone.
                 </AlertDialogDescription>
               </div>
             </div>

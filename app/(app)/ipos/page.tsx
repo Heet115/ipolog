@@ -183,7 +183,8 @@ export default function IposPage() {
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Track issue timelines, multi-account bids, allotments, and listing gains
+            Track issue timelines, multi-account bids, allotments, and listing
+            gains
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -249,7 +250,7 @@ export default function IposPage() {
             </span>
             <div className="flex items-center gap-1.5">
               {openCount > 0 && (
-                <span className="size-1.5 rounded-none bg-primary animate-pulse" />
+                <span className="size-1.5 animate-pulse rounded-none bg-primary" />
               )}
               <span className="font-mono text-xl font-bold text-foreground">
                 {openCount}
@@ -328,7 +329,8 @@ export default function IposPage() {
             <EmptyTitle>No IPOs tracked yet</EmptyTitle>
             <EmptyDescription>
               Import an upcoming or open IPO from Upstox, or manually add an IPO
-              to begin recording multi-account applications and tracking allotments.
+              to begin recording multi-account applications and tracking
+              allotments.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent className="flex flex-row items-center justify-center gap-2">
@@ -341,11 +343,7 @@ export default function IposPage() {
               <Download data-icon="inline-start" />
               Import from Upstox
             </Button>
-            <Button
-              size="sm"
-              className="rounded-none"
-              onClick={handleAddClick}
-            >
+            <Button size="sm" className="rounded-none" onClick={handleAddClick}>
               <Plus data-icon="inline-start" />
               Add IPO Manually
             </Button>

@@ -284,15 +284,22 @@ export function CheckAllotmentDialog({
                   )}
                 </div>
                 <DialogDescription className="text-xs">
-                  Verify allotment on the registrar portal with 1-click PAN & Demat copy
+                  Verify allotment on the registrar portal with 1-click PAN &
+                  Demat copy
                 </DialogDescription>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-1.5 font-mono text-xs">
-              <Badge variant="outline" className="rounded-none px-2 py-0.5 text-[11px]">
+              <Badge
+                variant="outline"
+                className="rounded-none px-2 py-0.5 text-[11px]"
+              >
                 Issue: {formatCurrency(ipo.issuePrice)}
               </Badge>
-              <Badge variant="secondary" className="rounded-none px-2 py-0.5 text-[11px]">
+              <Badge
+                variant="secondary"
+                className="rounded-none px-2 py-0.5 text-[11px]"
+              >
                 {totalCount} {totalCount === 1 ? "App" : "Apps"}
               </Badge>
             </div>
@@ -727,7 +734,7 @@ export function CheckAllotmentDialog({
                       }
                       onClick={() => handleUpdateStatus(app.id, "allotted")}
                       className={cn(
-                        "h-7 rounded-none gap-1 text-xs font-semibold",
+                        "h-7 gap-1 rounded-none text-xs font-semibold",
                         isAllotted
                           ? "border-transparent bg-success text-success-foreground hover:bg-success/90"
                           : "text-muted-foreground hover:text-foreground"

@@ -386,7 +386,8 @@ function BulkSaleForm({
                 Bulk Exit / Sale — {ipo.name}
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Record exit prices across allotted accounts and calculate realized returns
+                Record exit prices across allotted accounts and calculate
+                realized returns
               </DialogDescription>
             </div>
           </div>

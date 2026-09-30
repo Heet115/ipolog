@@ -18,13 +18,16 @@ export function DashboardSkeleton() {
 
       {/* 4-Column Hero Card Skeleton */}
       <Card className="overflow-hidden rounded-none border border-border/70 shadow-xs">
-        <div className="border-b border-border/60 bg-muted/20 px-5 py-3 flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-border/60 bg-muted/20 px-5 py-3">
           <Skeleton className="h-4 w-44 rounded-none" />
           <Skeleton className="h-4 w-32 rounded-none" />
         </div>
-        <div className="grid grid-cols-1 divide-y divide-border/60 sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
+        <div className="grid grid-cols-1 divide-y divide-border/60 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex flex-col justify-between gap-3 p-5 sm:p-6">
+            <div
+              key={i}
+              className="flex flex-col justify-between gap-3 p-5 sm:p-6"
+            >
               <div className="flex items-center justify-between">
                 <Skeleton className="h-3.5 w-32 rounded-none" />
                 <Skeleton className="size-8 rounded-none" />
@@ -39,7 +42,10 @@ export function DashboardSkeleton() {
       {/* 4 Secondary Tiles Skeleton */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="rounded-none border border-border/70 shadow-xs">
+          <Card
+            key={i}
+            className="rounded-none border border-border/70 shadow-xs"
+          >
             <CardContent className="flex flex-col justify-between gap-3 p-4">
               <div className="flex items-center justify-between">
                 <Skeleton className="h-3.5 w-28 rounded-none" />

@@ -94,7 +94,8 @@ export function EditApplicationDialog({
                 Edit Application — {account?.name || "Account"}
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Modify lots, quota category, funding bank account, or notes for {ipo.name}
+                Modify lots, quota category, funding bank account, or notes for{" "}
+                {ipo.name}
               </DialogDescription>
             </div>
           </div>

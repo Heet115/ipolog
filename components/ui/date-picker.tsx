@@ -76,7 +76,7 @@ export function DatePicker({
           type="button"
           variant="ghost"
           size="icon-xs"
-          className="absolute right-1 top-1/2 z-10 size-6 -translate-y-1/2 rounded-none p-0 text-muted-foreground hover:text-foreground"
+          className="absolute top-1/2 right-1 z-10 size-6 -translate-y-1/2 rounded-none p-0 text-muted-foreground hover:text-foreground"
           onClick={(e) => {
             e.stopPropagation()
             e.preventDefault()

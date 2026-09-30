@@ -423,11 +423,15 @@ function BulkAllotmentForm({
                 Update Allotment — {ipo.name}
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Record allotment status across applications and track invested vs refund capital
+                Record allotment status across applications and track invested
+                vs refund capital
               </DialogDescription>
             </div>
           </div>
-          <Badge variant="outline" className="rounded-none font-mono text-xs uppercase">
+          <Badge
+            variant="outline"
+            className="rounded-none font-mono text-xs uppercase"
+          >
             {ipo.lotSize} sh/lot • {formatCurrency(ipo.issuePrice)}
           </Badge>
         </div>

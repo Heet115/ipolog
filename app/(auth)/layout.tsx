@@ -18,14 +18,15 @@ export default function AuthLayout({
       />
 
       {/* Main card viewport */}
-      <div className="relative z-10 w-full max-w-md animate-fade-in">
+      <div className="animate-fade-in relative z-10 w-full max-w-md">
         {children}
       </div>
 
       {/* Subtle branding footer */}
       <footer className="mt-8 text-center text-xs text-muted-foreground">
         <p className="font-medium tracking-wide">
-          <span className="font-bold text-foreground">IPOLOG</span> &bull; Indian IPO Portfolio & Multi-Account Manager
+          <span className="font-bold text-foreground">IPOLOG</span> &bull;
+          Indian IPO Portfolio & Multi-Account Manager
         </p>
       </footer>
     </div>

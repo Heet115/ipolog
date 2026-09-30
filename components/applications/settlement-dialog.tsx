@@ -84,7 +84,8 @@ export function SettlementDialog({
                 WhatsApp Settlement — {account?.name || "Account Owner"}
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Generate settlement breakdown and UPI share message for {ipo.name}
+                Generate settlement breakdown and UPI share message for{" "}
+                {ipo.name}
               </DialogDescription>
             </div>
           </div>
@@ -369,7 +370,7 @@ function SettlementForm({
               <span className="font-bold text-foreground">Payment Status:</span>
               <Badge
                 variant={settlementStatus === "settled" ? "success" : "warning"}
-                className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold uppercase tracking-wider"
+                className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider uppercase"
               >
                 {settlementStatus === "settled"
                   ? "Settled / Payment Received"

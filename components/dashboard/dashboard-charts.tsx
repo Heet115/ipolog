@@ -146,10 +146,16 @@ export function DashboardCharts({ metrics }: DashboardChartsProps) {
             </CardDescription>
           </div>
           <TabsList className="h-7 text-xs">
-            <TabsTrigger value="capital" className="px-2.5 py-0.5 text-xs font-medium">
+            <TabsTrigger
+              value="capital"
+              className="px-2.5 py-0.5 text-xs font-medium"
+            >
               Capital
             </TabsTrigger>
-            <TabsTrigger value="status" className="px-2.5 py-0.5 text-xs font-medium">
+            <TabsTrigger
+              value="status"
+              className="px-2.5 py-0.5 text-xs font-medium"
+            >
               Status
             </TabsTrigger>
           </TabsList>
@@ -171,7 +177,12 @@ export function DashboardCharts({ metrics }: DashboardChartsProps) {
                   data={financialData}
                   margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="var(--border)"
+                    opacity={0.5}
+                  />
                   <XAxis
                     dataKey="name"
                     tickLine={false}

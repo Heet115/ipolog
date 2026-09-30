@@ -586,10 +586,7 @@ function BulkApplicationForm({
               </DialogDescription>
             </div>
           </div>
-          <Badge
-            variant="outline"
-            className="rounded-none font-mono text-xs"
-          >
+          <Badge variant="outline" className="rounded-none font-mono text-xs">
             Step {step} of 2
           </Badge>
         </div>

@@ -143,8 +143,8 @@ export default function DashboardPage() {
           </EmptyMedia>
           <EmptyTitle>Failed to load portfolio data</EmptyTitle>
           <EmptyDescription>
-            Something went wrong while connecting to your portfolio. Please check
-            your connection and try again.
+            Something went wrong while connecting to your portfolio. Please
+            check your connection and try again.
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
@@ -261,14 +261,16 @@ export default function DashboardPage() {
     if (hour < 18) return "Good afternoon"
     return "Good evening"
   }
-  const userName = user?.displayName ? user.displayName.split(" ")[0] : "Investor"
+  const userName = user?.displayName
+    ? user.displayName.split(" ")[0]
+    : "Investor"
 
   // Empty state: Guided Onboarding Experience
   if (ipos.length === 0 && accounts.length === 0 && bankAccounts.length === 0) {
     return (
       <div className="flex flex-col gap-8 py-4">
         {/* Onboarding Welcome Hero */}
-        <div className="relative overflow-hidden rounded-none border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background p-6 sm:p-10 shadow-sm">
+        <div className="relative overflow-hidden rounded-none border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-background p-6 shadow-sm sm:p-10">
           <div className="relative z-10 max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-none border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
               <Sparkles className="size-3.5" />
@@ -277,10 +279,10 @@ export default function DashboardPage() {
             <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
               Master Your Multi-Account IPO Portfolio
             </h1>
-            <p className="mt-3 text-sm text-muted-foreground sm:text-base leading-relaxed">
-              Track multi-account applications, automate ASBA bank capital limits,
-              monitor allotment outcomes, and calculate profit-sharing splits in one
-              unified command center.
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
+              Track multi-account applications, automate ASBA bank capital
+              limits, monitor allotment outcomes, and calculate profit-sharing
+              splits in one unified command center.
             </p>
           </div>
         </div>
@@ -293,15 +295,15 @@ export default function DashboardPage() {
                 <Users className="size-6" />
               </div>
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                   Step 1
                 </span>
                 <h3 className="mt-1 text-lg font-bold text-foreground">
                   Add Application Accounts
                 </h3>
-                <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                  Configure personal PANs, family accounts, HUFs, or investor client
-                  profiles with custom profit-sharing percentages.
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  Configure personal PANs, family accounts, HUFs, or investor
+                  client profiles with custom profit-sharing percentages.
                 </p>
               </div>
             </div>
@@ -321,15 +323,15 @@ export default function DashboardPage() {
                 <Landmark className="size-6" />
               </div>
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                   Step 2
                 </span>
                 <h3 className="mt-1 text-lg font-bold text-foreground">
                   Add ASBA Bank Accounts
                 </h3>
-                <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                  Register your bank accounts and specify ASBA capital limits to prevent
-                  blocked-fund overdrafts and monitor UPI mandate caps.
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  Register your bank accounts and specify ASBA capital limits to
+                  prevent blocked-fund overdrafts and monitor UPI mandate caps.
                 </p>
               </div>
             </div>
@@ -350,15 +352,15 @@ export default function DashboardPage() {
                 <TrendingUp className="size-6" />
               </div>
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                   Step 3
                 </span>
                 <h3 className="mt-1 text-lg font-bold text-foreground">
                   Browse & Track IPOs
                 </h3>
-                <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                  Add upcoming Mainboard or SME IPOs, import live schedules, and apply
-                  across all your accounts simultaneously with one click.
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  Add upcoming Mainboard or SME IPOs, import live schedules, and
+                  apply across all your accounts simultaneously with one click.
                 </p>
               </div>
             </div>
@@ -423,7 +425,7 @@ export default function DashboardPage() {
               variant="outline"
               className="gap-1.5 rounded-none border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-medium text-foreground"
             >
-              <span className="size-1.5 rounded-none bg-primary animate-pulse" />
+              <span className="size-1.5 animate-pulse rounded-none bg-primary" />
               Live Portfolio
             </Badge>
           </div>
@@ -487,8 +489,8 @@ export default function DashboardPage() {
                 <p className="text-xs text-muted-foreground">
                   Blocked UPI mandates exceed available balance in{" "}
                   {exceededWarnings.length} bank account
-                  {exceededWarnings.length > 1 ? "s" : ""}. Please replenish funds
-                  to prevent application rejections.
+                  {exceededWarnings.length > 1 ? "s" : ""}. Please replenish
+                  funds to prevent application rejections.
                 </p>
               </div>
             </div>
@@ -511,8 +513,7 @@ export default function DashboardPage() {
               >
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold text-foreground">
-                    {w.nickname || w.bankName}{" "}
-                    {w.last4 ? `(••${w.last4})` : ""}
+                    {w.nickname || w.bankName} {w.last4 ? `(••${w.last4})` : ""}
                   </span>
                   <Badge variant="destructive" className="font-mono text-[9px]">
                     +{formatCurrency(w.exceededAmount)} Over
@@ -554,7 +555,7 @@ export default function DashboardPage() {
         </div>
 
         {/* 4 Metric Columns */}
-        <div className="grid grid-cols-1 divide-y divide-border/60 sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
+        <div className="grid grid-cols-1 divide-y divide-border/60 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-4">
           {/* Metric 1: Net Realized Profit (You) */}
           <div className="flex flex-col justify-between gap-3 bg-gradient-to-br from-success/5 via-transparent to-transparent p-5 sm:p-6">
             <div className="flex items-center justify-between">
@@ -766,7 +767,9 @@ export default function DashboardPage() {
                     href="/accounts"
                     className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
                   >
-                    <span>{receivables.pendingAccountsCount} accounts to settle</span>
+                    <span>
+                      {receivables.pendingAccountsCount} accounts to settle
+                    </span>
                     <ArrowUpRight className="size-3" />
                   </Link>
                 ) : (
@@ -933,16 +936,20 @@ export default function DashboardPage() {
             <CardContent className="p-0">
               {displayedIpos.length === 0 ? (
                 <div className="p-8 text-center text-xs text-muted-foreground">
-                  No IPOs matching this filter right now. Click &quot;Add IPO&quot; to
-                  track upcoming issues.
+                  No IPOs matching this filter right now. Click &quot;Add
+                  IPO&quot; to track upcoming issues.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table className="min-w-[550px]">
                     <TableHeader>
                       <TableRow className="bg-muted/40">
-                        <TableHead className="text-xs">IPO & Category</TableHead>
-                        <TableHead className="text-xs">Timeline Status</TableHead>
+                        <TableHead className="text-xs">
+                          IPO & Category
+                        </TableHead>
+                        <TableHead className="text-xs">
+                          Timeline Status
+                        </TableHead>
                         <TableHead className="text-right text-xs">
                           Price & Min Bid
                         </TableHead>
@@ -1054,7 +1061,8 @@ export default function DashboardPage() {
                   Application Activity & Returns
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Real-time bidding records, allotment outcomes, and realized gains
+                  Real-time bidding records, allotment outcomes, and realized
+                  gains
                 </CardDescription>
               </div>
 
@@ -1126,7 +1134,10 @@ export default function DashboardPage() {
                               }
 
                           return (
-                            <TableRow key={app.id} className="hover:bg-muted/30">
+                            <TableRow
+                              key={app.id}
+                              className="hover:bg-muted/30"
+                            >
                               <TableCell className="text-xs font-medium">
                                 <span className="block font-semibold text-foreground">
                                   {account?.name || "Account"}

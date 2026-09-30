@@ -138,7 +138,7 @@ export function ApplicationTable({
         return (
           <Badge
             variant="success"
-            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold uppercase tracking-wider"
+            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider uppercase"
           >
             Allotted
           </Badge>
@@ -147,7 +147,7 @@ export function ApplicationTable({
         return (
           <Badge
             variant="secondary"
-            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold uppercase tracking-wider"
+            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider uppercase"
           >
             Not Allotted
           </Badge>
@@ -156,7 +156,7 @@ export function ApplicationTable({
         return (
           <Badge
             variant="info"
-            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold uppercase tracking-wider"
+            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider uppercase"
           >
             Sold
           </Badge>
@@ -166,7 +166,7 @@ export function ApplicationTable({
         return (
           <Badge
             variant="outline"
-            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
+            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
           >
             Pending
           </Badge>
