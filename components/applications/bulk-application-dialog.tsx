@@ -1220,6 +1220,7 @@ function BulkApplicationForm({
                                 Number(e.target.value)
                               )
                             }
+                            aria-label={`Lots for ${account?.name || "account"}`}
                             className="h-7 w-16 px-1.5 text-center text-xs font-bold"
                           />
                           {!validation.isValid && (

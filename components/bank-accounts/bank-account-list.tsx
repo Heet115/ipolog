@@ -555,16 +555,25 @@ export function BankAccountList({
         open={Boolean(bankToDelete)}
         onOpenChange={(open) => !open && setBankToDelete(null)}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Bank Account?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to permanently delete{" "}
-              <strong>
-                {bankToDelete?.nickname || bankToDelete?.bankName}
-              </strong>
-              ? This action cannot be undone.
-            </AlertDialogDescription>
+        <AlertDialogContent className="rounded-none sm:max-w-md">
+          <AlertDialogHeader className="border-b border-border/60 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-destructive/10 text-destructive">
+                <Trash2 className="size-4" />
+              </div>
+              <div>
+                <AlertDialogTitle className="text-base font-bold">
+                  Delete Bank Account?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-xs">
+                  Are you sure you want to permanently delete{" "}
+                  <strong>
+                    {bankToDelete?.nickname || bankToDelete?.bankName}
+                  </strong>
+                  ? This action cannot be undone.
+                </AlertDialogDescription>
+              </div>
+            </div>
             {Boolean(
               bankToDelete &&
               applications.some((a) => a.bankAccountId === bankToDelete.id)
@@ -582,8 +591,14 @@ export function BankAccountList({
               </p>
             )}
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="border-t border-border/60 pt-3">
+            <AlertDialogCancel
+              disabled={deleting}
+              size="sm"
+              className="rounded-none text-xs"
+            >
+              Cancel
+            </AlertDialogCancel>
             {Boolean(
               bankToDelete &&
               applications.some((a) => a.bankAccountId === bankToDelete.id)
@@ -591,6 +606,7 @@ export function BankAccountList({
               <Button
                 variant="outline"
                 size="sm"
+                className="rounded-none text-xs"
                 onClick={async () => {
                   if (bankToDelete) {
                     await handleToggleArchive(bankToDelete)
@@ -606,6 +622,8 @@ export function BankAccountList({
               variant="destructive"
               onClick={handleDelete}
               disabled={deleting}
+              size="sm"
+              className="rounded-none text-xs"
             >
               {deleting ? "Deleting..." : "Delete Bank Account"}
             </AlertDialogAction>
@@ -778,7 +796,7 @@ function BankAccountCard({
               isExceeded
                 ? "border-destructive/50 bg-destructive/10"
                 : isNear
-                  ? "border-amber-500/50 bg-amber-500/10"
+                  ? "border-warning/40 bg-warning/10"
                   : "border-border/60 bg-muted/20"
             )}
           >
@@ -809,7 +827,7 @@ function BankAccountCard({
                 isExceeded
                   ? "[&_[data-slot=progress-indicator]]:bg-destructive"
                   : isNear
-                    ? "[&_[data-slot=progress-indicator]]:bg-amber-500"
+                    ? "[&_[data-slot=progress-indicator]]:bg-warning"
                     : "[&_[data-slot=progress-indicator]]:bg-primary"
               )}
             />
@@ -821,7 +839,7 @@ function BankAccountCard({
                   isExceeded
                     ? "font-bold text-destructive"
                     : isNear
-                      ? "font-semibold text-amber-500"
+                      ? "font-semibold text-warning-foreground"
                       : "text-muted-foreground"
                 )}
               >

@@ -638,14 +638,23 @@ export function AccountList({
         open={Boolean(accountToDelete)}
         onOpenChange={(open) => !open && setAccountToDelete(null)}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Application Account?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to permanently delete{" "}
-              <strong>{accountToDelete?.name}</strong>? This action cannot be
-              undone.
-            </AlertDialogDescription>
+        <AlertDialogContent className="rounded-none sm:max-w-md">
+          <AlertDialogHeader className="border-b border-border/60 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-destructive/10 text-destructive">
+                <Trash2 className="size-4" />
+              </div>
+              <div>
+                <AlertDialogTitle className="text-base font-bold">
+                  Delete Application Account?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-xs">
+                  Are you sure you want to permanently delete{" "}
+                  <strong>{accountToDelete?.name}</strong>? This action cannot be
+                  undone.
+                </AlertDialogDescription>
+              </div>
+            </div>
             {Boolean(
               accountToDelete &&
               applications.some((a) => a.accountId === accountToDelete.id)
@@ -663,8 +672,14 @@ export function AccountList({
               </p>
             )}
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="border-t border-border/60 pt-3">
+            <AlertDialogCancel
+              disabled={deleting}
+              size="sm"
+              className="rounded-none text-xs"
+            >
+              Cancel
+            </AlertDialogCancel>
             {Boolean(
               accountToDelete &&
               applications.some((a) => a.accountId === accountToDelete.id)
@@ -672,6 +687,7 @@ export function AccountList({
               <Button
                 variant="outline"
                 size="sm"
+                className="rounded-none text-xs"
                 onClick={async () => {
                   if (accountToDelete) {
                     await handleToggleArchive(accountToDelete)
@@ -687,6 +703,8 @@ export function AccountList({
               variant="destructive"
               onClick={handleDelete}
               disabled={deleting}
+              size="sm"
+              className="rounded-none text-xs"
             >
               {deleting ? "Deleting..." : "Delete Account"}
             </AlertDialogAction>
@@ -884,7 +902,7 @@ function AccountCard({
                 onClick={onSettleAll}
                 className="h-6 gap-1 border-warning/50 text-[10px] font-semibold hover:bg-warning/20"
               >
-                <CheckCheck className="size-3 text-emerald-600 dark:text-emerald-400" />
+                <CheckCheck className="size-3 text-success" />
                 Settle All ({summary.unsettledSoldApplicationsCount})
               </Button>
             )}

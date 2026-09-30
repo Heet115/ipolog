@@ -772,6 +772,7 @@ function BulkAllotmentForm({
                         <div className="flex items-center rounded-none border bg-background">
                           <button
                             type="button"
+                            aria-label="Decrease allotted lots"
                             disabled={state.allottedLots <= 1}
                             onClick={() =>
                               setAllottedLots(app.id, state.allottedLots - 1)
@@ -782,6 +783,7 @@ function BulkAllotmentForm({
                           </button>
                           <Input
                             type="number"
+                            aria-label="Allotted lots"
                             min={1}
                             max={app.lotsApplied}
                             value={
@@ -808,6 +810,7 @@ function BulkAllotmentForm({
                           />
                           <button
                             type="button"
+                            aria-label="Increase allotted lots"
                             disabled={state.allottedLots >= app.lotsApplied}
                             onClick={() =>
                               setAllottedLots(app.id, state.allottedLots + 1)

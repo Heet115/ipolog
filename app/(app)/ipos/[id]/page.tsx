@@ -427,15 +427,6 @@ export default function IpoDetailPage() {
           <Button
             variant="outline"
             size="xs"
-            onClick={() => setCheckAllotmentOpen(true)}
-            className="h-7 text-xs"
-          >
-            <ExternalLink data-icon="inline-start" />
-            Check Allotment
-          </Button>
-          <Button
-            variant="outline"
-            size="xs"
             onClick={() => setPriceDialogOpen(true)}
             className="h-7 text-xs"
           >

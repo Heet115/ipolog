@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { Users, Edit2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -41,17 +42,28 @@ export function AccountDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-lg md:max-w-xl">
-        <DialogHeader>
-          <DialogTitle className="max-w-md truncate">
-            {accountToEdit
-              ? "Edit Application Account"
-              : "Add Application Account"}
-          </DialogTitle>
-          <DialogDescription className="text-xs break-words">
-            {accountToEdit
-              ? "Update application account details and profit share."
-              : "Create an account label to associate with IPO applications."}
-          </DialogDescription>
+        <DialogHeader className="border-b border-border/60 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-primary/10 text-primary">
+              {accountToEdit ? (
+                <Edit2 className="size-4" />
+              ) : (
+                <Users className="size-4" />
+              )}
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold">
+                {accountToEdit
+                  ? "Edit Application Account"
+                  : "Add Application Account"}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                {accountToEdit
+                  ? "Update application account details and profit share."
+                  : "Create an account label to associate with IPO applications."}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         {open && (
@@ -331,17 +343,23 @@ function AccountForm({
         </Field>
       </FieldGroup>
 
-      <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
+      <DialogFooter className="flex flex-col-reverse gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={loading}
           size="sm"
+          className="rounded-none text-xs"
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={loading} size="sm">
+        <Button
+          type="submit"
+          disabled={loading}
+          size="sm"
+          className="rounded-none text-xs"
+        >
           {loading && <Spinner data-icon="inline-start" />}
           {loading
             ? isEditing

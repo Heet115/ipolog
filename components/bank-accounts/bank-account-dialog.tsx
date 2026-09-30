@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { Landmark, Edit2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -40,15 +41,26 @@ export function BankAccountDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88svh] overflow-y-auto sm:max-w-lg md:max-w-xl">
-        <DialogHeader>
-          <DialogTitle className="max-w-md truncate">
-            {bankAccountToEdit ? "Edit Bank Account" : "Add Bank Account"}
-          </DialogTitle>
-          <DialogDescription className="text-xs break-words">
-            {bankAccountToEdit
-              ? "Update bank account details."
-              : "Add the bank accounts you use to apply for IPOs."}
-          </DialogDescription>
+        <DialogHeader className="border-b border-border/60 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-primary/10 text-primary">
+              {bankAccountToEdit ? (
+                <Edit2 className="size-4" />
+              ) : (
+                <Landmark className="size-4" />
+              )}
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold">
+                {bankAccountToEdit ? "Edit Bank Account" : "Add Bank Account"}
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                {bankAccountToEdit
+                  ? "Update bank account details and ASBA limits."
+                  : "Add the bank accounts you use to apply for IPOs."}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         {open && (
@@ -272,17 +284,23 @@ function BankAccountForm({
         </Field>
       </FieldGroup>
 
-      <DialogFooter className="flex items-center justify-between gap-2 border-t pt-3 sm:justify-end">
+      <DialogFooter className="flex flex-col-reverse gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={loading}
           size="sm"
+          className="rounded-none text-xs"
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={loading} size="sm">
+        <Button
+          type="submit"
+          disabled={loading}
+          size="sm"
+          className="rounded-none text-xs"
+        >
           {loading && <Spinner data-icon="inline-start" />}
           {loading
             ? isEditing

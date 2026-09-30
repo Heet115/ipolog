@@ -138,7 +138,7 @@ export function ApplicationTable({
         return (
           <Badge
             variant="success"
-            className="px-1.5 py-0 text-[10px] font-normal"
+            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold uppercase tracking-wider"
           >
             Allotted
           </Badge>
@@ -147,14 +147,17 @@ export function ApplicationTable({
         return (
           <Badge
             variant="secondary"
-            className="px-1.5 py-0 text-[10px] font-normal"
+            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold uppercase tracking-wider"
           >
             Not Allotted
           </Badge>
         )
       case "sold":
         return (
-          <Badge variant="info" className="px-1.5 py-0 text-[10px] font-normal">
+          <Badge
+            variant="info"
+            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold uppercase tracking-wider"
+          >
             Sold
           </Badge>
         )
@@ -163,7 +166,7 @@ export function ApplicationTable({
         return (
           <Badge
             variant="outline"
-            className="px-1.5 py-0 text-[10px] font-normal"
+            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold uppercase tracking-wider text-muted-foreground"
           >
             Pending
           </Badge>
@@ -489,7 +492,7 @@ export function ApplicationTable({
                 variant="ghost"
                 size="icon-xs"
                 onClick={() => onWhatsAppSettlement?.(app)}
-                className="size-7 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500"
+                className="size-7 text-muted-foreground hover:bg-success/10 hover:text-success"
                 title="WhatsApp Settlement Report"
               >
                 <MessageSquare className="size-3.5" />
@@ -526,7 +529,7 @@ export function ApplicationTable({
                     >
                       <MessageSquare
                         data-icon="inline-start"
-                        className="text-emerald-500"
+                        className="text-success"
                       />
                       WhatsApp Settlement
                     </DropdownMenuItem>
@@ -544,7 +547,7 @@ export function ApplicationTable({
                         <>
                           <CheckCheck
                             data-icon="inline-start"
-                            className="text-emerald-600 dark:text-emerald-400"
+                            className="text-success"
                           />
                           Mark as Settled
                         </>
@@ -622,24 +625,41 @@ export function ApplicationTable({
         open={Boolean(appToDelete)}
         onOpenChange={(open) => !open && setAppToDelete(null)}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Application?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to remove this application for{" "}
-              <strong>
-                {accountMap.get(appToDelete?.accountId || "")?.name ||
-                  "this account"}
-              </strong>
-              ?
-            </AlertDialogDescription>
+        <AlertDialogContent className="rounded-none sm:max-w-md">
+          <AlertDialogHeader className="border-b border-border/60 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-destructive/10 text-destructive">
+                <Trash2 className="size-4" />
+              </div>
+              <div>
+                <AlertDialogTitle className="text-base font-bold">
+                  Remove Application?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-xs">
+                  Are you sure you want to remove this application for{" "}
+                  <strong>
+                    {accountMap.get(appToDelete?.accountId || "")?.name ||
+                      "this account"}
+                  </strong>
+                  ? All recorded lots and allotment data will be cleared.
+                </AlertDialogDescription>
+              </div>
+            </div>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="border-t border-border/60 pt-3">
+            <AlertDialogCancel
+              disabled={deleting}
+              size="sm"
+              className="rounded-none text-xs"
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={handleDelete}
               disabled={deleting}
+              size="sm"
+              className="rounded-none text-xs"
             >
               {deleting ? "Removing..." : "Remove Application"}
             </AlertDialogAction>

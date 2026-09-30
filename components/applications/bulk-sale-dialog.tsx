@@ -573,6 +573,7 @@ function BulkSaleForm({
                     <Checkbox
                       checked={state.selected}
                       onCheckedChange={() => toggleRow(app.id)}
+                      aria-label={`Select ${account?.name || "account"}`}
                     />
                   </TableCell>
 
@@ -608,6 +609,7 @@ function BulkSaleForm({
                       onChange={(e) =>
                         updateRowShares(app.id, Number(e.target.value))
                       }
+                      aria-label={`Shares sold for ${account?.name || "account"}`}
                       className="h-7 px-1.5 font-mono text-xs"
                     />
                   </TableCell>
@@ -622,6 +624,7 @@ function BulkSaleForm({
                       onChange={(e) =>
                         updateRowPrice(app.id, parseFloat(e.target.value) || 0)
                       }
+                      aria-label={`Sale price for ${account?.name || "account"}`}
                       className="h-7 px-1.5 text-xs font-bold"
                     />
                   </TableCell>

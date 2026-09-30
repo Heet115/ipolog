@@ -345,8 +345,8 @@ function SettlementForm({
         className={cn(
           "flex flex-col gap-3 rounded-none border p-3 text-xs sm:flex-row sm:items-center sm:justify-between",
           settlementStatus === "settled"
-            ? "border-emerald-500/50 bg-emerald-500/10"
-            : "border-amber-500/50 bg-amber-500/10"
+            ? "border-success/40 bg-success/10"
+            : "border-warning/40 bg-warning/10"
         )}
       >
         <div className="flex min-w-0 items-center gap-2.5">
@@ -354,8 +354,8 @@ function SettlementForm({
             className={cn(
               "flex size-8 shrink-0 items-center justify-center rounded-none border",
               settlementStatus === "settled"
-                ? "border-emerald-500/60 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                : "border-amber-500/60 bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                ? "border-success/50 bg-success/20 text-success"
+                : "border-warning/50 bg-warning/20 text-warning-foreground"
             )}
           >
             {settlementStatus === "settled" ? (
@@ -369,7 +369,7 @@ function SettlementForm({
               <span className="font-bold text-foreground">Payment Status:</span>
               <Badge
                 variant={settlementStatus === "settled" ? "success" : "warning"}
-                className="px-1.5 py-0 text-[10px] font-semibold capitalize"
+                className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold uppercase tracking-wider"
               >
                 {settlementStatus === "settled"
                   ? "Settled / Payment Received"
@@ -391,14 +391,10 @@ function SettlementForm({
         <Button
           type="button"
           size="sm"
+          variant={settlementStatus === "settled" ? "outline" : "default"}
           disabled={updatingSettlement}
           onClick={handleToggleSettlement}
-          className={cn(
-            "h-8 shrink-0 text-xs font-semibold",
-            settlementStatus === "settled"
-              ? "border border-border bg-background text-foreground hover:bg-muted"
-              : "bg-emerald-600 text-white hover:bg-emerald-700"
-          )}
+          className="h-8 shrink-0 rounded-none text-xs font-semibold"
         >
           {settlementStatus === "settled" ? (
             <>
