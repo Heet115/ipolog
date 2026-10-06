@@ -14,6 +14,7 @@ import {
   UserCheck,
   Building2,
   Settings,
+  FileText,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -63,6 +64,11 @@ const platformNav = [
     title: "My IPOs",
     url: "/ipos",
     icon: Layers,
+  },
+  {
+    title: "Applications",
+    url: "/applications",
+    icon: FileText,
   },
 ]
 
