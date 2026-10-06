@@ -792,9 +792,7 @@ export function ApplicationTable({
                     />
                     Mark Not Allotted
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleBulkStatus("pending")}
-                  >
+                  <DropdownMenuItem onClick={() => handleBulkStatus("pending")}>
                     <Clock
                       data-icon="inline-start"
                       className="text-warning-foreground"
@@ -940,9 +938,7 @@ export function ApplicationTable({
                     />
                     Mark Not Allotted
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleBulkStatus("pending")}
-                  >
+                  <DropdownMenuItem onClick={() => handleBulkStatus("pending")}>
                     <Clock
                       data-icon="inline-start"
                       className="text-warning-foreground"

@@ -42,7 +42,7 @@ function SelectTrigger({
       data-size={size}
       className={cn(
         "group/select-trigger flex w-full items-center justify-between gap-2 rounded-none border border-input bg-background py-1.5 pr-2.5 pl-2.5 text-xs transition-colors outline-none select-none",
-        "hover:bg-muted/30 hover:border-border",
+        "hover:border-border hover:bg-muted/30",
         "focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/40",
         "data-[popup-open]:border-primary",
         "disabled:cursor-not-allowed disabled:opacity-50",
@@ -99,7 +99,9 @@ function SelectContent({
           {...props}
         >
           <SelectScrollUpButton />
-          <SelectPrimitive.List className="flex flex-col gap-0.5">{children}</SelectPrimitive.List>
+          <SelectPrimitive.List className="flex flex-col gap-0.5">
+            {children}
+          </SelectPrimitive.List>
           <SelectScrollDownButton />
         </SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>
@@ -114,7 +116,10 @@ function SelectLabel({
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
-      className={cn("px-2 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider", className)}
+      className={cn(
+        "px-2 py-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase",
+        className
+      )}
       {...props}
     />
   )
@@ -129,7 +134,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex w-full cursor-default select-none items-center gap-2 rounded-none py-1.5 pr-8 pl-2 text-xs outline-none transition-colors",
+        "relative flex w-full cursor-default items-center gap-2 rounded-none py-1.5 pr-8 pl-2 text-xs transition-colors outline-none select-none",
         "data-highlighted:bg-accent data-highlighted:text-accent-foreground",
         "data-selected:font-semibold data-selected:text-foreground",
         "data-disabled:pointer-events-none data-disabled:opacity-50",

@@ -563,8 +563,10 @@ export async function updateApplicationsStatusBatch(
         updatedAt: now,
       }
       if (item.status === "allotted") {
-        if (item.allottedLots !== undefined) payload.allottedLots = item.allottedLots
-        if (item.allottedShares !== undefined) payload.allottedShares = item.allottedShares
+        if (item.allottedLots !== undefined)
+          payload.allottedLots = item.allottedLots
+        if (item.allottedShares !== undefined)
+          payload.allottedShares = item.allottedShares
       } else if (item.status === "not_allotted" || item.status === "pending") {
         payload.allottedLots = 0
         payload.allottedShares = 0

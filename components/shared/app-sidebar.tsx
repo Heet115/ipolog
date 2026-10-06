@@ -15,6 +15,7 @@ import {
   Building2,
   Settings,
   FileText,
+  HandCoins,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -82,6 +83,11 @@ const managementNav = [
     title: "Bank & ASBA",
     url: "/bank-accounts",
     icon: Landmark,
+  },
+  {
+    title: "Settlements",
+    url: "/settlements",
+    icon: HandCoins,
   },
 ]
 

@@ -222,3 +222,131 @@ export function getWhatsAppShareUrl(message: string, phone?: string): string {
 
   return `https://wa.me/${cleanPhone}?text=${encodedText}`
 }
+
+export interface MultiIpoSettlementItem {
+  applicationId: string
+  ipoName: string
+  allottedShares: number
+  allottedLots: number
+  issuePrice: number
+  investedAmount: number
+  salePrice: number
+  saleProceeds: number
+  grossProfit: number
+  ownerProfitShare: number
+  yourProfitShare: number
+  amountToSendUser: number
+  settlementStatus: "pending" | "settled"
+}
+
+export interface MultiIpoSettlementParams {
+  accountName: string
+  accountType?: string
+  profitSharingPercentage?: number
+  items: MultiIpoSettlementItem[]
+  upiId?: string
+  senderName?: string
+  customNote?: string
+}
+
+/**
+ * Formats a clean, readable WhatsApp statement consolidating multiple sold IPO allotments
+ * for a partner account into a single transparent summary.
+ */
+export function formatMultiIpoWhatsAppSettlementMessage(
+  params: MultiIpoSettlementParams
+): string {
+  const {
+    accountName,
+    profitSharingPercentage = 0,
+    items,
+    upiId,
+    senderName,
+    customNote,
+  } = params
+
+  const formatInr = (n: number) =>
+    `₹${Math.abs(Math.round(n)).toLocaleString("en-IN")}`
+  const funderName = senderName && senderName.trim() ? senderName.trim() : "Me"
+
+  const totalInvested = items.reduce((sum, item) => sum + item.investedAmount, 0)
+  const totalProceeds = items.reduce((sum, item) => sum + item.saleProceeds, 0)
+  const totalGrossProfit = totalProceeds - totalInvested
+  const totalOwnerProfit = items.reduce(
+    (sum, item) => sum + item.ownerProfitShare,
+    0
+  )
+  const totalAmountToSend = items.reduce(
+    (sum, item) => sum + item.amountToSendUser,
+    0
+  )
+
+  const lines: string[] = []
+
+  lines.push(`Hi ${accountName},`)
+  lines.push(
+    `Here is the consolidated settlement statement for your *${items.length}* recent IPO allotment${items.length > 1 ? "s" : ""}:`
+  )
+  lines.push("")
+
+  items.forEach((item, idx) => {
+    const isLoss = item.grossProfit < 0
+    lines.push(`*${idx + 1}. ${item.ipoName}*`)
+    lines.push(
+      `• Allotted: ${item.allottedShares} shares (${item.allottedLots} lot${item.allottedLots > 1 ? "s" : ""})`
+    )
+    lines.push(
+      `• Capital Applied: ${formatInr(item.investedAmount)} (Paid by ${funderName})`
+    )
+    lines.push(
+      `• Sale Proceeds: ${formatInr(item.saleProceeds)} (In your bank)`
+    )
+    if (isLoss) {
+      lines.push(`• Gross Loss: -${formatInr(item.grossProfit)}`)
+    } else {
+      lines.push(`• Gross Profit: +${formatInr(item.grossProfit)}`)
+      if (item.ownerProfitShare > 0) {
+        lines.push(
+          `• Your Profit Share (${profitSharingPercentage}%): *${formatInr(item.ownerProfitShare)}* (Keep this)`
+        )
+      }
+    }
+    lines.push(`• Amount to Transfer: *${formatInr(item.amountToSendUser)}*`)
+    lines.push("")
+  })
+
+  lines.push(`━━━━━━━━━━━━━━━━━━━━`)
+  lines.push(`*CONSOLIDATED SUMMARY*`)
+  lines.push(`• Total Capital Applied: ${formatInr(totalInvested)}`)
+  lines.push(`• Total Sale Proceeds: ${formatInr(totalProceeds)}`)
+  lines.push(
+    `• Total Net P&L: ${totalGrossProfit >= 0 ? "+" : "-"}${formatInr(totalGrossProfit)}`
+  )
+  if (totalOwnerProfit > 0) {
+    lines.push(`• Total Profit Kept by You: *${formatInr(totalOwnerProfit)}*`)
+  }
+  lines.push(
+    `• *Total Amount to Transfer to ${funderName}:* *${formatInr(totalAmountToSend)}*`
+  )
+  lines.push(`━━━━━━━━━━━━━━━━━━━━`)
+
+  if (upiId && upiId.trim()) {
+    lines.push("")
+    lines.push(`*Please transfer via UPI to:*`)
+    lines.push(`UPI ID: *${upiId.trim()}*`)
+  }
+
+  if (customNote && customNote.trim()) {
+    lines.push("")
+    lines.push(`Note: ${customNote.trim()}`)
+  }
+
+  lines.push("")
+  lines.push(`Please share the payment screenshot once transferred. Thanks!`)
+  lines.push("")
+  lines.push(
+    `Settlement Statement generated via IPOLog(https://ipolog.vercel.app)`
+  )
+
+  return lines.join("\n")
+}

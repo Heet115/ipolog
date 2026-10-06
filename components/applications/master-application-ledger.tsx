@@ -305,8 +305,7 @@ export function MasterApplicationLedger({
       }
     }
 
-    const winRate =
-      decidedCount > 0 ? (allottedCount / decidedCount) * 100 : 0
+    const winRate = decidedCount > 0 ? (allottedCount / decidedCount) * 100 : 0
 
     return {
       totalApplications: filteredApplications.length,
@@ -561,16 +560,16 @@ export function MasterApplicationLedger({
             <div className="flex items-center gap-1.5">
               <Link
                 href={`/ipos/${ipo.id}`}
-                className="group flex items-center gap-1 font-semibold text-foreground hover:text-primary transition-colors hover:underline"
+                className="group flex items-center gap-1 font-semibold text-foreground transition-colors hover:text-primary hover:underline"
               >
-                <span className="truncate max-w-[140px] sm:max-w-[200px] text-xs">
+                <span className="max-w-[140px] truncate text-xs sm:max-w-[200px]">
                   {ipo.name}
                 </span>
-                <ExternalLink className="size-3 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground" />
+                <ExternalLink className="size-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
               </Link>
               <Badge
                 variant={ipo.type === "sme" ? "secondary" : "outline"}
-                className="rounded-none px-1 py-0 font-mono text-[9px] uppercase font-bold"
+                className="rounded-none px-1 py-0 font-mono text-[9px] font-bold uppercase"
               >
                 {ipo.type === "sme" ? "SME" : "Main"}
               </Badge>
@@ -603,7 +602,7 @@ export function MasterApplicationLedger({
         }
         return (
           <div className="flex flex-col gap-0.5">
-            <span className="font-medium text-xs text-foreground truncate max-w-[130px]">
+            <span className="max-w-[130px] truncate text-xs font-medium text-foreground">
               {account.name}
             </span>
             <div className="flex items-center gap-1">
@@ -642,7 +641,7 @@ export function MasterApplicationLedger({
         }
         return (
           <div className="flex flex-col gap-0.5">
-            <span className="font-mono text-xs font-semibold text-foreground truncate max-w-[130px]">
+            <span className="max-w-[130px] truncate font-mono text-xs font-semibold text-foreground">
               {bank.nickname || bank.bankName}
             </span>
             <span className="font-mono text-[10px] text-muted-foreground">
@@ -661,7 +660,7 @@ export function MasterApplicationLedger({
         return (
           <Badge
             variant="outline"
-            className="rounded-none px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-wider uppercase border-border/80"
+            className="rounded-none border-border/80 px-1.5 py-0.5 font-mono text-[10px] font-semibold tracking-wider uppercase"
           >
             {config?.shortLabel || cat}
           </Badge>
@@ -812,7 +811,7 @@ export function MasterApplicationLedger({
         return timeA - timeB
       },
       cell: (app) => (
-        <span className="font-mono text-[11px] text-muted-foreground whitespace-nowrap">
+        <span className="font-mono text-[11px] whitespace-nowrap text-muted-foreground">
           {formatDate(app.applicationDate)}
         </span>
       ),
@@ -855,9 +854,7 @@ export function MasterApplicationLedger({
                         className="gap-2"
                       >
                         <TrendingUp className="size-3.5" />
-                        {app.status === "sold"
-                          ? "Update Sale"
-                          : "Record Sale"}
+                        {app.status === "sold" ? "Update Sale" : "Record Sale"}
                       </DropdownMenuItem>
                     )}
 
@@ -898,7 +895,7 @@ export function MasterApplicationLedger({
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Card className="rounded-none border border-border/70 bg-card p-3 shadow-none">
           <CardContent className="flex flex-col gap-1 p-0">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+            <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
               Total Applications
             </span>
             <div className="flex items-baseline gap-1.5">
@@ -914,7 +911,7 @@ export function MasterApplicationLedger({
 
         <Card className="rounded-none border border-border/70 bg-card p-3 shadow-none">
           <CardContent className="flex flex-col gap-1 p-0">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+            <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
               Total Capital Blocked
             </span>
             <span className="font-mono text-xl font-bold text-foreground">
@@ -925,7 +922,7 @@ export function MasterApplicationLedger({
 
         <Card className="rounded-none border border-border/70 bg-card p-3 shadow-none">
           <CardContent className="flex flex-col gap-1 p-0">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+            <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
               Win Rate (Allotment)
             </span>
             <div className="flex items-baseline gap-1.5">
@@ -943,7 +940,7 @@ export function MasterApplicationLedger({
 
         <Card className="rounded-none border border-border/70 bg-card p-3 shadow-none">
           <CardContent className="flex flex-col gap-1 p-0">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+            <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
               Realized Net Profit
             </span>
             <span
@@ -959,9 +956,9 @@ export function MasterApplicationLedger({
           </CardContent>
         </Card>
 
-        <Card className="rounded-none border border-border/70 bg-card p-3 shadow-none col-span-2 sm:col-span-1">
+        <Card className="col-span-2 rounded-none border border-border/70 bg-card p-3 shadow-none sm:col-span-1">
           <CardContent className="flex flex-col gap-1 p-0">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+            <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
               Pending Allotment
             </span>
             <div className="flex items-center gap-1.5">
@@ -971,7 +968,7 @@ export function MasterApplicationLedger({
               {metrics.pendingCount > 0 && (
                 <Badge
                   variant="outline"
-                  className="rounded-none px-1 py-0 font-mono text-[9px] border-warning/40 text-warning"
+                  className="rounded-none border-warning/40 px-1 py-0 font-mono text-[9px] text-warning"
                 >
                   IN PROGRESS
                 </Badge>
@@ -986,19 +983,19 @@ export function MasterApplicationLedger({
         <CardContent className="flex flex-col gap-3.5 p-3.5">
           <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
             {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <div className="relative max-w-md flex-1">
+              <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search IPO, account, bank, PAN, notes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-8 pl-8 pr-8 text-xs bg-background rounded-none"
+                className="h-8 rounded-none bg-background pr-8 pl-8 text-xs"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label="Clear search"
                 >
                   <X className="size-3.5" />
@@ -1048,7 +1045,7 @@ export function MasterApplicationLedger({
               >
                 <SelectTrigger
                   id="filter-ipo"
-                  className="h-8 w-full bg-background text-xs truncate rounded-none"
+                  className="h-8 w-full truncate rounded-none bg-background text-xs"
                 >
                   <SelectValue placeholder="All IPOs">
                     {(val) => {
@@ -1063,11 +1060,7 @@ export function MasterApplicationLedger({
                     All IPOs ({applications.length})
                   </SelectItem>
                   {ipos.map((ipo) => (
-                    <SelectItem
-                      key={ipo.id}
-                      value={ipo.id}
-                      label={ipo.name}
-                    >
+                    <SelectItem key={ipo.id} value={ipo.id} label={ipo.name}>
                       <div className="flex w-full items-center justify-between gap-2">
                         <span className="truncate">{ipo.name}</span>
                         <span className="font-mono text-[10px] text-muted-foreground">
@@ -1094,7 +1087,7 @@ export function MasterApplicationLedger({
               >
                 <SelectTrigger
                   id="filter-account"
-                  className="h-8 w-full bg-background text-xs truncate rounded-none"
+                  className="h-8 w-full truncate rounded-none bg-background text-xs"
                 >
                   <SelectValue placeholder="All Accounts">
                     {(val) => {
@@ -1109,15 +1102,13 @@ export function MasterApplicationLedger({
                     All Accounts ({accounts.length})
                   </SelectItem>
                   {accounts.map((acc) => (
-                    <SelectItem
-                      key={acc.id}
-                      value={acc.id}
-                      label={acc.name}
-                    >
+                    <SelectItem key={acc.id} value={acc.id} label={acc.name}>
                       <div className="flex w-full items-center justify-between gap-2">
                         <span className="truncate">{acc.name}</span>
                         <span className="font-mono text-[10px] text-muted-foreground">
-                          {acc.type === "my" ? "My" : `${acc.profitSharePercent}%`}
+                          {acc.type === "my"
+                            ? "My"
+                            : `${acc.profitSharePercent}%`}
                         </span>
                       </div>
                     </SelectItem>
@@ -1140,7 +1131,7 @@ export function MasterApplicationLedger({
               >
                 <SelectTrigger
                   id="filter-bank"
-                  className="h-8 w-full bg-background text-xs truncate rounded-none"
+                  className="h-8 w-full truncate rounded-none bg-background text-xs"
                 >
                   <SelectValue placeholder="All Banks">
                     {(val) => {
@@ -1181,7 +1172,7 @@ export function MasterApplicationLedger({
               >
                 <SelectTrigger
                   id="filter-category"
-                  className="h-8 w-full bg-background text-xs truncate rounded-none"
+                  className="h-8 w-full truncate rounded-none bg-background text-xs"
                 >
                   <SelectValue placeholder="All Categories">
                     {(val) => {
@@ -1253,7 +1244,7 @@ export function MasterApplicationLedger({
         }
         footer={
           filteredApplications.length > 0 ? (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 bg-muted/40 px-4 py-2.5 text-xs">
+            <div className="flex flex-col items-center justify-between gap-2 bg-muted/40 px-4 py-2.5 text-xs sm:flex-row">
               <span className="font-medium text-muted-foreground">
                 Showing {filteredApplications.length} of {applications.length}{" "}
                 applications ({metrics.totalLots} Lots)
@@ -1479,7 +1470,7 @@ export function MasterApplicationLedger({
               >
                 <SelectTrigger
                   id="target-bank"
-                  className="h-9 w-full bg-background text-xs rounded-none"
+                  className="h-9 w-full rounded-none bg-background text-xs"
                 >
                   <SelectValue placeholder="Choose a bank account">
                     {(val) => {

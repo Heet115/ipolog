@@ -199,7 +199,9 @@ export function AccountList({
   // Check if current reordered array differs from original snapshot
   const isDirty = useMemo(() => {
     if (reorderedAccounts.length !== originalOrderIds.length) return false
-    return reorderedAccounts.some((acc, idx) => acc.id !== originalOrderIds[idx])
+    return reorderedAccounts.some(
+      (acc, idx) => acc.id !== originalOrderIds[idx]
+    )
   }, [reorderedAccounts, originalOrderIds])
 
   // Enter reorder mode — snapshot active (non-archived) accounts in current order
@@ -221,18 +223,15 @@ export function AccountList({
     setDragOverIndex(null)
   }, [])
 
-  const moveAccount = useCallback(
-    (index: number, direction: "up" | "down") => {
-      setReorderedAccounts((prev) => {
-        const next = [...prev]
-        const targetIdx = direction === "up" ? index - 1 : index + 1
-        if (targetIdx < 0 || targetIdx >= next.length) return prev
-        ;[next[index], next[targetIdx]] = [next[targetIdx], next[index]]
-        return next
-      })
-    },
-    []
-  )
+  const moveAccount = useCallback((index: number, direction: "up" | "down") => {
+    setReorderedAccounts((prev) => {
+      const next = [...prev]
+      const targetIdx = direction === "up" ? index - 1 : index + 1
+      if (targetIdx < 0 || targetIdx >= next.length) return prev
+      ;[next[index], next[targetIdx]] = [next[targetIdx], next[index]]
+      return next
+    })
+  }, [])
 
   const moveToExtreme = useCallback(
     (index: number, position: "top" | "bottom") => {
@@ -734,18 +733,23 @@ export function AccountList({
                   </>
                 )}
               </DropdownMenuItem>
-              {!account.archived && accounts.filter((a) => !a.archived).length > 1 && (
-                <>
-                  <DropdownMenuItem onClick={() => handleQuickMove(account, "top")}>
-                    <ChevronsUp data-icon="inline-start" />
-                    Move to Top
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleQuickMove(account, "bottom")}>
-                    <ChevronsDown data-icon="inline-start" />
-                    Move to Bottom
-                  </DropdownMenuItem>
-                </>
-              )}
+              {!account.archived &&
+                accounts.filter((a) => !a.archived).length > 1 && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => handleQuickMove(account, "top")}
+                    >
+                      <ChevronsUp data-icon="inline-start" />
+                      Move to Top
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleQuickMove(account, "bottom")}
+                    >
+                      <ChevronsDown data-icon="inline-start" />
+                      Move to Bottom
+                    </DropdownMenuItem>
+                  </>
+                )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
@@ -808,7 +812,7 @@ export function AccountList({
 
           {/* Grid Sort Selector — hidden during reorder */}
           {!reorderMode && (
-            <div className="flex items-center shrink-0">
+            <div className="flex shrink-0 items-center">
               <Select
                 value={sortBy}
                 onValueChange={(val) =>
@@ -893,7 +897,8 @@ export function AccountList({
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                Drag rows, jump by number, or use quick presets. Your custom order persists across all IPO applications.
+                Drag rows, jump by number, or use quick presets. Your custom
+                order persists across all IPO applications.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1032,7 +1037,7 @@ export function AccountList({
                   <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
                     {/* Drag Handle */}
                     <div
-                      className="flex cursor-grab shrink-0 p-1 text-muted-foreground hover:text-foreground active:cursor-grabbing"
+                      className="flex shrink-0 cursor-grab p-1 text-muted-foreground hover:text-foreground active:cursor-grabbing"
                       title="Drag to reorder"
                       aria-label="Drag handle"
                     >
@@ -1086,7 +1091,9 @@ export function AccountList({
                           {account.name}
                         </span>
                         <Badge
-                          variant={account.type === "my" ? "secondary" : "default"}
+                          variant={
+                            account.type === "my" ? "secondary" : "default"
+                          }
                           className="px-1 py-0 text-[9px] font-normal"
                         >
                           {account.type === "my"

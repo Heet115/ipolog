@@ -551,10 +551,12 @@ export function DataTable<TData>({
                 >
                   <SelectTrigger
                     size="sm"
-                    className="h-7 w-[68px] gap-1 rounded-none px-2 text-xs font-mono font-medium"
+                    className="h-7 w-[68px] gap-1 rounded-none px-2 font-mono text-xs font-medium"
                     aria-label="Rows per page"
                   >
-                    <SelectValue>{(val) => val || String(currentPageSize)}</SelectValue>
+                    <SelectValue>
+                      {(val) => val || String(currentPageSize)}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="w-[68px] min-w-[68px]">
                     {pageSizeOptions.map((opt) => (

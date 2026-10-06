@@ -47,7 +47,7 @@ export function DatePicker({
               disabled={disabled}
               className={cn(
                 "h-8 w-full justify-start rounded-none border border-input bg-background px-2.5 text-left text-xs font-normal transition-colors",
-                "hover:bg-muted/30 hover:border-border",
+                "hover:border-border hover:bg-muted/30",
                 "focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/40",
                 open && "border-primary ring-1 ring-primary/40",
                 date && !disabled ? "pr-8" : "",

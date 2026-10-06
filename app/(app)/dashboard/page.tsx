@@ -764,7 +764,7 @@ export default function DashboardPage() {
               <div className="mt-1 flex items-center justify-between text-xs">
                 {receivables.totalPendingReceivables > 0 ? (
                   <Link
-                    href="/accounts"
+                    href="/settlements"
                     className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
                   >
                     <span>

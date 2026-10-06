@@ -70,7 +70,7 @@ function DropdownMenuLabel({
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(
-        "px-2 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider data-inset:pl-7",
+        "px-2 py-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase data-inset:pl-7",
         className
       )}
       {...props}
@@ -93,7 +93,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "group/dropdown-menu-item relative flex cursor-default select-none items-center gap-2 rounded-none px-2 py-1.5 text-xs outline-none transition-colors",
+        "group/dropdown-menu-item relative flex cursor-default items-center gap-2 rounded-none px-2 py-1.5 text-xs transition-colors outline-none select-none",
         "data-highlighted:bg-accent data-highlighted:text-accent-foreground",
         "data-inset:pl-7",
         "data-[variant=destructive]:text-destructive data-[variant=destructive]:data-highlighted:bg-destructive/10 data-[variant=destructive]:data-highlighted:text-destructive",
@@ -123,7 +123,7 @@ function DropdownMenuSubTrigger({
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
       className={cn(
-        "flex cursor-default items-center gap-2 rounded-none px-2 py-1.5 text-xs outline-none select-none transition-colors",
+        "flex cursor-default items-center gap-2 rounded-none px-2 py-1.5 text-xs transition-colors outline-none select-none",
         "data-highlighted:bg-accent data-highlighted:text-accent-foreground",
         "data-popup-open:bg-accent data-popup-open:text-accent-foreground",
         "data-inset:pl-7",
@@ -176,7 +176,7 @@ function DropdownMenuCheckboxItem({
       data-slot="dropdown-menu-checkbox-item"
       data-inset={inset}
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-none py-1.5 pr-8 pl-2 text-xs outline-none transition-colors",
+        "relative flex cursor-default items-center gap-2 rounded-none py-1.5 pr-8 pl-2 text-xs transition-colors outline-none select-none",
         "data-highlighted:bg-accent data-highlighted:text-accent-foreground",
         "data-inset:pl-7 data-disabled:pointer-events-none data-disabled:opacity-50",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
@@ -220,7 +220,7 @@ function DropdownMenuRadioItem({
       data-slot="dropdown-menu-radio-item"
       data-inset={inset}
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-none py-1.5 pr-8 pl-2 text-xs outline-none transition-colors",
+        "relative flex cursor-default items-center gap-2 rounded-none py-1.5 pr-8 pl-2 text-xs transition-colors outline-none select-none",
         "data-highlighted:bg-accent data-highlighted:text-accent-foreground",
         "data-inset:pl-7 data-disabled:pointer-events-none data-disabled:opacity-50",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",

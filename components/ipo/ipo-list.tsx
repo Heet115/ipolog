@@ -497,7 +497,7 @@ export function IpoList({
           type="button"
           onClick={() => setStatusFilter("all")}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+            "flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors",
             statusFilter === "all"
               ? "bg-foreground text-background"
               : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -506,9 +506,9 @@ export function IpoList({
           <span>All</span>
           <span
             className={cn(
-              "px-1.5 py-0.2 font-mono text-[10px]",
+              "py-0.2 px-1.5 font-mono text-[10px]",
               statusFilter === "all"
-                ? "bg-background/25 text-background font-bold"
+                ? "bg-background/25 font-bold text-background"
                 : "bg-muted text-muted-foreground"
             )}
           >
@@ -520,7 +520,7 @@ export function IpoList({
           type="button"
           onClick={() => setStatusFilter("open")}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+            "flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors",
             statusFilter === "open"
               ? "bg-foreground text-background"
               : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -529,15 +529,17 @@ export function IpoList({
           <span
             className={cn(
               "size-1.5 shrink-0",
-              statusCounts.open > 0 ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"
+              statusCounts.open > 0
+                ? "animate-pulse bg-emerald-500"
+                : "bg-muted-foreground"
             )}
           />
           <span>Open</span>
           <span
             className={cn(
-              "px-1.5 py-0.2 font-mono text-[10px]",
+              "py-0.2 px-1.5 font-mono text-[10px]",
               statusFilter === "open"
-                ? "bg-background/25 text-background font-bold"
+                ? "bg-background/25 font-bold text-background"
                 : "bg-muted text-muted-foreground"
             )}
           >
@@ -549,7 +551,7 @@ export function IpoList({
           type="button"
           onClick={() => setStatusFilter("upcoming")}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+            "flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors",
             statusFilter === "upcoming"
               ? "bg-foreground text-background"
               : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -558,9 +560,9 @@ export function IpoList({
           <span>Upcoming</span>
           <span
             className={cn(
-              "px-1.5 py-0.2 font-mono text-[10px]",
+              "py-0.2 px-1.5 font-mono text-[10px]",
               statusFilter === "upcoming"
-                ? "bg-background/25 text-background font-bold"
+                ? "bg-background/25 font-bold text-background"
                 : "bg-muted text-muted-foreground"
             )}
           >
@@ -572,7 +574,7 @@ export function IpoList({
           type="button"
           onClick={() => setStatusFilter("allotment_pending")}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+            "flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors",
             statusFilter === "allotment_pending"
               ? "bg-foreground text-background"
               : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -581,9 +583,9 @@ export function IpoList({
           <span>Allotment</span>
           <span
             className={cn(
-              "px-1.5 py-0.2 font-mono text-[10px]",
+              "py-0.2 px-1.5 font-mono text-[10px]",
               statusFilter === "allotment_pending"
-                ? "bg-background/25 text-background font-bold"
+                ? "bg-background/25 font-bold text-background"
                 : "bg-muted text-muted-foreground"
             )}
           >
@@ -595,7 +597,7 @@ export function IpoList({
           type="button"
           onClick={() => setStatusFilter("listed")}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+            "flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors",
             statusFilter === "listed"
               ? "bg-foreground text-background"
               : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -604,9 +606,9 @@ export function IpoList({
           <span>Listed</span>
           <span
             className={cn(
-              "px-1.5 py-0.2 font-mono text-[10px]",
+              "py-0.2 px-1.5 font-mono text-[10px]",
               statusFilter === "listed"
-                ? "bg-background/25 text-background font-bold"
+                ? "bg-background/25 font-bold text-background"
                 : "bg-muted text-muted-foreground"
             )}
           >
@@ -619,7 +621,7 @@ export function IpoList({
             type="button"
             onClick={() => setStatusFilter("archived")}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+              "flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors",
               statusFilter === "archived"
                 ? "bg-foreground text-background"
                 : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
@@ -628,9 +630,9 @@ export function IpoList({
             <span>Archived</span>
             <span
               className={cn(
-                "px-1.5 py-0.2 font-mono text-[10px]",
+                "py-0.2 px-1.5 font-mono text-[10px]",
                 statusFilter === "archived"
-                  ? "bg-background/25 text-background font-bold"
+                  ? "bg-background/25 font-bold text-background"
                   : "bg-muted text-muted-foreground"
               )}
             >
@@ -681,7 +683,7 @@ export function IpoList({
               className="h-8 w-[130px] gap-1.5 rounded-none border border-border bg-background px-2.5 text-xs font-medium"
               aria-label="Filter by Type"
             >
-              <Layers className="size-3 text-muted-foreground shrink-0" />
+              <Layers className="size-3 shrink-0 text-muted-foreground" />
               <SelectValue placeholder="All Types">
                 {(val) =>
                   val === "mainboard"
@@ -718,8 +720,8 @@ export function IpoList({
         </div>
 
         {/* Right: Count + Sort Dropdown + View Toggle */}
-        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-          <span className="hidden text-[11px] font-mono text-muted-foreground lg:inline">
+        <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
+          <span className="hidden font-mono text-[11px] text-muted-foreground lg:inline">
             {filteredIpos.length} {filteredIpos.length === 1 ? "IPO" : "IPOs"}
           </span>
 
@@ -732,7 +734,7 @@ export function IpoList({
               className="h-8 w-[165px] gap-1.5 rounded-none border border-border bg-background px-2.5 text-xs font-medium"
               aria-label="Sort IPOs"
             >
-              <ArrowUpDown className="size-3 text-muted-foreground shrink-0" />
+              <ArrowUpDown className="size-3 shrink-0 text-muted-foreground" />
               <SelectValue placeholder="Sort by">
                 {(val) => IPO_SORT_LABELS[val as IpoSortOption] || "Sort"}
               </SelectValue>

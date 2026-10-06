@@ -42,7 +42,9 @@ function docToAccount(
 /**
  * Sorts accounts by user-defined sortIndex (ascending), with createdAt fallback.
  */
-export function sortAccounts(accounts: ApplicationAccount[]): ApplicationAccount[] {
+export function sortAccounts(
+  accounts: ApplicationAccount[]
+): ApplicationAccount[] {
   return [...accounts].sort((a, b) => {
     const ai = a.sortIndex ?? Number.MAX_SAFE_INTEGER
     const bi = b.sortIndex ?? Number.MAX_SAFE_INTEGER

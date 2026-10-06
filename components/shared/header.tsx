@@ -28,6 +28,7 @@ export function Header() {
     if (isIpoDetail) return "IPO Details"
     if (pathname === "/ipos") return "My IPOs"
     if (pathname === "/applications") return "Applications Ledger"
+    if (pathname === "/settlements") return "Settlement Center"
     if (pathname === "/accounts") return "Application Accounts"
     if (pathname === "/bank-accounts") return "Bank Accounts"
     if (pathname === "/settings") return "Settings"

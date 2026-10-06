@@ -181,10 +181,7 @@ export function BankAccountList({
   const bankSummaryMap = useMemo(() => {
     const map = new Map<string, BankMoneySummary>()
     for (const b of filteredAccounts) {
-      map.set(
-        b.id,
-        calculateBankMoneySummary(b.id, applications, ipoMap)
-      )
+      map.set(b.id, calculateBankMoneySummary(b.id, applications, ipoMap))
     }
     return map
   }, [filteredAccounts, applications, ipoMap])
@@ -544,7 +541,7 @@ export function BankAccountList({
           )}
 
           {/* Grid Sort Selector */}
-          <div className="flex items-center shrink-0">
+          <div className="flex shrink-0 items-center">
             <Select
               value={sortBy}
               onValueChange={(val) => val && setSortBy(val as BankSortOption)}
@@ -555,9 +552,7 @@ export function BankAccountList({
               >
                 <ArrowUpDown className="size-3 text-muted-foreground" />
                 <SelectValue placeholder="Sort by">
-                  {(val) =>
-                    BANK_SORT_LABELS[val as BankSortOption] || "Sort"
-                  }
+                  {(val) => BANK_SORT_LABELS[val as BankSortOption] || "Sort"}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="rounded-none">

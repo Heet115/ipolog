@@ -93,7 +93,6 @@ function IpoForm({
   onCancel: () => void
   onSuccess: (id?: string) => void
 }) {
-
   const [name, setName] = useState(ipoToEdit?.name ?? "")
   const [companyName, setCompanyName] = useState(ipoToEdit?.companyName ?? "")
   const [type, setType] = useState<IpoType>(ipoToEdit?.type ?? "mainboard")
@@ -181,9 +180,7 @@ function IpoForm({
         lotSize: numLotSize,
         openDate: openDate ? Timestamp.fromDate(openDate) : null,
         closeDate: closeDate ? Timestamp.fromDate(closeDate) : null,
-        allotmentDate: allotmentDate
-          ? Timestamp.fromDate(allotmentDate)
-          : null,
+        allotmentDate: allotmentDate ? Timestamp.fromDate(allotmentDate) : null,
         listingDate: listingDate ? Timestamp.fromDate(listingDate) : null,
         registrar: registrar.trim() || null,
         registrarUrl: registrarUrl.trim() || null,

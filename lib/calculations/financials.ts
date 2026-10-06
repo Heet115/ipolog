@@ -498,6 +498,10 @@ export interface AccountReceivableItem {
   ipoName: string
   accountId: string
   accountName: string
+  allottedShares: number
+  allottedLots: number
+  issuePrice: number
+  salePrice: number
   saleProceeds: number
   investedAmount: number
   grossProfit: number
@@ -506,6 +510,7 @@ export interface AccountReceivableItem {
   amountToSendUser: number
   settlementStatus: "pending" | "settled"
   settledAt?: Timestamp | null
+  application?: Application
 }
 
 export interface ReceivablesSummary {
@@ -598,6 +603,10 @@ export function calculateReceivablesSummary(
       ipoName: ipo?.name || "IPO",
       accountId: account.id,
       accountName: account.name,
+      allottedShares,
+      allottedLots: app.allottedLots || 1,
+      issuePrice,
+      salePrice,
       saleProceeds,
       investedAmount,
       grossProfit,
@@ -606,6 +615,7 @@ export function calculateReceivablesSummary(
       amountToSendUser,
       settlementStatus: isSettled ? "settled" : "pending",
       settledAt: app.settledAt,
+      application: app,
     }
     items.push(item)
 

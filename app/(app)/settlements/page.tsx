@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback } from "react"
 import { RefreshCw, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { MasterApplicationLedger } from "@/components/applications/master-application-ledger"
-import { MasterLedgerSkeleton } from "@/components/applications/master-ledger-skeleton"
+import { Badge } from "@/components/ui/badge"
+import { SettlementCenter } from "@/components/settlements/settlement-center"
+import { SettlementSkeleton } from "@/components/settlements/settlement-skeleton"
 import { useAuth } from "@/lib/firebase/auth-context"
 import { getIpos } from "@/lib/firebase/ipos"
 import { getApplications } from "@/lib/firebase/applications"
@@ -14,8 +14,8 @@ import { getBankAccounts } from "@/lib/firebase/bank-accounts"
 import { usePageTitle } from "@/hooks/use-page-title"
 import type { Ipo, Application, ApplicationAccount, BankAccount } from "@/types"
 
-export default function ApplicationsPage() {
-  usePageTitle("Applications Ledger")
+export default function SettlementsPage() {
+  usePageTitle("Settlement Center")
   const { user } = useAuth()
 
   const [ipos, setIpos] = useState<Ipo[]>([])
@@ -52,7 +52,7 @@ export default function ApplicationsPage() {
         }
       })
       .catch((err) => {
-        console.error("Failed to load applications ledger data:", err)
+        console.error("Failed to load settlement data:", err)
         if (!ignore) {
           setFetchError(true)
           setLoading(false)
@@ -73,18 +73,23 @@ export default function ApplicationsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6">
-      {/* Page Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 border-b border-border/60 pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <h1 className="font-mono text-xl font-bold tracking-tight text-foreground uppercase sm:text-2xl">
-              Applications Ledger
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              Settlement Center
             </h1>
+            <Badge
+              variant="secondary"
+              className="rounded-none px-2 py-0.5 font-mono text-[11px]"
+            >
+              Partner Ledgers
+            </Badge>
           </div>
-          <p className="text-xs text-muted-foreground sm:text-sm">
-            Cross-IPO portfolio management of all submitted applications,
-            allotment statuses, and investor settlements.
+          <p className="text-xs text-muted-foreground">
+            Consolidated partner receivables, multi-IPO WhatsApp statements, and 1-click settlements
           </p>
         </div>
 
@@ -93,53 +98,44 @@ export default function ApplicationsPage() {
             variant="outline"
             size="sm"
             onClick={handleManualRefresh}
-            disabled={loading || refreshing}
-            className="h-8 gap-1.5 rounded-none text-xs font-semibold"
+            disabled={refreshing}
+            className="rounded-none text-xs"
           >
             <RefreshCw
               className={`size-3.5 ${refreshing ? "animate-spin" : ""}`}
+              data-icon="inline-start"
             />
-            <span>Refresh</span>
+            {refreshing ? "Refreshing..." : "Refresh"}
           </Button>
         </div>
       </div>
 
-      {/* Error State */}
-      {fetchError ? (
-        <Card className="rounded-none border-destructive/50 bg-destructive/5">
-          <CardContent className="flex flex-col items-center justify-center gap-3 p-8 text-center">
-            <AlertTriangle className="size-8 text-destructive" />
-            <div className="flex flex-col gap-1">
-              <h3 className="text-sm font-bold text-foreground">
-                Failed to Load Applications Ledger
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Could not retrieve application data from Firestore. Please check
-                your connection and try again.
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={reloadData}
-              className="gap-1.5 rounded-none text-xs"
-            >
-              <RefreshCw className="size-3.5" />
-              Retry
-            </Button>
-          </CardContent>
-        </Card>
-      ) : loading ? (
-        /* Loading Skeleton */
-        <MasterLedgerSkeleton />
+      {/* Main Content */}
+      {loading ? (
+        <SettlementSkeleton />
+      ) : fetchError ? (
+        <div className="flex flex-col items-center justify-center gap-3 border border-border/70 p-12 text-center">
+          <AlertTriangle className="size-8 text-destructive" />
+          <div className="flex flex-col gap-1">
+            <h3 className="font-heading text-sm font-semibold text-foreground">
+              Failed to load settlements
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              An error occurred while loading settlement accounts and applications.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleManualRefresh}>
+            Retry
+          </Button>
+        </div>
       ) : (
-        /* Main Ledger */
-        <MasterApplicationLedger
-          ipos={ipos}
+        <SettlementCenter
           applications={applications}
+          ipos={ipos}
           accounts={accounts}
           bankAccounts={bankAccounts}
           userId={user?.uid || ""}
+          userName={user?.displayName || "Me"}
           onRefresh={reloadData}
         />
       )}
