@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import {
   MoreVertical,
   Edit2,
@@ -12,12 +12,21 @@ import {
   LayoutGrid,
   Table as TableIcon,
   AlertTriangle,
+  ArrowUpDown,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { useLocalStorage } from "@/hooks/use-local-storage"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +77,25 @@ interface BankAccountListProps {
   onRefresh: () => void
 }
 
+export type BankSortOption =
+  | "name_asc"
+  | "name_desc"
+  | "limit_desc"
+  | "limit_asc"
+  | "blocked_desc"
+  | "created_desc"
+  | "created_asc"
+
+export const BANK_SORT_LABELS: Record<BankSortOption, string> = {
+  name_asc: "Bank Name (A → Z)",
+  name_desc: "Bank Name (Z → A)",
+  limit_desc: "ASBA Limit (High → Low)",
+  limit_asc: "ASBA Limit (Low → High)",
+  blocked_desc: "Blocked Capital (High → Low)",
+  created_desc: "Recently Added",
+  created_asc: "Oldest First",
+}
+
 export function BankAccountList({
   bankAccounts,
   applications,
@@ -78,11 +106,18 @@ export function BankAccountList({
 }: BankAccountListProps) {
   const [search, setSearch] = useState("")
   const [showArchived, setShowArchived] = useState(false)
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid")
+  const [viewMode, setViewMode] = useLocalStorage<"grid" | "table">(
+    "ipolog:bank-view-mode",
+    "grid"
+  )
+  const [sortBy, setSortBy] = useLocalStorage<BankSortOption>(
+    "ipolog:bank-grid-sort",
+    "name_asc"
+  )
   const [bankToDelete, setBankToDelete] = useState<BankAccount | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  const ipoMap = new Map(ipos.map((i) => [i.id, i]))
+  const ipoMap = useMemo(() => new Map(ipos.map((i) => [i.id, i])), [ipos])
 
   // Filter bank accounts
   const filteredAccounts = bankAccounts.filter((bank) => {
@@ -143,13 +178,53 @@ export function BankAccountList({
   }
 
   // Precalculate summaries
-  const bankSummaryMap = new Map<string, BankMoneySummary>()
-  for (const b of filteredAccounts) {
-    bankSummaryMap.set(
-      b.id,
-      calculateBankMoneySummary(b.id, applications, ipoMap)
-    )
-  }
+  const bankSummaryMap = useMemo(() => {
+    const map = new Map<string, BankMoneySummary>()
+    for (const b of filteredAccounts) {
+      map.set(
+        b.id,
+        calculateBankMoneySummary(b.id, applications, ipoMap)
+      )
+    }
+    return map
+  }, [filteredAccounts, applications, ipoMap])
+
+  // Sort accounts based on chosen sort option
+  const sortedAccounts = useMemo(() => {
+    const list = [...filteredAccounts]
+    switch (sortBy) {
+      case "name_asc":
+        return list.sort((a, b) =>
+          (a.nickname || a.bankName).localeCompare(b.nickname || b.bankName)
+        )
+      case "name_desc":
+        return list.sort((a, b) =>
+          (b.nickname || b.bankName).localeCompare(a.nickname || a.bankName)
+        )
+      case "limit_desc":
+        return list.sort((a, b) => (b.asbaLimit || 0) - (a.asbaLimit || 0))
+      case "limit_asc":
+        return list.sort((a, b) => (a.asbaLimit || 0) - (b.asbaLimit || 0))
+      case "blocked_desc":
+        return list.sort((a, b) => {
+          const blockedA = bankSummaryMap.get(a.id)?.blockedAmount || 0
+          const blockedB = bankSummaryMap.get(b.id)?.blockedAmount || 0
+          return blockedB - blockedA
+        })
+      case "created_desc":
+        return list.sort(
+          (a, b) =>
+            (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
+        )
+      case "created_asc":
+        return list.sort(
+          (a, b) =>
+            (a.createdAt?.toMillis?.() ?? 0) - (b.createdAt?.toMillis?.() ?? 0)
+        )
+      default:
+        return list
+    }
+  }, [filteredAccounts, sortBy, bankSummaryMap])
 
   const asbaWarnings = checkBankAsbaLimits(bankAccounts, applications, ipoMap)
   const exceededWarnings = asbaWarnings.filter((w) => w.isExceeded)
@@ -468,6 +543,33 @@ export function BankAccountList({
             </Button>
           )}
 
+          {/* Grid Sort Selector */}
+          <div className="flex items-center shrink-0">
+            <Select
+              value={sortBy}
+              onValueChange={(val) => val && setSortBy(val as BankSortOption)}
+            >
+              <SelectTrigger
+                className="h-8 gap-1.5 rounded-none border border-border bg-background px-2 text-xs font-semibold"
+                aria-label="Sort Bank Accounts"
+              >
+                <ArrowUpDown className="size-3 text-muted-foreground" />
+                <SelectValue placeholder="Sort by">
+                  {(val) =>
+                    BANK_SORT_LABELS[val as BankSortOption] || "Sort"
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="rounded-none">
+                {Object.entries(BANK_SORT_LABELS).map(([key, label]) => (
+                  <SelectItem key={key} value={key} label={label}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* View Mode Toggle */}
           <div className="flex h-8 items-center rounded-none border border-border bg-background p-0.5">
             <button
@@ -521,7 +623,7 @@ export function BankAccountList({
         </Empty>
       ) : viewMode === "table" ? (
         <DataTable
-          data={filteredAccounts}
+          data={sortedAccounts}
           columns={tableColumns}
           keyExtractor={(b) => b.id}
           pageSize={12}
@@ -529,7 +631,7 @@ export function BankAccountList({
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredAccounts.map((bank) => {
+          {sortedAccounts.map((bank) => {
             const summary = calculateBankMoneySummary(
               bank.id,
               applications,

@@ -24,6 +24,13 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Empty,
   EmptyHeader,
   EmptyMedia,
@@ -531,22 +538,32 @@ export function DataTable<TData>({
 
           <div className="flex items-center gap-1.5 self-end sm:self-auto">
             {pageSizeOptions.length > 1 && (
-              <div className="mr-2 flex items-center gap-1 text-[11px]">
-                <span>Rows:</span>
-                <select
-                  value={currentPageSize}
-                  onChange={(e) => {
-                    setCurrentPageSize(Number(e.target.value))
-                    setCurrentPage(1)
+              <div className="mr-2 flex items-center gap-1.5 text-[11px]">
+                <span className="text-muted-foreground">Rows:</span>
+                <Select
+                  value={String(currentPageSize)}
+                  onValueChange={(val) => {
+                    if (val) {
+                      setCurrentPageSize(Number(val))
+                      setCurrentPage(1)
+                    }
                   }}
-                  className="h-7 rounded-none border border-border bg-background px-1 text-xs outline-none"
                 >
-                  {pageSizeOptions.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger
+                    size="sm"
+                    className="h-7 w-[68px] gap-1 rounded-none px-2 text-xs font-mono font-medium"
+                    aria-label="Rows per page"
+                  >
+                    <SelectValue>{(val) => val || String(currentPageSize)}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="w-[68px] min-w-[68px]">
+                    {pageSizeOptions.map((opt) => (
+                      <SelectItem key={opt} value={String(opt)}>
+                        {opt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 

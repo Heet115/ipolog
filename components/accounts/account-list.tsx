@@ -27,6 +27,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { useLocalStorage } from "@/hooks/use-local-storage"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -78,6 +86,27 @@ interface AccountListProps {
   onRefresh: () => void
 }
 
+export type AccountSortOption =
+  | "custom"
+  | "name_asc"
+  | "name_desc"
+  | "type_my"
+  | "type_other"
+  | "profit_desc"
+  | "created_desc"
+  | "created_asc"
+
+export const ACCOUNT_SORT_LABELS: Record<AccountSortOption, string> = {
+  custom: "Custom (Priority)",
+  name_asc: "Name (A → Z)",
+  name_desc: "Name (Z → A)",
+  type_my: "My Accounts First",
+  type_other: "Partners First",
+  profit_desc: "Profit % (High → Low)",
+  created_desc: "Recently Added",
+  created_asc: "Oldest First",
+}
+
 export function AccountList({
   accounts,
   applications,
@@ -88,7 +117,14 @@ export function AccountList({
 }: AccountListProps) {
   const [search, setSearch] = useState("")
   const [showArchived, setShowArchived] = useState(false)
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid")
+  const [viewMode, setViewMode] = useLocalStorage<"grid" | "table">(
+    "ipolog:account-view-mode",
+    "grid"
+  )
+  const [sortBy, setSortBy] = useLocalStorage<AccountSortOption>(
+    "ipolog:account-grid-sort",
+    "custom"
+  )
   const [accountToDelete, setAccountToDelete] =
     useState<ApplicationAccount | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -105,8 +141,43 @@ export function AccountList({
 
   const ipoMap = new Map(ipos.map((i) => [i.id, i]))
 
-  // Sort accounts by user-defined order
-  const sortedAccounts = sortAccounts(accounts)
+  // Sort accounts based on chosen sort option (or custom order)
+  const sortedAccounts = useMemo(() => {
+    const list = [...accounts]
+    switch (sortBy) {
+      case "name_asc":
+        return list.sort((a, b) => a.name.localeCompare(b.name))
+      case "name_desc":
+        return list.sort((a, b) => b.name.localeCompare(a.name))
+      case "type_my":
+        return list.sort((a, b) => {
+          if (a.type !== b.type) return a.type === "my" ? -1 : 1
+          return a.name.localeCompare(b.name)
+        })
+      case "type_other":
+        return list.sort((a, b) => {
+          if (a.type !== b.type) return a.type === "other" ? -1 : 1
+          return a.name.localeCompare(b.name)
+        })
+      case "profit_desc":
+        return list.sort(
+          (a, b) => (b.profitSharePercent || 0) - (a.profitSharePercent || 0)
+        )
+      case "created_desc":
+        return list.sort(
+          (a, b) =>
+            (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
+        )
+      case "created_asc":
+        return list.sort(
+          (a, b) =>
+            (a.createdAt?.toMillis?.() ?? 0) - (b.createdAt?.toMillis?.() ?? 0)
+        )
+      case "custom":
+      default:
+        return sortAccounts(list)
+    }
+  }, [accounts, sortBy])
 
   // Filter accounts
   const filteredAccounts = sortedAccounts.filter((acc) => {
@@ -133,13 +204,14 @@ export function AccountList({
 
   // Enter reorder mode — snapshot active (non-archived) accounts in current order
   const enterReorderMode = useCallback(() => {
+    setSortBy("custom")
     const activeInOrder = sortAccounts(accounts.filter((a) => !a.archived))
     setReorderedAccounts(activeInOrder)
     setOriginalOrderIds(activeInOrder.map((a) => a.id))
     setReorderMode(true)
     setDraggedIndex(null)
     setDragOverIndex(null)
-  }, [accounts])
+  }, [accounts, setSortBy])
 
   const cancelReorderMode = useCallback(() => {
     setReorderMode(false)
@@ -732,6 +804,37 @@ export function AccountList({
               <GripVertical data-icon="inline-start" />
               Reorder
             </Button>
+          )}
+
+          {/* Grid Sort Selector — hidden during reorder */}
+          {!reorderMode && (
+            <div className="flex items-center shrink-0">
+              <Select
+                value={sortBy}
+                onValueChange={(val) =>
+                  val && setSortBy(val as AccountSortOption)
+                }
+              >
+                <SelectTrigger
+                  className="h-8 gap-1.5 rounded-none border border-border bg-background px-2 text-xs font-semibold"
+                  aria-label="Sort Accounts"
+                >
+                  <ArrowUpDown className="size-3 text-muted-foreground" />
+                  <SelectValue placeholder="Sort by">
+                    {(val) =>
+                      ACCOUNT_SORT_LABELS[val as AccountSortOption] || "Sort"
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="rounded-none">
+                  {Object.entries(ACCOUNT_SORT_LABELS).map(([key, label]) => (
+                    <SelectItem key={key} value={key} label={label}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
           {/* View Mode Toggle — hidden during reorder */}

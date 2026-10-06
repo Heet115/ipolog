@@ -17,16 +17,25 @@ import {
   LayoutGrid,
   Table as TableIcon,
   X,
+  ArrowUpDown,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { useLocalStorage } from "@/hooks/use-local-storage"
+import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { cn } from "@/lib/utils"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,6 +87,31 @@ type StatusFilter =
 
 type TypeFilter = "all" | IpoType
 
+export type IpoSortOption =
+  | "close_date_asc"
+  | "close_date_desc"
+  | "open_date_desc"
+  | "open_date_asc"
+  | "name_asc"
+  | "name_desc"
+  | "price_desc"
+  | "price_asc"
+  | "created_desc"
+  | "created_asc"
+
+export const IPO_SORT_LABELS: Record<IpoSortOption, string> = {
+  close_date_asc: "Closing Soonest",
+  close_date_desc: "Closing Latest",
+  open_date_desc: "Opening Latest",
+  open_date_asc: "Opening Earliest",
+  name_asc: "Name (A → Z)",
+  name_desc: "Name (Z → A)",
+  price_desc: "Price (High → Low)",
+  price_asc: "Price (Low → High)",
+  created_desc: "Recently Added",
+  created_asc: "Oldest First",
+}
+
 export function IpoList({
   ipos,
   applications = [],
@@ -88,7 +122,14 @@ export function IpoList({
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid")
+  const [viewMode, setViewMode] = useLocalStorage<"grid" | "table">(
+    "ipolog:ipo-view-mode",
+    "grid"
+  )
+  const [sortBy, setSortBy] = useLocalStorage<IpoSortOption>(
+    "ipolog:ipo-grid-sort",
+    "close_date_asc"
+  )
   const [ipoToDelete, setIpoToDelete] = useState<Ipo | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -133,7 +174,78 @@ export function IpoList({
     return true
   })
 
-  const archivedCount = ipos.filter((i) => i.archived).length
+  // Sort IPOs for Grid (and initial Table) display
+  const sortedIpos = useMemo(() => {
+    const list = [...filteredIpos]
+    list.sort((a, b) => {
+      switch (sortBy) {
+        case "close_date_asc": {
+          const timeA = a.closeDate?.toMillis?.() ?? Number.MAX_SAFE_INTEGER
+          const timeB = b.closeDate?.toMillis?.() ?? Number.MAX_SAFE_INTEGER
+          return timeA - timeB
+        }
+        case "close_date_desc": {
+          const timeA = a.closeDate?.toMillis?.() ?? 0
+          const timeB = b.closeDate?.toMillis?.() ?? 0
+          return timeB - timeA
+        }
+        case "open_date_desc": {
+          const timeA = a.openDate?.toMillis?.() ?? 0
+          const timeB = b.openDate?.toMillis?.() ?? 0
+          return timeB - timeA
+        }
+        case "open_date_asc": {
+          const timeA = a.openDate?.toMillis?.() ?? Number.MAX_SAFE_INTEGER
+          const timeB = b.openDate?.toMillis?.() ?? Number.MAX_SAFE_INTEGER
+          return timeA - timeB
+        }
+        case "name_asc":
+          return a.name.localeCompare(b.name)
+        case "name_desc":
+          return b.name.localeCompare(a.name)
+        case "price_desc":
+          return (b.issuePrice || 0) - (a.issuePrice || 0)
+        case "price_asc":
+          return (a.issuePrice || 0) - (b.issuePrice || 0)
+        case "created_asc": {
+          const timeA = a.createdAt?.toMillis?.() ?? 0
+          const timeB = b.createdAt?.toMillis?.() ?? 0
+          return timeA - timeB
+        }
+        case "created_desc":
+        default: {
+          const timeA = a.createdAt?.toMillis?.() ?? 0
+          const timeB = b.createdAt?.toMillis?.() ?? 0
+          return timeB - timeA
+        }
+      }
+    })
+    return list
+  }, [filteredIpos, sortBy])
+
+  const statusCounts = useMemo(() => {
+    let all = 0
+    let open = 0
+    let upcoming = 0
+    let allotment = 0
+    let listed = 0
+    let archived = 0
+
+    for (const ipo of ipos) {
+      if (ipo.archived) {
+        archived++
+        continue
+      }
+      all++
+      const derived = getIpoStatus(ipo).status
+      if (derived === "open") open++
+      else if (derived === "upcoming") upcoming++
+      else if (derived === "allotment_pending") allotment++
+      else if (derived === "listed") listed++
+    }
+
+    return { all, open, upcoming, allotment, listed, archived }
+  }, [ipos])
 
   const handleToggleArchive = useCallback(
     async (ipo: Ipo) => {
@@ -379,92 +491,263 @@ export function IpoList({
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Controls Bar: Search, Status Filters & View Toggle */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        {/* Search Input */}
-        <div className="w-full sm:max-w-xs md:max-w-sm">
-          <InputGroup className="h-8">
-            <InputGroupAddon align="inline-start">
-              <Search className="size-3.5 text-muted-foreground" />
-            </InputGroupAddon>
-            <InputGroupInput
-              placeholder="Search IPO name, company, notes..."
-              aria-label="Search IPOs"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="text-xs"
-            />
-            {search && (
-              <InputGroupAddon align="inline-end">
-                <button
-                  type="button"
-                  onClick={() => setSearch("")}
-                  className="text-muted-foreground hover:text-foreground"
-                  aria-label="Clear search"
-                >
-                  <X className="size-3" />
-                </button>
-              </InputGroupAddon>
+      {/* Tier 1: Lifecycle Stage Tabs */}
+      <div className="flex items-center gap-1 overflow-x-auto border-b border-border/80 pb-2">
+        <button
+          type="button"
+          onClick={() => setStatusFilter("all")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+            statusFilter === "all"
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          )}
+        >
+          <span>All</span>
+          <span
+            className={cn(
+              "px-1.5 py-0.2 font-mono text-[10px]",
+              statusFilter === "all"
+                ? "bg-background/25 text-background font-bold"
+                : "bg-muted text-muted-foreground"
             )}
-          </InputGroup>
+          >
+            {statusCounts.all}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter("open")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+            statusFilter === "open"
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          )}
+        >
+          <span
+            className={cn(
+              "size-1.5 shrink-0",
+              statusCounts.open > 0 ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"
+            )}
+          />
+          <span>Open</span>
+          <span
+            className={cn(
+              "px-1.5 py-0.2 font-mono text-[10px]",
+              statusFilter === "open"
+                ? "bg-background/25 text-background font-bold"
+                : "bg-muted text-muted-foreground"
+            )}
+          >
+            {statusCounts.open}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter("upcoming")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+            statusFilter === "upcoming"
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          )}
+        >
+          <span>Upcoming</span>
+          <span
+            className={cn(
+              "px-1.5 py-0.2 font-mono text-[10px]",
+              statusFilter === "upcoming"
+                ? "bg-background/25 text-background font-bold"
+                : "bg-muted text-muted-foreground"
+            )}
+          >
+            {statusCounts.upcoming}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter("allotment_pending")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+            statusFilter === "allotment_pending"
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          )}
+        >
+          <span>Allotment</span>
+          <span
+            className={cn(
+              "px-1.5 py-0.2 font-mono text-[10px]",
+              statusFilter === "allotment_pending"
+                ? "bg-background/25 text-background font-bold"
+                : "bg-muted text-muted-foreground"
+            )}
+          >
+            {statusCounts.allotment}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter("listed")}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+            statusFilter === "listed"
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          )}
+        >
+          <span>Listed</span>
+          <span
+            className={cn(
+              "px-1.5 py-0.2 font-mono text-[10px]",
+              statusFilter === "listed"
+                ? "bg-background/25 text-background font-bold"
+                : "bg-muted text-muted-foreground"
+            )}
+          >
+            {statusCounts.listed}
+          </span>
+        </button>
+
+        {statusCounts.archived > 0 && (
+          <button
+            type="button"
+            onClick={() => setStatusFilter("archived")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+              statusFilter === "archived"
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            )}
+          >
+            <span>Archived</span>
+            <span
+              className={cn(
+                "px-1.5 py-0.2 font-mono text-[10px]",
+                statusFilter === "archived"
+                  ? "bg-background/25 text-background font-bold"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              {statusCounts.archived}
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* Tier 2: Search, Type Filter, Sort & View Modes */}
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+        {/* Left: Search + Type Select + Reset */}
+        <div className="flex flex-1 flex-wrap items-center gap-2">
+          {/* Search Input */}
+          <div className="w-full sm:w-60 md:w-72">
+            <InputGroup className="h-8">
+              <InputGroupAddon align="inline-start">
+                <Search className="size-3.5 text-muted-foreground" />
+              </InputGroupAddon>
+              <InputGroupInput
+                placeholder="Search IPO, company, notes..."
+                aria-label="Search IPOs"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="text-xs"
+              />
+              {search && (
+                <InputGroupAddon align="inline-end">
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    className="text-muted-foreground hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </InputGroupAddon>
+              )}
+            </InputGroup>
+          </div>
+
+          {/* Type Filter Select */}
+          <Select
+            value={typeFilter}
+            onValueChange={(val) => val && setTypeFilter(val as TypeFilter)}
+          >
+            <SelectTrigger
+              className="h-8 w-[130px] gap-1.5 rounded-none border border-border bg-background px-2.5 text-xs font-medium"
+              aria-label="Filter by Type"
+            >
+              <Layers className="size-3 text-muted-foreground shrink-0" />
+              <SelectValue placeholder="All Types">
+                {(val) =>
+                  val === "mainboard"
+                    ? "Mainboard"
+                    : val === "sme"
+                      ? "SME"
+                      : "All Types"
+                }
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="w-[130px]">
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="mainboard">Mainboard</SelectItem>
+              <SelectItem value="sme">SME</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Reset Filters (shown when active) */}
+          {(search || typeFilter !== "all" || statusFilter !== "all") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearch("")
+                setTypeFilter("all")
+                setStatusFilter("all")
+              }}
+              className="h-8 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3" />
+              <span>Reset</span>
+            </Button>
+          )}
         </div>
 
-        {/* Filters Group + View Toggle */}
-        <div className="flex max-w-full flex-wrap items-center gap-2 overflow-x-auto pb-1">
-          {/* Mainboard vs SME Type Toggle */}
-          <ToggleGroup
-            value={[typeFilter]}
-            onValueChange={(val) => {
-              if (val && val[0]) setTypeFilter(val[0] as TypeFilter)
-            }}
-            className="h-8 shrink-0"
-          >
-            <ToggleGroupItem value="all" className="h-7 px-2.5 text-xs">
-              All Types
-            </ToggleGroupItem>
-            <ToggleGroupItem value="mainboard" className="h-7 px-2.5 text-xs">
-              Mainboard
-            </ToggleGroupItem>
-            <ToggleGroupItem value="sme" className="h-7 px-2.5 text-xs">
-              SME
-            </ToggleGroupItem>
-          </ToggleGroup>
+        {/* Right: Count + Sort Dropdown + View Toggle */}
+        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+          <span className="hidden text-[11px] font-mono text-muted-foreground lg:inline">
+            {filteredIpos.length} {filteredIpos.length === 1 ? "IPO" : "IPOs"}
+          </span>
 
-          {/* Status Filters */}
-          <ToggleGroup
-            value={[statusFilter]}
-            onValueChange={(val) => {
-              if (val && val[0]) setStatusFilter(val[0] as StatusFilter)
-            }}
-            className="h-8 shrink-0"
+          {/* Sort Selector */}
+          <Select
+            value={sortBy}
+            onValueChange={(val) => val && setSortBy(val as IpoSortOption)}
           >
-            <ToggleGroupItem value="all" className="h-7 px-2.5 text-xs">
-              All ({ipos.filter((i) => !i.archived).length})
-            </ToggleGroupItem>
-            <ToggleGroupItem value="open" className="h-7 px-2.5 text-xs">
-              Open
-            </ToggleGroupItem>
-            <ToggleGroupItem value="upcoming" className="h-7 px-2.5 text-xs">
-              Upcoming
-            </ToggleGroupItem>
-            <ToggleGroupItem
-              value="allotment_pending"
-              className="h-7 px-2.5 text-xs"
+            <SelectTrigger
+              className="h-8 w-[165px] gap-1.5 rounded-none border border-border bg-background px-2.5 text-xs font-medium"
+              aria-label="Sort IPOs"
             >
-              Allotment
-            </ToggleGroupItem>
-            <ToggleGroupItem value="listed" className="h-7 px-2.5 text-xs">
-              Listed
-            </ToggleGroupItem>
-            {archivedCount > 0 && (
-              <ToggleGroupItem value="archived" className="h-7 px-2.5 text-xs">
-                Archived ({archivedCount})
-              </ToggleGroupItem>
-            )}
-          </ToggleGroup>
+              <ArrowUpDown className="size-3 text-muted-foreground shrink-0" />
+              <SelectValue placeholder="Sort by">
+                {(val) => IPO_SORT_LABELS[val as IpoSortOption] || "Sort"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="w-[175px]">
+              {Object.entries(IPO_SORT_LABELS).map(([key, label]) => (
+                <SelectItem key={key} value={key}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {/* View Mode Toggle */}
-          <div className="flex h-8 shrink-0 items-center rounded-none border border-border bg-background p-0.5">
+          <div className="flex h-8 items-center rounded-none border border-border bg-background p-0.5">
             <button
               type="button"
               onClick={() => setViewMode("grid")}
@@ -529,7 +812,7 @@ export function IpoList({
         </Empty>
       ) : viewMode === "table" ? (
         <DataTable
-          data={filteredIpos}
+          data={sortedIpos}
           columns={tableColumns}
           keyExtractor={(ipo) => ipo.id}
           pageSize={12}
@@ -537,7 +820,7 @@ export function IpoList({
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredIpos.map((ipo) => {
+          {sortedIpos.map((ipo) => {
             const { label, variant } = getIpoStatus(ipo)
             const appCount = appCountMap.get(ipo.id) || 0
             const lotAmount = ipo.lotSize * ipo.issuePrice

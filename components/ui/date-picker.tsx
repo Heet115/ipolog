@@ -46,18 +46,21 @@ export function DatePicker({
               size="sm"
               disabled={disabled}
               className={cn(
-                "h-8 w-full justify-start rounded-none px-2.5 text-left text-xs font-normal",
+                "h-8 w-full justify-start rounded-none border border-input bg-background px-2.5 text-left text-xs font-normal transition-colors",
+                "hover:bg-muted/30 hover:border-border",
+                "focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/40",
+                open && "border-primary ring-1 ring-primary/40",
                 date && !disabled ? "pr-8" : "",
                 !date && "text-muted-foreground"
               )}
             />
           }
         >
-          <CalendarIcon className="mr-2 size-3.5 shrink-0 opacity-70" />
+          <CalendarIcon className="mr-2 size-3.5 shrink-0 text-muted-foreground" />
           <span className="truncate">{formattedDate || placeholder}</span>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto rounded-none border border-border p-0"
+          className="w-auto rounded-none border border-border bg-popover p-0 shadow-lg"
           align="start"
         >
           <Calendar
