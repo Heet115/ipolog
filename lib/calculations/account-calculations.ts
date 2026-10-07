@@ -24,6 +24,16 @@ export interface AccountReceivableItem {
   application?: Application
 }
 
+export interface PartnerAccountReceivables {
+  account: ApplicationAccount
+  pendingAmount: number
+  pendingProfit: number
+  settledAmount: number
+  unsettledCount: number
+  settledCount: number
+  applications: AccountReceivableItem[]
+}
+
 export interface ReceivablesSummary {
   totalPendingReceivables: number
   totalPendingProfit: number
@@ -33,18 +43,7 @@ export interface ReceivablesSummary {
   settledCount: number
   pendingAccountsCount: number
   items: AccountReceivableItem[]
-  byAccount: Map<
-    string,
-    {
-      account: ApplicationAccount
-      pendingAmount: number
-      pendingProfit: number
-      settledAmount: number
-      unsettledCount: number
-      settledCount: number
-      applications: AccountReceivableItem[]
-    }
-  >
+  byAccount: Map<string, PartnerAccountReceivables>
 }
 
 /**
