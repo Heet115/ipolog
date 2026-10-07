@@ -12,6 +12,9 @@ import {
   ArrowDown,
   AlertTriangle,
   Layers,
+  Eye,
+  EyeOff,
+  Info,
 } from "lucide-react"
 import {
   Dialog,
@@ -21,6 +24,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -50,6 +63,7 @@ import {
   calculateAmountApplied,
 } from "@/lib/calculations/financials"
 import { formatCurrency, formatBankAccount } from "@/lib/utils/ipo"
+import { cn } from "@/lib/utils"
 import {
   CATEGORY_CONFIG,
   ALL_CATEGORIES,
@@ -247,6 +261,114 @@ function BulkApplicationForm({
     ipo.lotSize,
     ipo.issuePrice,
   ])
+
+  const [hideAppliedAccounts, setHideAppliedAccounts] = useState(false)
+  const [showDuplicatePanConfirm, setShowDuplicatePanConfirm] = useState(false)
+
+  // Normalize PAN helper (uppercase, trimmed)
+  const normalizePan = (pan?: string) => pan?.trim().toUpperCase() || ""
+
+  // Map of normalized PAN -> Account for all accounts that have ALREADY applied for this IPO
+  const appliedPanMap = useMemo(() => {
+    const map = new Map<string, ApplicationAccount>()
+    for (const app of existingApplications) {
+      const acc = accountMap.get(app.accountId)
+      const pan = normalizePan(acc?.pan)
+      if (pan && acc) {
+        map.set(pan, acc)
+      }
+    }
+    return map
+  }, [existingApplications, accountMap])
+
+  // Map of normalized PAN -> Account[] for accounts currently SELECTED in this dialog batch
+  const selectedPansMap = useMemo(() => {
+    const map = new Map<string, ApplicationAccount[]>()
+    for (const accId of selectedAccountIds) {
+      const acc = accountMap.get(accId)
+      const pan = normalizePan(acc?.pan)
+      if (pan && acc) {
+        const list = map.get(pan) || []
+        list.push(acc)
+        map.set(pan, list)
+      }
+    }
+    return map
+  }, [selectedAccountIds, accountMap])
+
+  // Intra-batch duplicate PAN groups (where 2 or more selected accounts share the same PAN)
+  const intraBatchDuplicatePans = useMemo(() => {
+    const duplicates: Array<{ pan: string; accounts: ApplicationAccount[] }> = []
+    selectedPansMap.forEach((accs, pan) => {
+      if (accs.length > 1) {
+        duplicates.push({ pan, accounts: accs })
+      }
+    })
+    return duplicates
+  }, [selectedPansMap])
+
+  // Selected accounts that share a PAN with an account that ALREADY applied
+  const selectedPanConflictsWithApplied = useMemo(() => {
+    const conflicts: Array<{
+      selectedAccount: ApplicationAccount
+      appliedAccount: ApplicationAccount
+      pan: string
+    }> = []
+
+    for (const accId of selectedAccountIds) {
+      const acc = accountMap.get(accId)
+      const pan = normalizePan(acc?.pan)
+      if (pan && acc && appliedPanMap.has(pan)) {
+        const appliedAcc = appliedPanMap.get(pan)!
+        if (appliedAcc.id !== acc.id) {
+          conflicts.push({
+            selectedAccount: acc,
+            appliedAccount: appliedAcc,
+            pan,
+          })
+        }
+      }
+    }
+    return conflicts
+  }, [selectedAccountIds, accountMap, appliedPanMap])
+
+  // Set of account IDs in current selection that are involved in duplicate PAN issues
+  const problematicAccountIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const item of intraBatchDuplicatePans) {
+      for (const acc of item.accounts) {
+        ids.add(acc.id)
+      }
+    }
+    for (const item of selectedPanConflictsWithApplied) {
+      ids.add(item.selectedAccount.id)
+    }
+    return ids
+  }, [intraBatchDuplicatePans, selectedPanConflictsWithApplied])
+
+  const hasDuplicatePanIssues =
+    intraBatchDuplicatePans.length > 0 ||
+    selectedPanConflictsWithApplied.length > 0
+
+  const allAccountsAlreadyApplied =
+    activeAccounts.length > 0 &&
+    activeAccounts.every((a) => appliedAccountIds.has(a.id))
+
+  // Helper to check if an unapplied account shares PAN with an already applied account
+  const getPanAppliedWarning = (account: ApplicationAccount) => {
+    const pan = normalizePan(account.pan)
+    if (!pan) return null
+    if (appliedPanMap.has(pan)) {
+      const appliedAcc = appliedPanMap.get(pan)!
+      if (appliedAcc.id !== account.id) {
+        return {
+          pan,
+          appliedAccountName: appliedAcc.name,
+        }
+      }
+    }
+    return null
+  }
 
   const toggleAccountSelection = (accountId: string) => {
     if (appliedAccountIds.has(accountId)) return
@@ -465,7 +587,7 @@ function BulkApplicationForm({
     setStep(2)
   }
 
-  const handleSubmit = async () => {
+  const executeSubmission = async () => {
     setError(null)
     setLoading(true)
 
@@ -474,14 +596,23 @@ function BulkApplicationForm({
         throw new Error("No accounts selected")
       }
 
-      for (const id of selectedAccountIds) {
+      // Filter out any accounts that already have applications (race condition / double-submit guard)
+      const sanitizedAccountIds = selectedAccountIds.filter(
+        (id) => !appliedAccountIds.has(id)
+      )
+
+      if (sanitizedAccountIds.length === 0) {
+        throw new Error("All selected accounts have already applied for this IPO.")
+      }
+
+      for (const id of sanitizedAccountIds) {
         const cfg = accountConfigs[id]
-        if (!cfg?.bankAccountId) {
+        if (!cfg?.bankAccountId && !defaultBankId) {
           throw new Error("Please select a bank account for all applications.")
         }
       }
 
-      const applicationsToCreate = selectedAccountIds.map((accountId) => {
+      const applicationsToCreate = sanitizedAccountIds.map((accountId) => {
         const cfg = accountConfigs[accountId]
         const lots = cfg?.lots || 1
         const bankAccountId = cfg?.bankAccountId || defaultBankId
@@ -518,7 +649,16 @@ function BulkApplicationForm({
       )
     } finally {
       setLoading(false)
+      setShowDuplicatePanConfirm(false)
     }
+  }
+
+  const handleSubmit = async () => {
+    if (hasDuplicatePanIssues) {
+      setShowDuplicatePanConfirm(true)
+      return
+    }
+    await executeSubmission()
   }
 
   const totalLots = selectedAccountIds.reduce(
@@ -629,6 +769,93 @@ function BulkApplicationForm({
             </div>
           ) : (
             <>
+              {/* All Accounts Already Applied Notice */}
+              {allAccountsAlreadyApplied && (
+                <Alert className="rounded-none border-primary/50 bg-primary/5 text-xs">
+                  <Info className="size-4 text-primary" />
+                  <AlertDescription className="flex items-center justify-between gap-2">
+                    <span>
+                      <strong>All Accounts Applied:</strong> Every active
+                      account in your portfolio already has an application recorded for this IPO.
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="xs"
+                      onClick={onCancel}
+                      className="rounded-none text-xs"
+                    >
+                      Close
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Applied Accounts Status Bar */}
+              {appliedAccountIds.size > 0 && !allAccountsAlreadyApplied && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-none border border-border/70 bg-muted/20 px-3 py-2 text-xs">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <span className="font-semibold text-foreground">
+                      {appliedAccountIds.size} of {activeAccounts.length}
+                    </span>
+                    <span>accounts have already applied for this IPO</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => setHideAppliedAccounts(!hideAppliedAccounts)}
+                    className="h-6 gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                  >
+                    {hideAppliedAccounts ? (
+                      <>
+                        <Eye className="size-3" />
+                        <span>Show applied ({appliedAccountIds.size})</span>
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="size-3" />
+                        <span>Hide applied ({appliedAccountIds.size})</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              {/* Duplicate PAN Warning Alert */}
+              {hasDuplicatePanIssues && (
+                <Alert className="rounded-none border-amber-500/50 bg-amber-500/10 text-xs text-amber-900 dark:text-amber-200">
+                  <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <AlertDescription className="flex flex-col gap-1">
+                    <span className="font-bold">
+                      Duplicate PAN Detected — Potential Exchange Disqualification:
+                    </span>
+                    <div className="flex flex-col gap-0.5 text-[11px] leading-relaxed">
+                      {intraBatchDuplicatePans.map((d) => (
+                        <span key={d.pan}>
+                          • Accounts{" "}
+                          <strong>
+                            {d.accounts.map((a) => a.name).join(" & ")}
+                          </strong>{" "}
+                          share PAN <span className="font-mono font-bold">{d.pan}</span>.
+                        </span>
+                      ))}
+                      {selectedPanConflictsWithApplied.map((c) => (
+                        <span key={c.selectedAccount.id}>
+                          • Account <strong>{c.selectedAccount.name}</strong> shares PAN{" "}
+                          <span className="font-mono font-bold">{c.pan}</span> with already-applied{" "}
+                          <strong>{c.appliedAccount.name}</strong>.
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-[10px] text-amber-800/80 dark:text-amber-300/80">
+                      In Indian IPOs, registrars automatically reject duplicate applications
+                      submitted with identical PAN numbers for the same IPO.
+                    </span>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Category & Quick Actions Bar */}
               <div className="flex flex-col gap-2 rounded-none border bg-muted/30 p-2.5">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -715,64 +942,119 @@ function BulkApplicationForm({
               {myAccounts.length > 0 && (
                 <div className="flex flex-col gap-2">
                   <span className="block text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                    My Accounts ({myAccounts.length})
+                    My Accounts (
+                    {hideAppliedAccounts
+                      ? `${myAccounts.filter((a) => !appliedAccountIds.has(a.id)).length} of ${myAccounts.length}`
+                      : myAccounts.length}
+                    )
                   </span>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {myAccounts.map((account) => {
-                      const alreadyApplied = appliedAccountIds.has(account.id)
-                      const isSelected = selectedAccountIds.includes(account.id)
+                  {myAccounts.filter((a) => !appliedAccountIds.has(a.id)).length === 0 &&
+                  hideAppliedAccounts ? (
+                    <div className="py-2 text-[11px] text-muted-foreground italic">
+                      All {myAccounts.length} self accounts have already applied for this IPO.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {(hideAppliedAccounts
+                        ? myAccounts.filter((a) => !appliedAccountIds.has(a.id))
+                        : myAccounts
+                      ).map((account) => {
+                        const alreadyApplied = appliedAccountIds.has(account.id)
+                        const isSelected = selectedAccountIds.includes(account.id)
+                        const panWarning = !alreadyApplied ? getPanAppliedWarning(account) : null
+                        const isDuplicatePanSelected =
+                          isSelected && problematicAccountIds.has(account.id)
 
-                      return (
-                        <label
-                          key={account.id}
-                          className={`flex min-w-0 cursor-pointer items-center justify-between gap-2 rounded-none border p-2.5 text-xs transition-all ${
-                            alreadyApplied
-                              ? "cursor-not-allowed border-dashed bg-muted/20 opacity-50"
-                              : isSelected
-                                ? "border-primary bg-primary/5 ring-1 ring-primary"
-                                : "border-border hover:bg-muted/40"
-                          }`}
-                        >
-                          <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                            <Checkbox
-                              checked={isSelected}
-                              disabled={alreadyApplied}
-                              onCheckedChange={() =>
-                                !alreadyApplied &&
-                                toggleAccountSelection(account.id)
-                              }
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className="block truncate text-xs font-semibold text-foreground"
-                                  title={account.name}
-                                >
-                                  {account.name}
-                                </span>
-                                {account.sortIndex !== undefined && (
-                                  <span className="font-mono text-[9px] text-muted-foreground">
-                                    #{account.sortIndex + 1}
+                        return (
+                          <label
+                            key={account.id}
+                            className={cn(
+                              "flex min-w-0 cursor-pointer items-center justify-between gap-2 rounded-none border p-2.5 text-xs transition-all",
+                              alreadyApplied &&
+                                "cursor-not-allowed border-dashed bg-muted/20 opacity-50",
+                              !alreadyApplied &&
+                                isDuplicatePanSelected &&
+                                "border-amber-500 bg-amber-500/10 ring-1 ring-amber-500",
+                              !alreadyApplied &&
+                                !isDuplicatePanSelected &&
+                                isSelected &&
+                                "border-primary bg-primary/5 ring-1 ring-primary",
+                              !alreadyApplied &&
+                                !isSelected &&
+                                panWarning &&
+                                "border-amber-500/40 bg-amber-500/5 hover:border-amber-500/70",
+                              !alreadyApplied &&
+                                !isSelected &&
+                                !panWarning &&
+                                "border-border hover:bg-muted/40"
+                            )}
+                          >
+                            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                              <Checkbox
+                                checked={isSelected}
+                                disabled={alreadyApplied}
+                                onCheckedChange={() =>
+                                  !alreadyApplied &&
+                                  toggleAccountSelection(account.id)
+                                }
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    className="block truncate text-xs font-semibold text-foreground"
+                                    title={account.name}
+                                  >
+                                    {account.name}
                                   </span>
-                                )}
+                                  {account.sortIndex !== undefined && (
+                                    <span className="font-mono text-[9px] text-muted-foreground">
+                                      #{account.sortIndex + 1}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="block truncate text-[10px] text-muted-foreground">
+                                    Self Account
+                                  </span>
+                                  {account.pan && (
+                                    <span className="font-mono text-[9px] text-muted-foreground/80">
+                                      • PAN: {account.pan}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                              <span className="block truncate text-[10px] text-muted-foreground">
-                                Self Account
-                              </span>
                             </div>
-                          </div>
-                          {alreadyApplied && (
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 py-0 font-mono text-[10px]"
-                            >
-                              Applied
-                            </Badge>
-                          )}
-                        </label>
-                      )
-                    })}
-                  </div>
+                            {alreadyApplied && (
+                              <Badge
+                                variant="outline"
+                                className="shrink-0 py-0 font-mono text-[10px]"
+                              >
+                                Applied
+                              </Badge>
+                            )}
+                            {!alreadyApplied && isDuplicatePanSelected && (
+                              <Badge
+                                variant="outline"
+                                className="shrink-0 border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-[9px] gap-1"
+                              >
+                                <AlertTriangle className="size-2.5" />
+                                <span>Dup PAN</span>
+                              </Badge>
+                            )}
+                            {!alreadyApplied && !isDuplicatePanSelected && panWarning && (
+                              <Badge
+                                variant="outline"
+                                className="shrink-0 border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-[9px]"
+                                title={`Shares PAN ${account.pan} with ${panWarning.appliedAccountName} (already applied)`}
+                              >
+                                ⚠️ PAN Applied
+                              </Badge>
+                            )}
+                          </label>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -780,64 +1062,119 @@ function BulkApplicationForm({
               {otherAccounts.length > 0 && (
                 <div className="flex flex-col gap-2">
                   <span className="block text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                    Other Accounts ({otherAccounts.length})
+                    Other Accounts (
+                    {hideAppliedAccounts
+                      ? `${otherAccounts.filter((a) => !appliedAccountIds.has(a.id)).length} of ${otherAccounts.length}`
+                      : otherAccounts.length}
+                    )
                   </span>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {otherAccounts.map((account) => {
-                      const alreadyApplied = appliedAccountIds.has(account.id)
-                      const isSelected = selectedAccountIds.includes(account.id)
+                  {otherAccounts.filter((a) => !appliedAccountIds.has(a.id)).length === 0 &&
+                  hideAppliedAccounts ? (
+                    <div className="py-2 text-[11px] text-muted-foreground italic">
+                      All {otherAccounts.length} partner accounts have already applied for this IPO.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {(hideAppliedAccounts
+                        ? otherAccounts.filter((a) => !appliedAccountIds.has(a.id))
+                        : otherAccounts
+                      ).map((account) => {
+                        const alreadyApplied = appliedAccountIds.has(account.id)
+                        const isSelected = selectedAccountIds.includes(account.id)
+                        const panWarning = !alreadyApplied ? getPanAppliedWarning(account) : null
+                        const isDuplicatePanSelected =
+                          isSelected && problematicAccountIds.has(account.id)
 
-                      return (
-                        <label
-                          key={account.id}
-                          className={`flex min-w-0 cursor-pointer items-center justify-between gap-2 rounded-none border p-2.5 text-xs transition-all ${
-                            alreadyApplied
-                              ? "cursor-not-allowed border-dashed bg-muted/20 opacity-50"
-                              : isSelected
-                                ? "border-primary bg-primary/5 ring-1 ring-primary"
-                                : "border-border hover:bg-muted/40"
-                          }`}
-                        >
-                          <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                            <Checkbox
-                              checked={isSelected}
-                              disabled={alreadyApplied}
-                              onCheckedChange={() =>
-                                !alreadyApplied &&
-                                toggleAccountSelection(account.id)
-                              }
-                            />
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className="block truncate text-xs font-semibold text-foreground"
-                                  title={account.name}
-                                >
-                                  {account.name}
-                                </span>
-                                {account.sortIndex !== undefined && (
-                                  <span className="font-mono text-[9px] text-muted-foreground">
-                                    #{account.sortIndex + 1}
+                        return (
+                          <label
+                            key={account.id}
+                            className={cn(
+                              "flex min-w-0 cursor-pointer items-center justify-between gap-2 rounded-none border p-2.5 text-xs transition-all",
+                              alreadyApplied &&
+                                "cursor-not-allowed border-dashed bg-muted/20 opacity-50",
+                              !alreadyApplied &&
+                                isDuplicatePanSelected &&
+                                "border-amber-500 bg-amber-500/10 ring-1 ring-amber-500",
+                              !alreadyApplied &&
+                                !isDuplicatePanSelected &&
+                                isSelected &&
+                                "border-primary bg-primary/5 ring-1 ring-primary",
+                              !alreadyApplied &&
+                                !isSelected &&
+                                panWarning &&
+                                "border-amber-500/40 bg-amber-500/5 hover:border-amber-500/70",
+                              !alreadyApplied &&
+                                !isSelected &&
+                                !panWarning &&
+                                "border-border hover:bg-muted/40"
+                            )}
+                          >
+                            <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                              <Checkbox
+                                checked={isSelected}
+                                disabled={alreadyApplied}
+                                onCheckedChange={() =>
+                                  !alreadyApplied &&
+                                  toggleAccountSelection(account.id)
+                                }
+                              />
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    className="block truncate text-xs font-semibold text-foreground"
+                                    title={account.name}
+                                  >
+                                    {account.name}
                                   </span>
-                                )}
+                                  {account.sortIndex !== undefined && (
+                                    <span className="font-mono text-[9px] text-muted-foreground">
+                                      #{account.sortIndex + 1}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="block truncate text-[10px] text-muted-foreground">
+                                    {account.profitSharePercent}% profit share
+                                  </span>
+                                  {account.pan && (
+                                    <span className="font-mono text-[9px] text-muted-foreground/80">
+                                      • PAN: {account.pan}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                              <span className="block truncate text-[10px] text-muted-foreground">
-                                {account.profitSharePercent}% profit share
-                              </span>
                             </div>
-                          </div>
-                          {alreadyApplied && (
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 py-0 font-mono text-[10px]"
-                            >
-                              Applied
-                            </Badge>
-                          )}
-                        </label>
-                      )
-                    })}
-                  </div>
+                            {alreadyApplied && (
+                              <Badge
+                                variant="outline"
+                                className="shrink-0 py-0 font-mono text-[10px]"
+                              >
+                                Applied
+                              </Badge>
+                            )}
+                            {!alreadyApplied && isDuplicatePanSelected && (
+                              <Badge
+                                variant="outline"
+                                className="shrink-0 border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-[9px] gap-1"
+                              >
+                                <AlertTriangle className="size-2.5" />
+                                <span>Dup PAN</span>
+                              </Badge>
+                            )}
+                            {!alreadyApplied && !isDuplicatePanSelected && panWarning && (
+                              <Badge
+                                variant="outline"
+                                className="shrink-0 border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-[9px]"
+                                title={`Shares PAN ${account.pan} with ${panWarning.appliedAccountName} (already applied)`}
+                              >
+                                ⚠️ PAN Applied
+                              </Badge>
+                            )}
+                          </label>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </>
@@ -1036,6 +1373,36 @@ function BulkApplicationForm({
             </div>
           )}
 
+          {/* Duplicate PAN Warning for Current Batch */}
+          {hasDuplicatePanIssues && (
+            <div className="flex flex-col gap-1.5 rounded-none border border-amber-500/60 bg-amber-500/10 p-2.5 text-xs">
+              <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-400">
+                <AlertTriangle className="size-3.5 shrink-0" />
+                <span>
+                  Duplicate PAN Warning: Identical PANs detected across applications
+                </span>
+              </div>
+              <div className="flex flex-col gap-1 pl-5 text-[11px] text-foreground">
+                {intraBatchDuplicatePans.map((d) => (
+                  <div key={d.pan}>
+                    • <strong>{d.accounts.map((a) => a.name).join(" and ")}</strong> share PAN{" "}
+                    <span className="font-mono font-bold">{d.pan}</span>
+                  </div>
+                ))}
+                {selectedPanConflictsWithApplied.map((c) => (
+                  <div key={c.selectedAccount.id}>
+                    • <strong>{c.selectedAccount.name}</strong> shares PAN{" "}
+                    <span className="font-mono font-bold">{c.pan}</span> with already-applied{" "}
+                    <strong>{c.appliedAccount.name}</strong>
+                  </div>
+                ))}
+                <span className="mt-0.5 text-[10px] text-muted-foreground">
+                  Registrars and stock exchanges automatically disqualify duplicate applications submitted with matching PANs.
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Detailed Applications Table */}
           <div className="max-h-[300px] min-w-0 overflow-x-auto overflow-y-auto rounded-none border border-border/80">
             <Table className="min-w-[700px]">
@@ -1159,7 +1526,7 @@ function BulkApplicationForm({
                   return (
                     <TableRow key={accountId}>
                       <TableCell className="text-xs font-medium">
-                        <div className="flex max-w-[190px] min-w-0 items-center gap-1.5">
+                        <div className="flex max-w-[210px] min-w-0 items-center gap-1.5 flex-wrap">
                           <span
                             className="block truncate font-semibold text-foreground"
                             title={account?.name}
@@ -1176,7 +1543,26 @@ function BulkApplicationForm({
                               ? "My"
                               : `${account?.profitSharePercent}%`}
                           </Badge>
+                          {problematicAccountIds.has(accountId) && (
+                            <Badge
+                              variant="outline"
+                              className="shrink-0 border-amber-500/60 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-mono text-[9px] gap-1 px-1 py-0"
+                              title={
+                                account?.pan
+                                  ? `Duplicate PAN detected: ${account.pan}`
+                                  : "Duplicate PAN detected"
+                              }
+                            >
+                              <AlertTriangle className="size-2.5" />
+                              <span>Dup PAN</span>
+                            </Badge>
+                          )}
                         </div>
+                        {account?.pan && (
+                          <span className="block font-mono text-[9px] text-muted-foreground">
+                            PAN: {account.pan}
+                          </span>
+                        )}
                       </TableCell>
 
                       <TableCell>
@@ -1331,6 +1717,60 @@ function BulkApplicationForm({
           </DialogFooter>
         </div>
       )}
+
+      {/* Duplicate PAN Submission Confirmation Modal */}
+      <AlertDialog
+        open={showDuplicatePanConfirm}
+        onOpenChange={setShowDuplicatePanConfirm}
+      >
+        <AlertDialogContent className="rounded-none sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-none bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="size-4" />
+              </div>
+              <AlertDialogTitle className="text-base font-bold">
+                Duplicate PAN Warning
+              </AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-xs text-muted-foreground pt-2">
+              Multiple applications in this batch share identical PAN numbers:
+              <div className="my-2.5 flex flex-col gap-1 rounded-none border border-amber-500/30 bg-amber-500/5 p-2 font-mono text-[11px] text-amber-900 dark:text-amber-200">
+                {intraBatchDuplicatePans.map((d) => (
+                  <div key={d.pan}>
+                    • <strong>{d.accounts.map((a) => a.name).join(", ")}</strong> share PAN <strong>{d.pan}</strong>
+                  </div>
+                ))}
+                {selectedPanConflictsWithApplied.map((c) => (
+                  <div key={c.selectedAccount.id}>
+                    • <strong>{c.selectedAccount.name}</strong> shares PAN <strong>{c.pan}</strong> with already-applied <strong>{c.appliedAccount.name}</strong>
+                  </div>
+                ))}
+              </div>
+              In Indian IPOs, SEBI regulations mandate that duplicate bids under
+              the same PAN will be rejected by the exchange registrar. Are you
+              sure you want to proceed anyway?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="border-t border-border/60 pt-3">
+            <AlertDialogCancel
+              disabled={loading}
+              onClick={() => setShowDuplicatePanConfirm(false)}
+              className="rounded-none text-xs"
+            >
+              Back to Selection
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={loading}
+              onClick={executeSubmission}
+              className="rounded-none bg-amber-600 text-white hover:bg-amber-700 text-xs"
+            >
+              {loading && <Spinner className="size-3" />}
+              Proceed Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

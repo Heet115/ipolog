@@ -209,11 +209,19 @@ export async function createApplicationsBatch(
 ): Promise<string[]> {
   if (applications.length === 0) return []
 
+  // Ensure no duplicate account applications are inserted within the same batch
+  const seenAccountIds = new Set<string>()
+  const uniqueApplications = applications.filter((app) => {
+    if (seenAccountIds.has(app.accountId)) return false
+    seenAccountIds.add(app.accountId)
+    return true
+  })
+
   const batch = writeBatch(db)
   const appsRef = collection(db, "users", userId, "applications")
   const createdIds: string[] = []
 
-  for (const app of applications) {
+  for (const app of uniqueApplications) {
     const newDocRef = doc(appsRef)
     createdIds.push(newDocRef.id)
 

@@ -17,22 +17,24 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { ThemeToggle } from "@/components/shared/theme-toggle"
+import { usePageTitleContext } from "@/components/shared/page-title-context"
 
 export function Header() {
   const pathname = usePathname()
+  const { customTitle } = usePageTitleContext() ?? {}
 
   const isIpoDetail = pathname.startsWith("/ipos/") && pathname !== "/ipos"
 
   const getPageTitle = () => {
+    if (isIpoDetail) return customTitle || "IPO Details"
     if (pathname === "/dashboard") return "Dashboard"
-    if (isIpoDetail) return "IPO Details"
     if (pathname === "/ipos") return "My IPOs"
     if (pathname === "/applications") return "Applications Ledger"
     if (pathname === "/settlements") return "Settlement Center"
     if (pathname === "/accounts") return "Application Accounts"
     if (pathname === "/bank-accounts") return "Bank Accounts"
     if (pathname === "/settings") return "Settings"
-    return "Overview"
+    return customTitle || "Overview"
   }
 
   return (
@@ -65,8 +67,11 @@ export function Header() {
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage className="font-semibold text-foreground">
+                <BreadcrumbItem className="min-w-0">
+                  <BreadcrumbPage
+                    className="max-w-[150px] truncate font-semibold text-foreground sm:max-w-[260px] md:max-w-[360px]"
+                    title={getPageTitle()}
+                  >
                     {getPageTitle()}
                   </BreadcrumbPage>
                 </BreadcrumbItem>

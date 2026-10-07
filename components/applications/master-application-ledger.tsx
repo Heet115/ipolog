@@ -5,7 +5,6 @@ import Link from "next/link"
 import {
   Search,
   X,
-  Download,
   Layers,
   Landmark,
   CheckCircle2,
@@ -76,7 +75,6 @@ import {
   CATEGORY_CONFIG,
   inferCategoryFromAmount,
 } from "@/lib/calculations/categories"
-import { exportPortfolioSummaryCsv } from "@/lib/utils/export-csv"
 import { EditApplicationDialog } from "@/components/applications/edit-application-dialog"
 import { RecordSaleDialog } from "@/components/applications/record-sale-dialog"
 import { SettlementDialog } from "@/components/applications/settlement-dialog"
@@ -463,31 +461,6 @@ export function MasterApplicationLedger({
     } finally {
       setDeleting(false)
     }
-  }
-
-  // CSV export handler
-  const handleExportCsv = () => {
-    if (filteredApplications.length === 0) {
-      toast.add({
-        title: "No records to export",
-        description: "There are no applications matching your current filters.",
-        type: "warning",
-      })
-      return
-    }
-    exportPortfolioSummaryCsv(
-      ipos,
-      filteredApplications,
-      accounts,
-      bankAccounts
-    )
-    toast.add({
-      title: "Export started",
-      description: `Exporting ${filteredApplications.length} application record${
-        filteredApplications.length === 1 ? "" : "s"
-      } to CSV.`,
-      type: "success",
-    })
   }
 
   // Status Filter Pills
@@ -1016,16 +989,6 @@ export function MasterApplicationLedger({
                   Clear Filters
                 </Button>
               )}
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportCsv}
-                className="h-8 gap-1.5 rounded-none text-xs font-semibold"
-              >
-                <Download className="size-3.5" />
-                Export CSV ({filteredApplications.length})
-              </Button>
             </div>
           </div>
 

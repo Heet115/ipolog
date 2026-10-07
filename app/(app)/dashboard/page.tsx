@@ -45,7 +45,6 @@ import {
   EmptyDescription,
   EmptyContent,
 } from "@/components/ui/empty"
-import { toast } from "@/components/ui/toast"
 import { useAuth } from "@/lib/firebase/auth-context"
 import { getIpos } from "@/lib/firebase/ipos"
 import {
@@ -60,7 +59,6 @@ import {
   checkBankAsbaLimits,
   calculateReceivablesSummary,
 } from "@/lib/calculations/financials"
-import { exportPortfolioSummaryCsv } from "@/lib/utils/export-csv"
 import { formatCurrency, formatDate, getIpoStatus } from "@/lib/utils/ipo"
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts"
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton"
@@ -441,27 +439,6 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {applications.length > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                exportPortfolioSummaryCsv(
-                  ipos,
-                  applications,
-                  accounts,
-                  bankAccounts
-                )
-                toast.add({
-                  title: "Portfolio report exported to CSV",
-                  type: "success",
-                })
-              }}
-            >
-              <Download data-icon="inline-start" />
-              Export CSV
-            </Button>
-          )}
           <Button
             size="sm"
             nativeButton={false}

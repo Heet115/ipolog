@@ -11,7 +11,6 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
-  Download,
   X,
   Phone,
   RotateCcw,
@@ -45,7 +44,7 @@ import {
   type AccountReceivableItem,
 } from "@/lib/calculations/financials"
 import { MultiIpoSettlementDialog } from "@/components/settlements/multi-ipo-settlement-dialog"
-import { formatCurrency, formatDate } from "@/lib/utils/ipo"
+import { formatCurrency } from "@/lib/utils/ipo"
 import { cn } from "@/lib/utils"
 import type { Ipo, Application, ApplicationAccount, BankAccount } from "@/types"
 
@@ -260,66 +259,6 @@ export function SettlementCenter({
     }))
   }, [selectedPartnerEntry])
 
-  // Export CSV
-  const handleExportCsv = () => {
-    if (summary.items.length === 0) {
-      toast.add({
-        title: "No settlements to export",
-        type: "error",
-      })
-      return
-    }
-
-    const headers = [
-      "Partner Name",
-      "IPO Name",
-      "Allotted Lots",
-      "Allotted Shares",
-      "Issue Price",
-      "Sale Price",
-      "Capital Applied",
-      "Sale Proceeds",
-      "Gross Profit",
-      "Partner Profit Share",
-      "Funder Profit Share",
-      "Amount to Transfer",
-      "Settlement Status",
-      "Settled Date",
-    ]
-
-    const rows = summary.items.map((item) => [
-      `"${item.accountName.replace(/"/g, '""')}"`,
-      `"${item.ipoName.replace(/"/g, '""')}"`,
-      item.allottedLots || 1,
-      item.allottedShares || 0,
-      item.issuePrice || 0,
-      item.salePrice || 0,
-      item.investedAmount,
-      item.saleProceeds,
-      item.grossProfit,
-      item.ownerProfitShare,
-      item.yourProfitShare,
-      item.amountToSendUser,
-      item.settlementStatus,
-      item.settledAt ? `"${formatDate(item.settledAt)}"` : '""',
-    ])
-
-    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n")
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.setAttribute("download", `ipolog-settlements-${new Date().toISOString().slice(0, 10)}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-
-    toast.add({
-      title: "Settlements statement exported",
-      type: "success",
-    })
-  }
 
   const pendingPartnersCount = partnerAccountsList.filter((p) => p.unsettledCount > 0).length
   const settledPartnersCount = partnerAccountsList.filter((p) => p.unsettledCount === 0 && p.settledCount > 0).length
@@ -490,7 +429,7 @@ export function SettlementCenter({
           </button>
         </div>
 
-        {/* Tier 2: Search Input & Export CSV */}
+        {/* Tier 2: Search Input & Controls */}
         <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-1 items-center gap-2">
             <div className="w-full sm:w-72 md:w-80">
@@ -537,19 +476,9 @@ export function SettlementCenter({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <span className="hidden text-[11px] font-mono text-muted-foreground lg:inline">
+            <span className="text-[11px] font-mono text-muted-foreground">
               Showing {filteredPartners.length} partner{filteredPartners.length === 1 ? "" : "s"}
             </span>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportCsv}
-              className="h-8 gap-1.5 rounded-none text-xs"
-            >
-              <Download data-icon="inline-start" className="size-3.5" />
-              <span>Export CSV</span>
-            </Button>
           </div>
         </div>
       </div>

@@ -16,7 +16,6 @@ import {
   Layers,
   RefreshCw,
   TrendingUp,
-  Download,
   Check,
   ExternalLink,
   BadgeIndianRupeeIcon,
@@ -72,7 +71,6 @@ import {
   isIpoSyncStale,
   formatSyncFreshness,
 } from "@/lib/utils/ipo"
-import { exportIpoApplicationsCsv } from "@/lib/utils/export-csv"
 import {
   calculateIpoMoneySummary,
   calculateIpoProfitSummary,
@@ -805,28 +803,6 @@ export default function IpoDetailPage() {
             </CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {applications.length > 0 && (
-              <Button
-                variant="outline"
-                size="xs"
-                className="h-7 text-xs"
-                onClick={() => {
-                  exportIpoApplicationsCsv(
-                    ipo,
-                    applications,
-                    accounts,
-                    bankAccounts
-                  )
-                  toast.add({
-                    title: "Applications exported to CSV",
-                    type: "success",
-                  })
-                }}
-              >
-                <Download data-icon="inline-start" />
-                Export CSV
-              </Button>
-            )}
             {hasAllottedApps && (
               <Button
                 variant="outline"
