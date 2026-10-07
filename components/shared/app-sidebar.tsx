@@ -99,6 +99,50 @@ const secondaryNav = [
   },
 ]
 
+interface SidebarNavItemProps {
+  item: {
+    title: string
+    url: string
+    icon: React.ComponentType<{ className?: string }>
+  }
+  pathname: string
+  onNavClick: () => void
+}
+
+function SidebarNavItem({ item, pathname, onNavClick }: SidebarNavItemProps) {
+  const isActive =
+    pathname === item.url ||
+    (item.url !== "/dashboard" &&
+      (pathname.startsWith(item.url + "/") || pathname === item.url))
+
+  return (
+    <SidebarMenuItem key={item.url}>
+      <SidebarMenuButton
+        isActive={isActive}
+        tooltip={item.title}
+        className={cn(
+          "relative transition-all duration-150",
+          isActive
+            ? "border-l-2 border-primary bg-sidebar-accent pl-2 font-semibold text-sidebar-accent-foreground shadow-xs group-data-[collapsible=icon]:border-l-0 group-data-[collapsible=icon]:p-2!"
+            : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
+        )}
+        render={<Link href={item.url} onClick={onNavClick} />}
+      >
+        <item.icon
+          className={cn(
+            "size-4 shrink-0 transition-colors",
+            isActive && "text-primary"
+          )}
+        />
+        <span className="truncate">{item.title}</span>
+        {isActive && (
+          <span className="ml-auto size-1.5 rounded-none bg-primary group-data-[collapsible=icon]:hidden" />
+        )}
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  )
+}
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const { user, signOut } = useAuth()
@@ -152,30 +196,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {platformNav.map((item) => {
-                  const isActive =
-                    pathname === item.url ||
-                    (item.url !== "/dashboard" && pathname.startsWith(item.url))
-
-                  return (
-                    <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        tooltip={item.title}
-                        className={cn(
-                          "transition-colors duration-150",
-                          isActive && "font-semibold"
-                        )}
-                        render={
-                          <Link href={item.url} onClick={handleNavClick} />
-                        }
-                      >
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )
-                })}
+                {platformNav.map((item) => (
+                  <SidebarNavItem
+                    key={item.url}
+                    item={item}
+                    pathname={pathname}
+                    onNavClick={handleNavClick}
+                  />
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -187,29 +215,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {managementNav.map((item) => {
-                  const isActive =
-                    pathname === item.url || pathname.startsWith(item.url)
-
-                  return (
-                    <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        tooltip={item.title}
-                        className={cn(
-                          "transition-colors duration-150",
-                          isActive && "font-semibold"
-                        )}
-                        render={
-                          <Link href={item.url} onClick={handleNavClick} />
-                        }
-                      >
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )
-                })}
+                {managementNav.map((item) => (
+                  <SidebarNavItem
+                    key={item.url}
+                    item={item}
+                    pathname={pathname}
+                    onNavClick={handleNavClick}
+                  />
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -221,28 +234,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {secondaryNav.map((item) => {
-                  const isActive = pathname === item.url
-
-                  return (
-                    <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        tooltip={item.title}
-                        className={cn(
-                          "transition-colors duration-150",
-                          isActive && "font-semibold"
-                        )}
-                        render={
-                          <Link href={item.url} onClick={handleNavClick} />
-                        }
-                      >
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )
-                })}
+                {secondaryNav.map((item) => (
+                  <SidebarNavItem
+                    key={item.url}
+                    item={item}
+                    pathname={pathname}
+                    onNavClick={handleNavClick}
+                  />
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
