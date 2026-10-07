@@ -1,15 +1,10 @@
 "use client"
 
-import { useState, useMemo } from "react"
 import {
   Check,
   Sparkles,
   TrendingUp,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
 } from "lucide-react"
-import { Timestamp } from "firebase/firestore"
 import {
   Dialog,
   DialogContent,
@@ -22,25 +17,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
 import { DatePicker } from "@/components/ui/date-picker"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { Spinner } from "@/components/ui/spinner"
-import { toast } from "@/components/ui/toast"
-import { recordSaleBulk, type BulkSaleItem } from "@/lib/firebase/applications"
-import {
-  calculateRealizedGrossProfit,
-  calculateProfitShared,
-  calculateYourProfit,
-} from "@/lib/calculations/financials"
 import { formatCurrency } from "@/lib/utils/ipo"
+import { useBulkSale } from "@/hooks/use-bulk-sale"
+import { BulkSaleTable } from "@/components/applications/bulk-sale-table"
 import type { Ipo, Application, ApplicationAccount } from "@/types"
 
 interface BulkSaleDialogProps {
@@ -51,12 +32,6 @@ interface BulkSaleDialogProps {
   applications: Application[]
   accounts: ApplicationAccount[]
   onSuccess: () => void
-}
-
-interface SaleRowState {
-  selected: boolean
-  salePrice: number
-  sharesSold: number
 }
 
 export function BulkSaleDialog({
@@ -103,275 +78,36 @@ function BulkSaleForm({
   onCancel: () => void
   onSuccess: () => void
 }) {
-  const accountMap = useMemo(
-    () => new Map(accounts.map((a) => [a.id, a])),
-    [accounts]
-  )
-
-  // Only allotted and partially sold applications
-  const eligibleApps = applications.filter(
-    (a) => a.status === "allotted" || a.status === "sold"
-  )
-
-  const defaultPrice = ipo.currentPrice || ipo.listingPrice || ipo.issuePrice
-
-  const [globalSalePrice, setGlobalSalePrice] = useState<string>(
-    String(defaultPrice)
-  )
-  const [globalSaleDate, setGlobalSaleDate] = useState<Date | undefined>(
-    new Date()
-  )
-
-  const [rowStates, setRowStates] = useState<Record<string, SaleRowState>>(
-    () => {
-      const init: Record<string, SaleRowState> = {}
-      for (const app of eligibleApps) {
-        const shares =
-          app.allottedShares || (app.allottedLots || 1) * ipo.lotSize
-        init[app.id] = {
-          selected: true,
-          salePrice: defaultPrice,
-          sharesSold: shares,
-        }
-      }
-      return init
-    }
-  )
-
-  const [sortColumn, setSortColumn] = useState<
-    "account" | "shares" | "price" | "profit" | null
-  >(null)
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const toggleSort = (col: "account" | "shares" | "price" | "profit") => {
-    if (sortColumn !== col) {
-      setSortColumn(col)
-      setSortDirection("asc")
-    } else if (sortDirection === "asc") {
-      setSortDirection("desc")
-    } else {
-      setSortColumn(null)
-    }
-  }
-
-  const handleFillCmp = () => {
-    const cmp = ipo.currentPrice || ipo.listingPrice
-    if (cmp) {
-      setGlobalSalePrice(String(cmp))
-      setRowStates((prev) => {
-        const updated = { ...prev }
-        for (const id in updated) {
-          updated[id] = { ...updated[id], salePrice: cmp }
-        }
-        return updated
-      })
-    }
-  }
-
-  const handleApplyGlobalPrice = () => {
-    const price = parseFloat(globalSalePrice)
-    if (!price || price <= 0) return
-
-    setRowStates((prev) => {
-      const updated = { ...prev }
-      for (const id in updated) {
-        if (updated[id]?.selected) {
-          updated[id] = { ...updated[id], salePrice: price }
-        }
-      }
-      return updated
-    })
-  }
-
-  const toggleSelectAll = (checked: boolean) => {
-    setRowStates((prev) => {
-      const updated = { ...prev }
-      for (const app of eligibleApps) {
-        updated[app.id] = { ...updated[app.id], selected: checked }
-      }
-      return updated
-    })
-  }
-
-  const toggleRow = (appId: string) => {
-    setRowStates((prev) => ({
-      ...prev,
-      [appId]: {
-        ...prev[appId],
-        selected: !prev[appId]?.selected,
-      },
-    }))
-  }
-
-  const updateRowPrice = (appId: string, price: number) => {
-    setRowStates((prev) => ({
-      ...prev,
-      [appId]: {
-        ...prev[appId],
-        salePrice: price,
-      },
-    }))
-  }
-
-  const updateRowShares = (appId: string, shares: number) => {
-    setRowStates((prev) => ({
-      ...prev,
-      [appId]: {
-        ...prev[appId],
-        sharesSold: shares,
-      },
-    }))
-  }
-
-  // Summary calculations
-  let totalGrossProfit = 0
-  let totalProfitShared = 0
-  let totalYourProfit = 0
-  let selectedCount = 0
-
-  for (const app of eligibleApps) {
-    const state = rowStates[app.id]
-    if (state?.selected) {
-      selectedCount++
-      const account = accountMap.get(app.accountId)
-      const gross = calculateRealizedGrossProfit(
-        state.sharesSold,
-        state.salePrice,
-        ipo.issuePrice
-      )
-      const shared = calculateProfitShared(
-        gross,
-        account?.type === "my" ? 0 : (account?.profitSharePercent ?? 40)
-      )
-      const your = calculateYourProfit(
-        gross,
-        account?.type === "my" ? 0 : (account?.profitSharePercent ?? 40)
-      )
-
-      totalGrossProfit += gross
-      totalProfitShared += shared
-      totalYourProfit += your
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-
-    try {
-      const items: BulkSaleItem[] = []
-
-      for (const app of eligibleApps) {
-        const state = rowStates[app.id]
-        if (state?.selected) {
-          if (!state.salePrice || state.salePrice <= 0) {
-            throw new Error(
-              "Please ensure all selected rows have a valid sale price."
-            )
-          }
-          if (!state.sharesSold || state.sharesSold <= 0) {
-            throw new Error(
-              "Please ensure all selected rows have valid shares sold."
-            )
-          }
-
-          items.push({
-            applicationId: app.id,
-            salePrice: state.salePrice,
-            sharesSold: state.sharesSold,
-            saleDate: globalSaleDate
-              ? Timestamp.fromDate(globalSaleDate)
-              : undefined,
-          })
-        }
-      }
-
-      if (items.length === 0) {
-        throw new Error("Please select at least one account to record a sale.")
-      }
-
-      await recordSaleBulk(userId, items)
-      toast.add({
-        title: `Sales recorded for ${items.length} applications`,
-        type: "success",
-      })
-      onSuccess()
-    } catch (err: unknown) {
-      console.error(err)
-      setError(
-        err instanceof Error ? err.message : "Failed to record bulk sale."
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const allSelected =
-    eligibleApps.length > 0 &&
-    eligibleApps.every((a) => rowStates[a.id]?.selected)
-
-  const sortedEligibleApps = useMemo(() => {
-    if (!sortColumn) return eligibleApps
-
-    const list = [...eligibleApps]
-    list.sort((appA, appB) => {
-      const accA = accountMap.get(appA.accountId)
-      const accB = accountMap.get(appB.accountId)
-      const stateA = rowStates[appA.id] || {
-        selected: false,
-        salePrice: defaultPrice,
-        sharesSold: 0,
-      }
-      const stateB = rowStates[appB.id] || {
-        selected: false,
-        salePrice: defaultPrice,
-        sharesSold: 0,
-      }
-
-      let res = 0
-      if (sortColumn === "account") {
-        res = (accA?.name || "").localeCompare(accB?.name || "")
-      } else if (sortColumn === "shares") {
-        res = stateA.sharesSold - stateB.sharesSold
-      } else if (sortColumn === "price") {
-        res = stateA.salePrice - stateB.salePrice
-      } else if (sortColumn === "profit") {
-        const grossA = calculateRealizedGrossProfit(
-          stateA.sharesSold,
-          stateA.salePrice,
-          ipo.issuePrice
-        )
-        const yourA = calculateYourProfit(
-          grossA,
-          accA?.type === "my" ? 0 : (accA?.profitSharePercent ?? 40)
-        )
-        const grossB = calculateRealizedGrossProfit(
-          stateB.sharesSold,
-          stateB.salePrice,
-          ipo.issuePrice
-        )
-        const yourB = calculateYourProfit(
-          grossB,
-          accB?.type === "my" ? 0 : (accB?.profitSharePercent ?? 40)
-        )
-        res = yourA - yourB
-      }
-
-      return sortDirection === "asc" ? res : -res
-    })
-    return list
-  }, [
-    eligibleApps,
+  const {
+    accountMap,
+    defaultPrice,
+    globalSalePrice,
+    setGlobalSalePrice,
+    globalSaleDate,
+    setGlobalSaleDate,
+    rowStates,
     sortColumn,
     sortDirection,
-    accountMap,
-    rowStates,
-    defaultPrice,
-    ipo.issuePrice,
-  ])
+    loading,
+    error,
+    toggleSort,
+    handleFillCmp,
+    handleApplyGlobalPrice,
+    toggleSelectAll,
+    toggleRow,
+    updateRowPrice,
+    updateRowShares,
+    summary,
+    allSelected,
+    sortedEligibleApps,
+    handleSubmit,
+  } = useBulkSale({
+    userId,
+    ipo,
+    applications,
+    accounts,
+    onSuccess,
+  })
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -456,205 +192,31 @@ function BulkSaleForm({
       </div>
 
       {/* Accounts Table */}
-      <div className="max-h-[300px] min-w-0 overflow-x-auto overflow-y-auto rounded-none border border-border/80">
-        <Table className="min-w-[550px]">
-          <TableHeader>
-            <TableRow className="border-b border-border/70 bg-muted/30">
-              <TableHead className="w-10 text-center">
-                <Checkbox
-                  checked={allSelected}
-                  onCheckedChange={(checked) =>
-                    toggleSelectAll(Boolean(checked))
-                  }
-                />
-              </TableHead>
-              <TableHead className="h-9 min-w-[160px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
-                <button
-                  type="button"
-                  onClick={() => toggleSort("account")}
-                  className="inline-flex items-center gap-1 font-semibold transition-colors hover:text-foreground"
-                >
-                  Account
-                  {sortColumn === "account" ? (
-                    sortDirection === "asc" ? (
-                      <ArrowUp className="size-3 text-foreground" />
-                    ) : (
-                      <ArrowDown className="size-3 text-foreground" />
-                    )
-                  ) : (
-                    <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
-                  )}
-                </button>
-              </TableHead>
-              <TableHead className="h-9 w-[100px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
-                <button
-                  type="button"
-                  onClick={() => toggleSort("shares")}
-                  className="inline-flex items-center gap-1 font-semibold transition-colors hover:text-foreground"
-                >
-                  Shares Sold
-                  {sortColumn === "shares" ? (
-                    sortDirection === "asc" ? (
-                      <ArrowUp className="size-3 text-foreground" />
-                    ) : (
-                      <ArrowDown className="size-3 text-foreground" />
-                    )
-                  ) : (
-                    <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
-                  )}
-                </button>
-              </TableHead>
-              <TableHead className="h-9 w-[110px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
-                <button
-                  type="button"
-                  onClick={() => toggleSort("price")}
-                  className="inline-flex items-center gap-1 font-semibold transition-colors hover:text-foreground"
-                >
-                  Sale Price (₹)
-                  {sortColumn === "price" ? (
-                    sortDirection === "asc" ? (
-                      <ArrowUp className="size-3 text-foreground" />
-                    ) : (
-                      <ArrowDown className="size-3 text-foreground" />
-                    )
-                  ) : (
-                    <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
-                  )}
-                </button>
-              </TableHead>
-              <TableHead className="h-9 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
-                <button
-                  type="button"
-                  onClick={() => toggleSort("profit")}
-                  className="ml-auto inline-flex flex-row-reverse items-center gap-1 font-semibold transition-colors hover:text-foreground"
-                >
-                  Profit (You)
-                  {sortColumn === "profit" ? (
-                    sortDirection === "asc" ? (
-                      <ArrowUp className="size-3 text-foreground" />
-                    ) : (
-                      <ArrowDown className="size-3 text-foreground" />
-                    )
-                  ) : (
-                    <ArrowUpDown className="size-3 opacity-30 hover:opacity-100" />
-                  )}
-                </button>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedEligibleApps.map((app) => {
-              const account = accountMap.get(app.accountId)
-              const state = rowStates[app.id] || {
-                selected: false,
-                salePrice: defaultPrice,
-                sharesSold: 0,
-              }
-              const maxShares =
-                app.allottedShares || (app.allottedLots || 1) * ipo.lotSize
-
-              const gross = calculateRealizedGrossProfit(
-                state.sharesSold,
-                state.salePrice,
-                ipo.issuePrice
-              )
-              const your = calculateYourProfit(
-                gross,
-                account?.type === "my" ? 0 : (account?.profitSharePercent ?? 40)
-              )
-
-              return (
-                <TableRow
-                  key={app.id}
-                  className={state.selected ? "bg-muted/30" : "opacity-60"}
-                >
-                  <TableCell className="text-center">
-                    <Checkbox
-                      checked={state.selected}
-                      onCheckedChange={() => toggleRow(app.id)}
-                      aria-label={`Select ${account?.name || "account"}`}
-                    />
-                  </TableCell>
-
-                  <TableCell className="text-xs font-medium">
-                    <div className="flex max-w-[220px] min-w-0 items-center gap-1.5">
-                      <span
-                        className="block truncate font-semibold text-foreground"
-                        title={account?.name}
-                      >
-                        {account?.name}
-                      </span>
-                      <Badge
-                        variant={
-                          account?.type === "my" ? "secondary" : "default"
-                        }
-                        className="shrink-0 px-1 py-0 text-[9px] font-normal"
-                      >
-                        {account?.type === "my"
-                          ? "My"
-                          : `${account?.profitSharePercent}%`}
-                      </Badge>
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={maxShares}
-                      step={1}
-                      disabled={!state.selected}
-                      value={state.sharesSold}
-                      onChange={(e) =>
-                        updateRowShares(app.id, Number(e.target.value))
-                      }
-                      aria-label={`Shares sold for ${account?.name || "account"}`}
-                      className="h-7 px-1.5 font-mono text-xs"
-                    />
-                  </TableCell>
-
-                  <TableCell>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      disabled={!state.selected}
-                      value={state.salePrice}
-                      onChange={(e) =>
-                        updateRowPrice(app.id, parseFloat(e.target.value) || 0)
-                      }
-                      aria-label={`Sale price for ${account?.name || "account"}`}
-                      className="h-7 px-1.5 text-xs font-bold"
-                    />
-                  </TableCell>
-
-                  <TableCell
-                    className={`text-right text-xs font-bold ${
-                      your > 0
-                        ? "text-success"
-                        : your < 0
-                          ? "text-destructive"
-                          : "text-muted-foreground"
-                    }`}
-                  >
-                    {formatCurrency(your)}
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <BulkSaleTable
+        sortedEligibleApps={sortedEligibleApps}
+        accountMap={accountMap}
+        rowStates={rowStates}
+        ipo={ipo}
+        defaultPrice={defaultPrice}
+        allSelected={allSelected}
+        sortColumn={sortColumn}
+        sortDirection={sortDirection}
+        onToggleSort={toggleSort}
+        onToggleSelectAll={toggleSelectAll}
+        onToggleRow={toggleRow}
+        onUpdateRowShares={updateRowShares}
+        onUpdateRowPrice={updateRowPrice}
+      />
 
       {/* Aggregate Returns Summary Card */}
       <div className="flex flex-col gap-2 rounded-none border border-success/30 bg-success/10 p-3.5">
         <div className="flex items-center justify-between border-b border-success/20 pb-2 text-xs">
           <span className="flex items-center gap-1.5 font-semibold text-foreground">
             <TrendingUp className="text-success" />
-            Selected: {selectedCount} Accounts
+            Selected: {summary.selectedCount} Accounts
           </span>
           <span className="font-bold text-foreground">
-            Total Gross: {formatCurrency(totalGrossProfit)}
+            Total Gross: {formatCurrency(summary.totalGrossProfit)}
           </span>
         </div>
 
@@ -664,7 +226,7 @@ function BulkSaleForm({
               Your Realized Net Profit
             </span>
             <span className="text-base font-bold text-success">
-              {formatCurrency(totalYourProfit)}
+              {formatCurrency(summary.totalYourProfit)}
             </span>
           </div>
 
@@ -673,7 +235,7 @@ function BulkSaleForm({
               Total Profit Shared (Others)
             </span>
             <span className="text-base font-bold text-warning-foreground">
-              {formatCurrency(totalProfitShared)}
+              {formatCurrency(summary.totalProfitShared)}
             </span>
           </div>
         </div>
@@ -692,7 +254,7 @@ function BulkSaleForm({
         </Button>
         <Button
           type="submit"
-          disabled={loading || selectedCount === 0}
+          disabled={loading || summary.selectedCount === 0}
           size="sm"
           className="rounded-none text-xs"
         >
@@ -702,7 +264,7 @@ function BulkSaleForm({
           ) : (
             <>
               <Check data-icon="inline-start" />
-              Commit Sales ({selectedCount})
+              Commit Sales ({summary.selectedCount})
             </>
           )}
         </Button>

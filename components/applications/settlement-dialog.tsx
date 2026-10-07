@@ -1,15 +1,11 @@
 "use client"
 
-import { useState, useMemo, useId } from "react"
+import { useId } from "react"
 import {
   MessageSquare,
   Copy,
   Check,
   Landmark,
-  CheckCheck,
-  CheckCircle2,
-  Clock,
-  RotateCcw,
 } from "lucide-react"
 import {
   Dialog,
@@ -20,7 +16,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -38,16 +33,9 @@ import {
   InputGroupButton,
 } from "@/components/ui/input-group"
 import { Card, CardContent } from "@/components/ui/card"
-import { toast } from "@/components/ui/toast"
-import { useAuth } from "@/lib/firebase/auth-context"
-import { updateApplicationSettlement } from "@/lib/firebase/applications"
-import {
-  calculateSettlement,
-  formatWhatsAppSettlementMessage,
-  getWhatsAppShareUrl,
-} from "@/lib/utils/whatsapp-settlement"
-import { formatCurrency, formatDate } from "@/lib/utils/ipo"
-import { cn } from "@/lib/utils"
+import { useSettlementForm } from "@/hooks/use-settlement-form"
+import { SettlementFinancialCards } from "@/components/applications/settlement-financial-cards"
+import { SettlementStatusBanner } from "@/components/applications/settlement-status-banner"
 import type { Ipo, Application, ApplicationAccount, BankAccount } from "@/types"
 
 interface SettlementDialogProps {
@@ -121,295 +109,57 @@ function SettlementForm({
   onSuccess?: () => void
   onClose: () => void
 }) {
-  const { user } = useAuth()
-  const defaultSender =
-    user?.displayName?.trim() ||
-    (user?.email ? user.email.split("@")[0] : "") ||
-    "Me"
-
   const senderNameInputId = useId()
   const phoneInputId = useId()
   const upiInputId = useId()
   const salePriceInputId = useId()
   const noteInputId = useId()
 
-  // Default bank account from application
-  const initialBank =
-    bankAccounts.find((b) => b.id === application.bankAccountId) ||
-    bankAccounts.find((b) => Boolean(b.upiId)) ||
-    bankAccounts[0]
-
-  const [selectedBankId, setSelectedBankId] = useState<string>(
-    initialBank?.id || ""
-  )
-  const [customUpiId, setCustomUpiId] = useState<string>(
-    initialBank?.upiId || ""
-  )
-  const [senderName, setSenderName] = useState<string>(defaultSender)
-  const [salePrice, setSalePrice] = useState<string>(
-    application.salePrice !== undefined && application.salePrice !== null
-      ? String(application.salePrice)
-      : String(ipo.currentPrice || ipo.listingPrice || ipo.issuePrice)
-  )
-  const [phone, setPhone] = useState<string>(account?.phoneNumber ?? "")
-  const [note, setNote] = useState<string>("")
-  const [copied, setCopied] = useState(false)
-  const [copiedUpi, setCopiedUpi] = useState(false)
-  const [settlementStatus, setSettlementStatus] = useState<
-    "pending" | "settled"
-  >(application.settlementStatus || "pending")
-  const [updatingSettlement, setUpdatingSettlement] = useState(false)
-
-  // Switch bank account handler
-  const handleBankChange = (bankId: string) => {
-    setSelectedBankId(bankId)
-    const selected = bankAccounts.find((b) => b.id === bankId)
-    if (selected?.upiId) {
-      setCustomUpiId(selected.upiId)
-    }
-  }
-
-  const selectedBank = bankAccounts.find((b) => b.id === selectedBankId)
-
-  // Calculate settlement
-  const calculation = useMemo(() => {
-    return calculateSettlement({
-      application,
-      ipo,
-      account,
-      bankAccount: selectedBank,
-      customSalePrice: Number(salePrice) || ipo.issuePrice,
-      customUpiId,
-      senderName,
-    })
-  }, [
+  const {
+    selectedBankId,
+    customUpiId,
+    setCustomUpiId,
+    senderName,
+    setSenderName,
+    salePrice,
+    setSalePrice,
+    phone,
+    setPhone,
+    note,
+    setNote,
+    copied,
+    copiedUpi,
+    settlementStatus,
+    updatingSettlement,
+    handleBankChange,
+    calculation,
+    message,
+    handleCopyMessage,
+    handleCopyUpi,
+    handleSendWhatsApp,
+    handleToggleSettlement,
+  } = useSettlementForm({
     application,
     ipo,
     account,
-    selectedBank,
-    salePrice,
-    customUpiId,
-    senderName,
-  ])
-
-  // Formatted message
-  const message = useMemo(() => {
-    return formatWhatsAppSettlementMessage(calculation, note)
-  }, [calculation, note])
-
-  const handleCopyMessage = async () => {
-    try {
-      await navigator.clipboard.writeText(message)
-      setCopied(true)
-      toast.add({
-        title: "Settlement message copied!",
-        description: "Ready to paste in WhatsApp.",
-        type: "success",
-      })
-      setTimeout(() => setCopied(false), 2500)
-    } catch {
-      toast.add({
-        title: "Failed to copy",
-        type: "error",
-      })
-    }
-  }
-
-  const handleCopyUpi = async () => {
-    if (!calculation.upiId) return
-    try {
-      await navigator.clipboard.writeText(calculation.upiId)
-      setCopiedUpi(true)
-      toast.add({
-        title: "UPI ID copied!",
-        type: "success",
-      })
-      setTimeout(() => setCopiedUpi(false), 2000)
-    } catch {
-      toast.add({
-        title: "Failed to copy UPI ID",
-        type: "error",
-      })
-    }
-  }
-
-  const handleSendWhatsApp = () => {
-    const url = getWhatsAppShareUrl(message, phone)
-    window.open(url, "_blank", "noopener,noreferrer")
-  }
-
-  const handleToggleSettlement = async () => {
-    if (!user) return
-    const nextStatus = settlementStatus === "settled" ? "pending" : "settled"
-    setUpdatingSettlement(true)
-    try {
-      await updateApplicationSettlement(user.uid, application.id, nextStatus)
-      setSettlementStatus(nextStatus)
-      toast.add({
-        title:
-          nextStatus === "settled"
-            ? "Payment Marked as Settled"
-            : "Reverted to Pending Payment",
-        description:
-          nextStatus === "settled"
-            ? `Recorded payment receipt of ${formatCurrency(calculation.amountToSendUser)}.`
-            : "Settlement marked as pending receipt.",
-        type: "success",
-      })
-      onSuccess?.()
-    } catch (err) {
-      console.error(err)
-      toast.add({
-        title: "Failed to update settlement status",
-        type: "error",
-      })
-    } finally {
-      setUpdatingSettlement(false)
-    }
-  }
+    bankAccounts,
+    onSuccess,
+  })
 
   return (
     <div className="flex flex-col gap-4">
       {/* Financial Breakdown Highlights */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Card
-          size="sm"
-          className="rounded-none border-border/60 bg-muted/20 px-3 py-2.5"
-        >
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-              Capital Applied
-            </span>
-            <span className="font-mono text-sm font-bold text-foreground">
-              {formatCurrency(calculation.investedAmount)}
-            </span>
-            <span className="text-[10px] text-muted-foreground">
-              {calculation.allottedShares} sh @ ₹{calculation.issuePrice}
-            </span>
-          </div>
-        </Card>
-
-        <Card
-          size="sm"
-          className="rounded-none border-border/60 bg-muted/20 px-3 py-2.5"
-        >
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-              Sale Proceeds
-            </span>
-            <span className="font-mono text-sm font-bold text-foreground">
-              {formatCurrency(calculation.saleProceeds)}
-            </span>
-            <span className="text-[10px] text-muted-foreground">
-              In owner&apos;s bank @ ₹{calculation.salePrice}
-            </span>
-          </div>
-        </Card>
-
-        <Card
-          size="sm"
-          className="rounded-none border-border/60 bg-muted/20 px-3 py-2.5"
-        >
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-              Owner Keeps ({calculation.profitSharingPercentage}%)
-            </span>
-            <span className="font-mono text-sm font-bold text-warning-foreground">
-              {formatCurrency(calculation.ownerProfitShare)}
-            </span>
-            <span className="text-[10px] text-muted-foreground">
-              Profit retention
-            </span>
-          </div>
-        </Card>
-
-        <Card
-          size="sm"
-          className="rounded-none border-2 border-success/60 bg-success/10 px-3 py-2.5"
-        >
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-bold tracking-wider text-success uppercase">
-              Transfer to You
-            </span>
-            <span className="font-mono text-base font-extrabold text-success">
-              {formatCurrency(calculation.amountToSendUser)}
-            </span>
-            <span className="text-[10px] font-medium text-success/90">
-              Capital + Your Profit
-            </span>
-          </div>
-        </Card>
-      </div>
+      <SettlementFinancialCards calculation={calculation} />
 
       {/* Settlement Payment Status Banner */}
-      <div
-        className={cn(
-          "flex flex-col gap-3 rounded-none border p-3 text-xs sm:flex-row sm:items-center sm:justify-between",
-          settlementStatus === "settled"
-            ? "border-success/40 bg-success/10"
-            : "border-warning/40 bg-warning/10"
-        )}
-      >
-        <div className="flex min-w-0 items-center gap-2.5">
-          <div
-            className={cn(
-              "flex size-8 shrink-0 items-center justify-center rounded-none border",
-              settlementStatus === "settled"
-                ? "border-success/50 bg-success/20 text-success"
-                : "border-warning/50 bg-warning/20 text-warning-foreground"
-            )}
-          >
-            {settlementStatus === "settled" ? (
-              <CheckCheck className="size-4" />
-            ) : (
-              <Clock className="size-4" />
-            )}
-          </div>
-          <div className="flex min-w-0 flex-col">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-bold text-foreground">Payment Status:</span>
-              <Badge
-                variant={settlementStatus === "settled" ? "success" : "warning"}
-                className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider uppercase"
-              >
-                {settlementStatus === "settled"
-                  ? "Settled / Payment Received"
-                  : "Pending Payment"}
-              </Badge>
-            </div>
-            <span className="truncate text-[11px] text-muted-foreground">
-              {settlementStatus === "settled"
-                ? `Net payout of ${formatCurrency(calculation.amountToSendUser)} marked as received${
-                    application.settledAt
-                      ? ` on ${formatDate(application.settledAt)}`
-                      : ""
-                  }.`
-                : `Awaiting ${formatCurrency(calculation.amountToSendUser)} transfer from ${account?.name || "account owner"}.`}
-            </span>
-          </div>
-        </div>
-
-        <Button
-          type="button"
-          size="sm"
-          variant={settlementStatus === "settled" ? "outline" : "default"}
-          disabled={updatingSettlement}
-          onClick={handleToggleSettlement}
-          className="h-8 shrink-0 rounded-none text-xs font-semibold"
-        >
-          {settlementStatus === "settled" ? (
-            <>
-              <RotateCcw className="size-3" data-icon="inline-start" />
-              Revert to Pending
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="size-3" data-icon="inline-start" />
-              Mark as Settled
-            </>
-          )}
-        </Button>
-      </div>
+      <SettlementStatusBanner
+        settlementStatus={settlementStatus}
+        amountToSendUser={calculation.amountToSendUser}
+        settledAt={application.settledAt}
+        accountName={account?.name}
+        updatingSettlement={updatingSettlement}
+        onToggleSettlement={handleToggleSettlement}
+      />
 
       {/* Configuration Controls */}
       <Card className="rounded-none border-border/60 bg-card p-3.5">
