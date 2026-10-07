@@ -95,9 +95,7 @@ export function AccountMetadataCard({ user }: AccountMetadataCardProps) {
           </div>
 
           <div className="flex flex-col gap-1 rounded-none border border-border/70 p-2.5">
-            <span className="text-[11px] text-muted-foreground">
-              Joined On
-            </span>
+            <span className="text-[11px] text-muted-foreground">Joined On</span>
             <div className="flex items-center gap-1.5 pt-0.5">
               <Calendar className="size-3.5 text-muted-foreground" />
               <span className="font-mono text-[11px] text-foreground">

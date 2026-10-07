@@ -149,9 +149,7 @@ export function IpoList({
                 </AlertDialogDescription>
               </div>
             </div>
-            {Boolean(
-              ipoToDelete && (appCountMap.get(ipoToDelete.id) || 0) > 0
-            )}
+            {Boolean(ipoToDelete && (appCountMap.get(ipoToDelete.id) || 0) > 0)}
           </AlertDialogHeader>
           {Boolean(
             ipoToDelete && (appCountMap.get(ipoToDelete.id) || 0) > 0

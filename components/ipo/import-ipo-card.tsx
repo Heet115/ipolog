@@ -250,15 +250,14 @@ export function ImportIpoCard({
             <span className="font-mono text-xs font-bold text-foreground">
               {ipo.issueSize ? `₹${ipo.issueSize} Cr` : "TBA"}
             </span>
-            {ipo.totalSubscription &&
-              parseFloat(ipo.totalSubscription) > 0 && (
-                <Badge
-                  variant="outline"
-                  className="rounded-none border-primary/40 bg-primary/10 px-1.5 py-0 font-mono text-[10px] font-bold text-primary"
-                >
-                  {ipo.totalSubscription}x
-                </Badge>
-              )}
+            {ipo.totalSubscription && parseFloat(ipo.totalSubscription) > 0 && (
+              <Badge
+                variant="outline"
+                className="rounded-none border-primary/40 bg-primary/10 px-1.5 py-0 font-mono text-[10px] font-bold text-primary"
+              >
+                {ipo.totalSubscription}x
+              </Badge>
+            )}
           </div>
         </div>
 

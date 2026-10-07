@@ -14,7 +14,12 @@ import {
   calculateAccountMoneySummary,
   type AccountMoneySummary,
 } from "@/lib/calculations/financials"
-import type { ApplicationAccount, Application, Ipo, AccountSortOption } from "@/types"
+import type {
+  ApplicationAccount,
+  Application,
+  Ipo,
+  AccountSortOption,
+} from "@/types"
 
 interface UseAccountListProps {
   accounts: ApplicationAccount[]

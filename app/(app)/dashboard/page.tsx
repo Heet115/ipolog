@@ -66,8 +66,8 @@ export default function DashboardPage() {
           </EmptyMedia>
           <EmptyTitle>Failed to load portfolio data</EmptyTitle>
           <EmptyDescription>
-            Something went wrong while connecting to your portfolio. Please check
-            your connection and try again.
+            Something went wrong while connecting to your portfolio. Please
+            check your connection and try again.
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>

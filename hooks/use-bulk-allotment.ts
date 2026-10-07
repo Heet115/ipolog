@@ -21,12 +21,7 @@ export interface RowState {
 }
 
 export type AllotmentSortColumn =
-  | "account"
-  | "bank"
-  | "applied"
-  | "status"
-  | "invested"
-  | null
+  "account" | "bank" | "applied" | "status" | "invested" | null
 
 interface UseBulkAllotmentProps {
   userId: string
@@ -329,7 +324,8 @@ export function useBulkAllotment({
             applicationId: app.id,
             status: state.status,
             allottedLots: state.status === "pending" ? undefined : finalLots,
-            allottedShares: state.status === "pending" ? undefined : finalShares,
+            allottedShares:
+              state.status === "pending" ? undefined : finalShares,
           }
         })
 

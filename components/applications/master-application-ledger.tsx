@@ -97,7 +97,15 @@ export function MasterApplicationLedger({
         onSettle: setAppToSettle,
         onDeleteRequest: setAppToDelete,
       }),
-    [ipoMap, accountMap, bankMap, setAppToEdit, setAppToSell, setAppToSettle, setAppToDelete]
+    [
+      ipoMap,
+      accountMap,
+      bankMap,
+      setAppToEdit,
+      setAppToSell,
+      setAppToSettle,
+      setAppToDelete,
+    ]
   )
 
   return (

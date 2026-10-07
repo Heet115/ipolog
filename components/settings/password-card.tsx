@@ -136,8 +136,8 @@ export function PasswordCard({ user, changePassword }: PasswordCardProps) {
             <AlertTitle>Authenticated via Google Single Sign-On</AlertTitle>
             <AlertDescription>
               Your account is secured with Google OAuth. Your password and
-              two-factor authentication are managed directly inside your
-              Google Account security dashboard.
+              two-factor authentication are managed directly inside your Google
+              Account security dashboard.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -163,13 +163,9 @@ export function PasswordCard({ user, changePassword }: PasswordCardProps) {
                   <InputGroupAddon align="inline-end">
                     <InputGroupButton
                       size="icon-xs"
-                      onClick={() =>
-                        setShowCurrentPassword((prev) => !prev)
-                      }
+                      onClick={() => setShowCurrentPassword((prev) => !prev)}
                       aria-label={
-                        showCurrentPassword
-                          ? "Hide password"
-                          : "Show password"
+                        showCurrentPassword ? "Hide password" : "Show password"
                       }
                     >
                       {showCurrentPassword ? (
@@ -239,13 +235,9 @@ export function PasswordCard({ user, changePassword }: PasswordCardProps) {
                   <InputGroupAddon align="inline-end">
                     <InputGroupButton
                       size="icon-xs"
-                      onClick={() =>
-                        setShowConfirmPassword((prev) => !prev)
-                      }
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
                       aria-label={
-                        showConfirmPassword
-                          ? "Hide password"
-                          : "Show password"
+                        showConfirmPassword ? "Hide password" : "Show password"
                       }
                     >
                       {showConfirmPassword ? (

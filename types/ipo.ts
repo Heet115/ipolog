@@ -82,4 +82,3 @@ export const IPO_SORT_LABELS: Record<IpoSortOption, string> = {
   created_desc: "Recently Added",
   created_asc: "Oldest First",
 }
-

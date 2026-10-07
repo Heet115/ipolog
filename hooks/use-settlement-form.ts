@@ -172,7 +172,13 @@ export function useSettlementForm({
     } finally {
       setUpdatingSettlement(false)
     }
-  }, [user, settlementStatus, application.id, calculation.amountToSendUser, onSuccess])
+  }, [
+    user,
+    settlementStatus,
+    application.id,
+    calculation.amountToSendUser,
+    onSuccess,
+  ])
 
   return {
     selectedBankId,

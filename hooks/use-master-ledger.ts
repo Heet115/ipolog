@@ -297,7 +297,8 @@ export function useMasterLedger({
         console.error("Bulk status update failed:", err)
         toast.add({
           title: "Update failed",
-          description: "Failed to update application statuses. Please try again.",
+          description:
+            "Failed to update application statuses. Please try again.",
           type: "error",
         })
       } finally {

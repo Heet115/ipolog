@@ -88,11 +88,7 @@ export function CheckAllotmentRegistrarBar({
         {portalUrl ? (
           <Button
             render={
-              <a
-                href={portalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              />
+              <a href={portalUrl} target="_blank" rel="noopener noreferrer" />
             }
             size="sm"
             nativeButton={false}

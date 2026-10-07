@@ -30,8 +30,8 @@ export function DashboardAsbaAlert({
             <p className="text-xs text-muted-foreground">
               Blocked UPI mandates exceed available balance in{" "}
               {exceededWarnings.length} bank account
-              {exceededWarnings.length > 1 ? "s" : ""}. Please replenish
-              funds to prevent application rejections.
+              {exceededWarnings.length > 1 ? "s" : ""}. Please replenish funds
+              to prevent application rejections.
             </p>
           </div>
         </div>

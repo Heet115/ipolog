@@ -19,7 +19,8 @@ import type {
   ApplicationStatus,
 } from "@/types"
 
-export type AllotmentStatusFilter = "all" | "pending" | "allotted" | "not_allotted"
+export type AllotmentStatusFilter =
+  "all" | "pending" | "allotted" | "not_allotted"
 
 interface UseCheckAllotmentProps {
   userId: string

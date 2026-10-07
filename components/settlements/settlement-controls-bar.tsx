@@ -39,18 +39,18 @@ export function SettlementControlsBar({
           type="button"
           onClick={() => setStatusTab("all")}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+            "flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors",
             statusTab === "all"
-              ? "bg-foreground text-background font-semibold"
+              ? "bg-foreground font-semibold text-background"
               : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           )}
         >
           <span>All Partners</span>
           <span
             className={cn(
-              "px-1.5 py-0.2 font-mono text-[10px]",
+              "py-0.2 px-1.5 font-mono text-[10px]",
               statusTab === "all"
-                ? "bg-background/25 text-background font-bold"
+                ? "bg-background/25 font-bold text-background"
                 : "bg-muted text-muted-foreground"
             )}
           >
@@ -62,24 +62,26 @@ export function SettlementControlsBar({
           type="button"
           onClick={() => setStatusTab("pending")}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+            "flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors",
             statusTab === "pending"
-              ? "bg-foreground text-background font-semibold"
+              ? "bg-foreground font-semibold text-background"
               : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           )}
         >
           <span
             className={cn(
               "size-1.5 shrink-0",
-              pendingPartnersCount > 0 ? "bg-amber-500 animate-pulse" : "bg-muted-foreground"
+              pendingPartnersCount > 0
+                ? "animate-pulse bg-amber-500"
+                : "bg-muted-foreground"
             )}
           />
           <span>Needs Settlement</span>
           <span
             className={cn(
-              "px-1.5 py-0.2 font-mono text-[10px]",
+              "py-0.2 px-1.5 font-mono text-[10px]",
               statusTab === "pending"
-                ? "bg-background/25 text-background font-bold"
+                ? "bg-background/25 font-bold text-background"
                 : "bg-muted text-muted-foreground"
             )}
           >
@@ -91,18 +93,18 @@ export function SettlementControlsBar({
           type="button"
           onClick={() => setStatusTab("settled")}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors shrink-0",
+            "flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors",
             statusTab === "settled"
-              ? "bg-foreground text-background font-semibold"
+              ? "bg-foreground font-semibold text-background"
               : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
           )}
         >
           <span>Fully Settled</span>
           <span
             className={cn(
-              "px-1.5 py-0.2 font-mono text-[10px]",
+              "py-0.2 px-1.5 font-mono text-[10px]",
               statusTab === "settled"
-                ? "bg-background/25 text-background font-bold"
+                ? "bg-background/25 font-bold text-background"
                 : "bg-muted text-muted-foreground"
             )}
           >
@@ -157,8 +159,8 @@ export function SettlementControlsBar({
           )}
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[11px] font-mono text-muted-foreground">
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="font-mono text-[11px] text-muted-foreground">
             Showing {filteredCount} partner{filteredCount === 1 ? "" : "s"}
           </span>
         </div>

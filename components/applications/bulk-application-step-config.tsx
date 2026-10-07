@@ -76,7 +76,10 @@ interface BulkApplicationStepConfigProps {
     exceededAmount: number
   }>
   hasDuplicatePanIssues: boolean
-  intraBatchDuplicatePans: Array<{ pan: string; accounts: ApplicationAccount[] }>
+  intraBatchDuplicatePans: Array<{
+    pan: string
+    accounts: ApplicationAccount[]
+  }>
   selectedPanConflictsWithApplied: Array<{
     selectedAccount: ApplicationAccount
     appliedAccount: ApplicationAccount
@@ -85,7 +88,9 @@ interface BulkApplicationStepConfigProps {
   problematicAccountIds: Set<string>
   sortColumn: BulkAppSortColumn
   sortDirection: "asc" | "desc"
-  onToggleSort: (col: "account" | "bank" | "category" | "lots" | "amount") => void
+  onToggleSort: (
+    col: "account" | "bank" | "category" | "lots" | "amount"
+  ) => void
   onUpdateIndividualBank: (accountId: string, bankId: string) => void
   onUpdateIndividualCategory: (
     accountId: string,
@@ -336,7 +341,7 @@ export function BulkApplicationStepConfig({
         <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow className="border-b border-border/70 bg-muted/30">
-              <TableHead className="h-9 min-w-[170px] select-none text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+              <TableHead className="h-9 min-w-[170px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 <button
                   type="button"
                   onClick={() => onToggleSort("account")}
@@ -354,7 +359,7 @@ export function BulkApplicationStepConfig({
                   )}
                 </button>
               </TableHead>
-              <TableHead className="h-9 min-w-[180px] select-none text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+              <TableHead className="h-9 min-w-[180px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 <button
                   type="button"
                   onClick={() => onToggleSort("bank")}
@@ -372,7 +377,7 @@ export function BulkApplicationStepConfig({
                   )}
                 </button>
               </TableHead>
-              <TableHead className="h-9 w-[120px] select-none text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+              <TableHead className="h-9 w-[120px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 <button
                   type="button"
                   onClick={() => onToggleSort("category")}
@@ -390,7 +395,7 @@ export function BulkApplicationStepConfig({
                   )}
                 </button>
               </TableHead>
-              <TableHead className="h-9 w-[80px] select-none text-center text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+              <TableHead className="h-9 w-[80px] text-center text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 <button
                   type="button"
                   onClick={() => onToggleSort("lots")}
@@ -408,10 +413,10 @@ export function BulkApplicationStepConfig({
                   )}
                 </button>
               </TableHead>
-              <TableHead className="h-9 select-none text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+              <TableHead className="h-9 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 Shares
               </TableHead>
-              <TableHead className="h-9 select-none text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+              <TableHead className="h-9 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
                 <button
                   type="button"
                   onClick={() => onToggleSort("amount")}

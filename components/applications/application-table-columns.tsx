@@ -29,12 +29,7 @@ import {
   CATEGORY_CONFIG,
   inferCategoryFromAmount,
 } from "@/lib/calculations/categories"
-import type {
-  Ipo,
-  Application,
-  ApplicationAccount,
-  BankAccount,
-} from "@/types"
+import type { Ipo, Application, ApplicationAccount, BankAccount } from "@/types"
 
 export interface ApplicationTableColumnsOptions {
   accountMap: Map<string, ApplicationAccount>
@@ -333,9 +328,7 @@ export function getApplicationTableColumns({
                     </DropdownMenuItem>
                   )}
                   {app.status === "sold" && account?.type === "other" && (
-                    <DropdownMenuItem
-                      onClick={() => onToggleSettlement(app)}
-                    >
+                    <DropdownMenuItem onClick={() => onToggleSettlement(app)}>
                       {app.settlementStatus === "settled" ? (
                         <>
                           <RotateCcw data-icon="inline-start" />

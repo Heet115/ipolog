@@ -331,7 +331,9 @@ export function useApplicationTable({
 
   const handleToggleSelect = useCallback((appId: string) => {
     setSelectedIds((prev) =>
-      prev.includes(appId) ? prev.filter((id) => id !== appId) : [...prev, appId]
+      prev.includes(appId)
+        ? prev.filter((id) => id !== appId)
+        : [...prev, appId]
     )
   }, [])
 

@@ -99,12 +99,17 @@ export function SettlementCenter({
             </EmptyMedia>
             <EmptyTitle>No partner settlements yet</EmptyTitle>
             <EmptyDescription>
-              Settlement ledgers appear automatically when applications belonging to Partner
-              Accounts are marked as sold with realized profit or loss.
+              Settlement ledgers appear automatically when applications
+              belonging to Partner Accounts are marked as sold with realized
+              profit or loss.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button variant="outline" size="sm" render={<Link href="/applications" />}>
+            <Button
+              variant="outline"
+              size="sm"
+              render={<Link href="/applications" />}
+            >
               View Applications Ledger
             </Button>
           </EmptyContent>

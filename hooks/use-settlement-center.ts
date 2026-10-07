@@ -31,9 +31,13 @@ export function useSettlementCenter({
 }: UseSettlementCenterProps) {
   const [statusTab, setStatusTab] = useState<SettlementFilterTab>("all")
   const [search, setSearch] = useState("")
-  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null)
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(
+    null
+  )
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [expandedAccounts, setExpandedAccounts] = useState<Record<string, boolean>>({})
+  const [expandedAccounts, setExpandedAccounts] = useState<
+    Record<string, boolean>
+  >({})
   const [updatingId, setUpdatingId] = useState<string | null>(null)
 
   // Map Lookups
@@ -108,12 +112,16 @@ export function useSettlementCenter({
 
   // Handle single settlement toggle
   const handleToggleSingleSettlement = async (item: AccountReceivableItem) => {
-    const nextStatus = item.settlementStatus === "settled" ? "pending" : "settled"
+    const nextStatus =
+      item.settlementStatus === "settled" ? "pending" : "settled"
     setUpdatingId(item.applicationId)
     try {
       await updateApplicationSettlement(userId, item.applicationId, nextStatus)
       toast.add({
-        title: nextStatus === "settled" ? "Marked as settled" : "Reverted to pending",
+        title:
+          nextStatus === "settled"
+            ? "Marked as settled"
+            : "Reverted to pending",
         type: "success",
       })
       onRefresh()
@@ -219,7 +227,9 @@ export function useSettlementCenter({
     }))
   }, [selectedPartnerEntry])
 
-  const pendingPartnersCount = partnerAccountsList.filter((p) => p.unsettledCount > 0).length
+  const pendingPartnersCount = partnerAccountsList.filter(
+    (p) => p.unsettledCount > 0
+  ).length
   const settledPartnersCount = partnerAccountsList.filter(
     (p) => p.unsettledCount === 0 && p.settledCount > 0
   ).length

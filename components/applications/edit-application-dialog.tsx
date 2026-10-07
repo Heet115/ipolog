@@ -9,12 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { EditApplicationForm } from "@/components/applications/edit-application-form"
-import type {
-  Ipo,
-  Application,
-  ApplicationAccount,
-  BankAccount,
-} from "@/types"
+import type { Ipo, Application, ApplicationAccount, BankAccount } from "@/types"
 
 interface EditApplicationDialogProps {
   open: boolean

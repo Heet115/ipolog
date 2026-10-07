@@ -45,4 +45,3 @@ export const BANK_SORT_LABELS: Record<BankSortOption, string> = {
   created_desc: "Recently Added",
   created_asc: "Oldest First",
 }
-

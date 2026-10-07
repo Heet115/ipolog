@@ -89,10 +89,18 @@ export function DashboardRecentApps({
               <TableHeader>
                 <TableRow className="bg-muted/40">
                   <TableHead className="text-xs">Account / IPO</TableHead>
-                  <TableHead className="w-20 text-center text-xs">Lots</TableHead>
-                  <TableHead className="text-right text-xs">Bid Amount</TableHead>
-                  <TableHead className="w-24 text-center text-xs">Status</TableHead>
-                  <TableHead className="text-right text-xs">Your Profit</TableHead>
+                  <TableHead className="w-20 text-center text-xs">
+                    Lots
+                  </TableHead>
+                  <TableHead className="text-right text-xs">
+                    Bid Amount
+                  </TableHead>
+                  <TableHead className="w-24 text-center text-xs">
+                    Status
+                  </TableHead>
+                  <TableHead className="text-right text-xs">
+                    Your Profit
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

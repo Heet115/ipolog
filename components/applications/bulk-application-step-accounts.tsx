@@ -1,12 +1,6 @@
 "use client"
 
-import {
-  ArrowRight,
-  Eye,
-  EyeOff,
-  AlertTriangle,
-  Info,
-} from "lucide-react"
+import { ArrowRight, Eye, EyeOff, AlertTriangle, Info } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,14 +15,8 @@ import {
 import { DialogFooter } from "@/components/ui/dialog"
 import { formatCurrency } from "@/lib/utils/ipo"
 import { cn } from "@/lib/utils"
-import {
-  CATEGORY_CONFIG,
-  ALL_CATEGORIES,
-} from "@/lib/calculations/categories"
-import type {
-  ApplicationAccount,
-  ApplicationCategory,
-} from "@/types"
+import { CATEGORY_CONFIG, ALL_CATEGORIES } from "@/lib/calculations/categories"
+import type { ApplicationAccount, ApplicationCategory } from "@/types"
 
 interface BulkApplicationStepAccountsProps {
   activeAccounts: ApplicationAccount[]
@@ -40,7 +28,10 @@ interface BulkApplicationStepAccountsProps {
   hideAppliedAccounts: boolean
   onToggleHideAppliedAccounts: () => void
   hasDuplicatePanIssues: boolean
-  intraBatchDuplicatePans: Array<{ pan: string; accounts: ApplicationAccount[] }>
+  intraBatchDuplicatePans: Array<{
+    pan: string
+    accounts: ApplicationAccount[]
+  }>
   selectedPanConflictsWithApplied: Array<{
     selectedAccount: ApplicationAccount
     appliedAccount: ApplicationAccount
@@ -107,8 +98,8 @@ export function BulkApplicationStepAccounts({
           <Info className="size-4 text-primary" />
           <AlertDescription className="flex items-center justify-between gap-2">
             <span>
-              <strong>All Accounts Applied:</strong> Every active account in your
-              portfolio already has an application recorded for this IPO.
+              <strong>All Accounts Applied:</strong> Every active account in
+              your portfolio already has an application recorded for this IPO.
             </span>
             <Button
               type="button"
@@ -167,7 +158,8 @@ export function BulkApplicationStepAccounts({
                 <span key={d.pan}>
                   • Accounts{" "}
                   <strong>{d.accounts.map((a) => a.name).join(" & ")}</strong>{" "}
-                  share PAN <span className="font-mono font-bold">{d.pan}</span>.
+                  share PAN <span className="font-mono font-bold">{d.pan}</span>
+                  .
                 </span>
               ))}
               {selectedPanConflictsWithApplied.map((c) => (
@@ -179,8 +171,9 @@ export function BulkApplicationStepAccounts({
               ))}
             </div>
             <span className="text-[10px] text-amber-800/80 dark:text-amber-300/80">
-              In Indian IPOs, registrars automatically reject duplicate applications
-              submitted with identical PAN numbers for the same IPO.
+              In Indian IPOs, registrars automatically reject duplicate
+              applications submitted with identical PAN numbers for the same
+              IPO.
             </span>
           </AlertDescription>
         </Alert>
@@ -277,11 +270,11 @@ export function BulkApplicationStepAccounts({
               : myAccounts.length}
             )
           </span>
-          {myAccounts.filter((a) => !appliedAccountIds.has(a.id)).length === 0 &&
-          hideAppliedAccounts ? (
-            <div className="py-2 text-[11px] italic text-muted-foreground">
-              All {myAccounts.length} self accounts have already applied for this
-              IPO.
+          {myAccounts.filter((a) => !appliedAccountIds.has(a.id)).length ===
+            0 && hideAppliedAccounts ? (
+            <div className="py-2 text-[11px] text-muted-foreground italic">
+              All {myAccounts.length} self accounts have already applied for
+              this IPO.
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -373,15 +366,17 @@ export function BulkApplicationStepAccounts({
                         <span>Dup PAN</span>
                       </Badge>
                     )}
-                    {!alreadyApplied && !isDuplicatePanSelected && panWarning && (
-                      <Badge
-                        variant="outline"
-                        className="shrink-0 border-amber-500/40 bg-amber-500/10 font-mono text-[9px] text-amber-600 dark:text-amber-400"
-                        title={`Shares PAN ${account.pan} with ${panWarning.appliedAccountName} (already applied)`}
-                      >
-                        ⚠️ PAN Applied
-                      </Badge>
-                    )}
+                    {!alreadyApplied &&
+                      !isDuplicatePanSelected &&
+                      panWarning && (
+                        <Badge
+                          variant="outline"
+                          className="shrink-0 border-amber-500/40 bg-amber-500/10 font-mono text-[9px] text-amber-600 dark:text-amber-400"
+                          title={`Shares PAN ${account.pan} with ${panWarning.appliedAccountName} (already applied)`}
+                        >
+                          ⚠️ PAN Applied
+                        </Badge>
+                      )}
                   </label>
                 )
               })}
@@ -400,11 +395,11 @@ export function BulkApplicationStepAccounts({
               : otherAccounts.length}
             )
           </span>
-          {otherAccounts.filter((a) => !appliedAccountIds.has(a.id)).length === 0 &&
-          hideAppliedAccounts ? (
-            <div className="py-2 text-[11px] italic text-muted-foreground">
-              All {otherAccounts.length} partner accounts have already applied for
-              this IPO.
+          {otherAccounts.filter((a) => !appliedAccountIds.has(a.id)).length ===
+            0 && hideAppliedAccounts ? (
+            <div className="py-2 text-[11px] text-muted-foreground italic">
+              All {otherAccounts.length} partner accounts have already applied
+              for this IPO.
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -496,15 +491,17 @@ export function BulkApplicationStepAccounts({
                         <span>Dup PAN</span>
                       </Badge>
                     )}
-                    {!alreadyApplied && !isDuplicatePanSelected && panWarning && (
-                      <Badge
-                        variant="outline"
-                        className="shrink-0 border-amber-500/40 bg-amber-500/10 font-mono text-[9px] text-amber-600 dark:text-amber-400"
-                        title={`Shares PAN ${account.pan} with ${panWarning.appliedAccountName} (already applied)`}
-                      >
-                        ⚠️ PAN Applied
-                      </Badge>
-                    )}
+                    {!alreadyApplied &&
+                      !isDuplicatePanSelected &&
+                      panWarning && (
+                        <Badge
+                          variant="outline"
+                          className="shrink-0 border-amber-500/40 bg-amber-500/10 font-mono text-[9px] text-amber-600 dark:text-amber-400"
+                          title={`Shares PAN ${account.pan} with ${panWarning.appliedAccountName} (already applied)`}
+                        >
+                          ⚠️ PAN Applied
+                        </Badge>
+                      )}
                   </label>
                 )
               })}

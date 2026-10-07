@@ -97,7 +97,8 @@ export function ApplicationTableDialogs({
               </div>
               <div>
                 <AlertDialogTitle className="text-base font-bold">
-                  Delete {selectedCount} Application{selectedCount > 1 ? "s" : ""}?
+                  Delete {selectedCount} Application
+                  {selectedCount > 1 ? "s" : ""}?
                 </AlertDialogTitle>
                 <AlertDialogDescription className="text-xs">
                   This action will permanently delete the selected application

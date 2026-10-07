@@ -15,12 +15,7 @@ import {
   calculateReceivablesSummary,
 } from "@/lib/calculations/financials"
 import { getIpoStatus } from "@/lib/utils/ipo"
-import type {
-  Ipo,
-  Application,
-  ApplicationAccount,
-  BankAccount,
-} from "@/types"
+import type { Ipo, Application, ApplicationAccount, BankAccount } from "@/types"
 
 export function useDashboardData() {
   const { user } = useAuth()

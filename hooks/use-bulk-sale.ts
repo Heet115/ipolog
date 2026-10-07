@@ -17,7 +17,8 @@ export interface SaleRowState {
   sharesSold: number
 }
 
-export type BulkSaleSortColumn = "account" | "shares" | "price" | "profit" | null
+export type BulkSaleSortColumn =
+  "account" | "shares" | "price" | "profit" | null
 
 interface UseBulkSaleProps {
   userId: string
@@ -309,7 +310,9 @@ export function useBulkSale({
         }
 
         if (items.length === 0) {
-          throw new Error("Please select at least one account to record a sale.")
+          throw new Error(
+            "Please select at least one account to record a sale."
+          )
         }
 
         await recordSaleBulk(userId, items)

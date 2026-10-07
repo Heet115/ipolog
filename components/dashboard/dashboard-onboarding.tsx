@@ -20,8 +20,8 @@ export function DashboardOnboarding() {
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
             Track multi-account applications, automate ASBA bank capital limits,
-            monitor allotment outcomes, and calculate profit-sharing splits in one
-            unified command center.
+            monitor allotment outcomes, and calculate profit-sharing splits in
+            one unified command center.
           </p>
         </div>
       </div>

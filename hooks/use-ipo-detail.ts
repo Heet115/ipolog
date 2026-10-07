@@ -224,12 +224,14 @@ export function useIpoDetail() {
     [applications, ipo]
   )
   const profitSummary = useMemo(
-    () => (ipo ? calculateIpoProfitSummary(applications, ipo, accountsMap) : null),
+    () =>
+      ipo ? calculateIpoProfitSummary(applications, ipo, accountsMap) : null,
     [applications, ipo, accountsMap]
   )
 
   const hasAllottedApps = useMemo(
-    () => applications.some((a) => a.status === "allotted" || a.status === "sold"),
+    () =>
+      applications.some((a) => a.status === "allotted" || a.status === "sold"),
     [applications]
   )
 

@@ -45,7 +45,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           }
         >
           <AppSidebar variant="inset" />
-          <SidebarInset id="main-content" tabIndex={-1} className="outline-none">
+          <SidebarInset
+            id="main-content"
+            tabIndex={-1}
+            className="outline-none"
+          >
             <Header />
             <div className="flex flex-1 flex-col gap-4 p-4 sm:p-6 lg:gap-6 lg:p-8">
               {children}

@@ -24,7 +24,7 @@ export function SettlementMetricsStrip({
       {/* Pending Receivables */}
       <div className="flex flex-col justify-between gap-2 border border-border/70 bg-card p-3.5 shadow-xs">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
             Pending Receivables
           </span>
           <div className="flex size-6 items-center justify-center rounded-none bg-warning/15 text-warning-foreground">
@@ -36,8 +36,10 @@ export function SettlementMetricsStrip({
             {formatCurrency(summary.totalPendingReceivables)}
           </span>
           <span className="text-[11px] text-muted-foreground">
-            {summary.pendingCount} allotment{summary.pendingCount === 1 ? "" : "s"} across{" "}
-            {summary.pendingAccountsCount} partner{summary.pendingAccountsCount === 1 ? "" : "s"}
+            {summary.pendingCount} allotment
+            {summary.pendingCount === 1 ? "" : "s"} across{" "}
+            {summary.pendingAccountsCount} partner
+            {summary.pendingAccountsCount === 1 ? "" : "s"}
           </span>
         </div>
       </div>
@@ -45,7 +47,7 @@ export function SettlementMetricsStrip({
       {/* Settled Capital */}
       <div className="flex flex-col justify-between gap-2 border border-border/70 bg-card p-3.5 shadow-xs">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
             Settled Capital
           </span>
           <div className="flex size-6 items-center justify-center rounded-none bg-success/15 text-success">
@@ -57,7 +59,8 @@ export function SettlementMetricsStrip({
             {formatCurrency(summary.totalSettledReceivables)}
           </span>
           <span className="text-[11px] text-muted-foreground">
-            {summary.settledCount} allotment{summary.settledCount === 1 ? "" : "s"} realized & settled
+            {summary.settledCount} allotment
+            {summary.settledCount === 1 ? "" : "s"} realized & settled
           </span>
         </div>
       </div>
@@ -65,7 +68,7 @@ export function SettlementMetricsStrip({
       {/* Partner Profit Retained */}
       <div className="flex flex-col justify-between gap-2 border border-border/70 bg-card p-3.5 shadow-xs">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
             Partner Profit Kept
           </span>
           <div className="flex size-6 items-center justify-center rounded-none bg-primary/15 text-primary">
@@ -85,7 +88,7 @@ export function SettlementMetricsStrip({
       {/* Active Partner Accounts */}
       <div className="flex flex-col justify-between gap-2 border border-border/70 bg-card p-3.5 shadow-xs">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
             Partner Accounts
           </span>
           <div className="flex size-6 items-center justify-center rounded-none bg-muted text-muted-foreground">

@@ -1,13 +1,6 @@
 "use client"
 
-import {
-  Check,
-  Copy,
-  CheckCircle2,
-  XCircle,
-  User,
-  Users,
-} from "lucide-react"
+import { Check, Copy, CheckCircle2, XCircle, User, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils/ipo"
@@ -63,10 +56,7 @@ export function CheckAllotmentItem({
             ) : (
               <Users className="size-3 shrink-0 text-muted-foreground" />
             )}
-            <span
-              className="truncate"
-              title={account?.name || "Unknown"}
-            >
+            <span className="truncate" title={account?.name || "Unknown"}>
               {account?.name || "Unknown"}
             </span>
           </div>
@@ -82,11 +72,7 @@ export function CheckAllotmentItem({
 
           <Badge
             variant={
-              isAllotted
-                ? "success"
-                : isNotAllotted
-                  ? "secondary"
-                  : "outline"
+              isAllotted ? "success" : isNotAllotted ? "secondary" : "outline"
             }
             className={cn(
               "shrink-0 px-1.5 py-0 text-[9px] font-semibold capitalize",
@@ -196,9 +182,7 @@ export function CheckAllotmentItem({
           variant={isAllotted ? "default" : "outline"}
           size="xs"
           disabled={
-            updatingAppId === app.id ||
-            isBulkUpdating ||
-            app.status === "sold"
+            updatingAppId === app.id || isBulkUpdating || app.status === "sold"
           }
           onClick={() => onUpdateStatus(app.id, "allotted")}
           className={cn(
@@ -217,9 +201,7 @@ export function CheckAllotmentItem({
           variant={isNotAllotted ? "secondary" : "outline"}
           size="xs"
           disabled={
-            updatingAppId === app.id ||
-            isBulkUpdating ||
-            app.status === "sold"
+            updatingAppId === app.id || isBulkUpdating || app.status === "sold"
           }
           onClick={() => onUpdateStatus(app.id, "not_allotted")}
           className={cn(
@@ -229,7 +211,10 @@ export function CheckAllotmentItem({
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          <XCircle className="size-3 text-muted-foreground" data-icon="inline-start" />
+          <XCircle
+            className="size-3 text-muted-foreground"
+            data-icon="inline-start"
+          />
           Not Allotted
         </Button>
       </div>

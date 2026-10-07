@@ -18,7 +18,10 @@ interface BulkApplicationPanModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   loading: boolean
-  intraBatchDuplicatePans: Array<{ pan: string; accounts: ApplicationAccount[] }>
+  intraBatchDuplicatePans: Array<{
+    pan: string
+    accounts: ApplicationAccount[]
+  }>
   selectedPanConflictsWithApplied: Array<{
     selectedAccount: ApplicationAccount
     appliedAccount: ApplicationAccount
@@ -67,8 +70,8 @@ export function BulkApplicationPanModal({
               ))}
             </div>
             In Indian IPOs, SEBI regulations mandate that duplicate bids under
-            the same PAN will be rejected by the exchange registrar. Are you sure
-            you want to proceed anyway?
+            the same PAN will be rejected by the exchange registrar. Are you
+            sure you want to proceed anyway?
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="border-t border-border/60 pt-3">

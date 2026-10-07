@@ -14,12 +14,7 @@ import { useBulkApplication } from "@/hooks/use-bulk-application"
 import { BulkApplicationStepAccounts } from "@/components/applications/bulk-application-step-accounts"
 import { BulkApplicationStepConfig } from "@/components/applications/bulk-application-step-config"
 import { BulkApplicationPanModal } from "@/components/applications/bulk-application-pan-modal"
-import type {
-  Ipo,
-  ApplicationAccount,
-  BankAccount,
-  Application,
-} from "@/types"
+import type { Ipo, ApplicationAccount, BankAccount, Application } from "@/types"
 
 interface BulkApplicationDialogProps {
   open: boolean

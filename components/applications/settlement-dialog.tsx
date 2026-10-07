@@ -1,12 +1,7 @@
 "use client"
 
 import { useId } from "react"
-import {
-  MessageSquare,
-  Copy,
-  Check,
-  Landmark,
-} from "lucide-react"
+import { MessageSquare, Copy, Check, Landmark } from "lucide-react"
 import {
   Dialog,
   DialogContent,

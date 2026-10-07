@@ -269,7 +269,10 @@ export function formatMultiIpoWhatsAppSettlementMessage(
     `₹${Math.abs(Math.round(n)).toLocaleString("en-IN")}`
   const funderName = senderName && senderName.trim() ? senderName.trim() : "Me"
 
-  const totalInvested = items.reduce((sum, item) => sum + item.investedAmount, 0)
+  const totalInvested = items.reduce(
+    (sum, item) => sum + item.investedAmount,
+    0
+  )
   const totalProceeds = items.reduce((sum, item) => sum + item.saleProceeds, 0)
   const totalGrossProfit = totalProceeds - totalInvested
   const totalOwnerProfit = items.reduce(

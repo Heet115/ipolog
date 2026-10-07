@@ -48,4 +48,3 @@ export const ACCOUNT_SORT_LABELS: Record<AccountSortOption, string> = {
   created_desc: "Recently Added",
   created_asc: "Oldest First",
 }
-

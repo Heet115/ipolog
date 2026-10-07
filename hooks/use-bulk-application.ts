@@ -8,9 +8,7 @@ import {
   calculateSharesApplied,
   calculateAmountApplied,
 } from "@/lib/calculations/financials"
-import {
-  getCategoryMinLots,
-} from "@/lib/calculations/categories"
+import { getCategoryMinLots } from "@/lib/calculations/categories"
 import type {
   Ipo,
   ApplicationAccount,
@@ -27,12 +25,7 @@ export interface AccountConfig {
 }
 
 export type BulkAppSortColumn =
-  | "account"
-  | "bank"
-  | "category"
-  | "lots"
-  | "amount"
-  | null
+  "account" | "bank" | "category" | "lots" | "amount" | null
 
 interface UseBulkApplicationProps {
   userId: string
@@ -175,7 +168,10 @@ export function useBulkApplication({
   ])
 
   // Normalize PAN helper (uppercase, trimmed)
-  const normalizePan = useCallback((pan?: string) => pan?.trim().toUpperCase() || "", [])
+  const normalizePan = useCallback(
+    (pan?: string) => pan?.trim().toUpperCase() || "",
+    []
+  )
 
   // Map of normalized PAN -> Account for all accounts that have ALREADY applied for this IPO
   const appliedPanMap = useMemo(() => {
@@ -207,7 +203,8 @@ export function useBulkApplication({
 
   // Intra-batch duplicate PAN groups (where 2 or more selected accounts share the same PAN)
   const intraBatchDuplicatePans = useMemo(() => {
-    const duplicates: Array<{ pan: string; accounts: ApplicationAccount[] }> = []
+    const duplicates: Array<{ pan: string; accounts: ApplicationAccount[] }> =
+      []
     selectedPansMap.forEach((accs, pan) => {
       if (accs.length > 1) {
         duplicates.push({ pan, accounts: accs })
@@ -335,7 +332,13 @@ export function useBulkApplication({
       })
       return merged
     })
-  }, [myAccounts, appliedAccountIds, defaultBankId, defaultLots, defaultCategory])
+  }, [
+    myAccounts,
+    appliedAccountIds,
+    defaultBankId,
+    defaultLots,
+    defaultCategory,
+  ])
 
   const selectAllOther = useCallback(() => {
     const available = otherAccounts
@@ -360,7 +363,13 @@ export function useBulkApplication({
       })
       return merged
     })
-  }, [otherAccounts, appliedAccountIds, defaultBankId, defaultLots, defaultCategory])
+  }, [
+    otherAccounts,
+    appliedAccountIds,
+    defaultBankId,
+    defaultLots,
+    defaultCategory,
+  ])
 
   const selectAllAvailable = useCallback(() => {
     const available = activeAccounts
@@ -382,7 +391,13 @@ export function useBulkApplication({
       }
       return nextCfg
     })
-  }, [activeAccounts, appliedAccountIds, defaultBankId, defaultLots, defaultCategory])
+  }, [
+    activeAccounts,
+    appliedAccountIds,
+    defaultBankId,
+    defaultLots,
+    defaultCategory,
+  ])
 
   const deselectAll = useCallback(() => {
     setSelectedAccountIds([])
@@ -392,7 +407,11 @@ export function useBulkApplication({
   const applyGlobalCategory = useCallback(
     (cat: ApplicationCategory) => {
       setDefaultCategory(cat)
-      const recommendedLots = getCategoryMinLots(cat, ipo.lotSize, ipo.issuePrice)
+      const recommendedLots = getCategoryMinLots(
+        cat,
+        ipo.lotSize,
+        ipo.issuePrice
+      )
       setDefaultLots(recommendedLots)
 
       setAccountConfigs((prev) => {
@@ -532,7 +551,9 @@ export function useBulkApplication({
       )
 
       if (sanitizedAccountIds.length === 0) {
-        throw new Error("All selected accounts have already applied for this IPO.")
+        throw new Error(
+          "All selected accounts have already applied for this IPO."
+        )
       }
 
       for (const id of sanitizedAccountIds) {

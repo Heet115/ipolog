@@ -90,7 +90,10 @@ export function ApplicationTableBulkBar({
           <DropdownMenuContent align="center" className="w-48 text-xs">
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => onBulkStatus("allotted")}>
-                <CheckCircle2 data-icon="inline-start" className="text-success" />
+                <CheckCircle2
+                  data-icon="inline-start"
+                  className="text-success"
+                />
                 Mark Allotted
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onBulkStatus("not_allotted")}>

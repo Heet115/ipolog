@@ -89,7 +89,8 @@ export default function SettlementsPage() {
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">
-            Consolidated partner receivables, multi-IPO WhatsApp statements, and 1-click settlements
+            Consolidated partner receivables, multi-IPO WhatsApp statements, and
+            1-click settlements
           </p>
         </div>
 
@@ -121,7 +122,8 @@ export default function SettlementsPage() {
               Failed to load settlements
             </h3>
             <p className="text-xs text-muted-foreground">
-              An error occurred while loading settlement accounts and applications.
+              An error occurred while loading settlement accounts and
+              applications.
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={handleManualRefresh}>

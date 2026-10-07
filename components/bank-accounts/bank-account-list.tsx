@@ -62,7 +62,13 @@ export function BankAccountList({
     handleDelete,
     bankSummaryMap,
     exceededWarnings,
-  } = useBankAccountList({ bankAccounts, applications, ipos, userId, onRefresh })
+  } = useBankAccountList({
+    bankAccounts,
+    applications,
+    ipos,
+    userId,
+    onRefresh,
+  })
 
   return (
     <div className="flex flex-col gap-6">
@@ -161,7 +167,7 @@ export function BankAccountList({
             </div>
             {Boolean(
               bankToDelete &&
-                applications.some((a) => a.bankAccountId === bankToDelete.id)
+              applications.some((a) => a.bankAccountId === bankToDelete.id)
             ) && (
               <p className="mt-2 rounded-none border border-warning/40 bg-warning/10 p-2.5 text-xs font-medium text-warning-foreground">
                 ⚠️ Warning: This bank account has{" "}
@@ -185,7 +191,7 @@ export function BankAccountList({
             </AlertDialogCancel>
             {Boolean(
               bankToDelete &&
-                applications.some((a) => a.bankAccountId === bankToDelete.id)
+              applications.some((a) => a.bankAccountId === bankToDelete.id)
             ) && (
               <Button
                 variant="outline"

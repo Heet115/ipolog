@@ -18,10 +18,7 @@ import {
 } from "@/lib/calculations/financials"
 import { formatCurrency } from "@/lib/utils/ipo"
 import type { Ipo, Application, ApplicationAccount } from "@/types"
-import type {
-  SaleRowState,
-  BulkSaleSortColumn,
-} from "@/hooks/use-bulk-sale"
+import type { SaleRowState, BulkSaleSortColumn } from "@/hooks/use-bulk-sale"
 
 interface BulkSaleTableProps {
   sortedEligibleApps: Application[]
@@ -67,7 +64,7 @@ export function BulkSaleTable({
                 }
               />
             </TableHead>
-            <TableHead className="h-9 min-w-[160px] select-none text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <TableHead className="h-9 min-w-[160px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
               <button
                 type="button"
                 onClick={() => onToggleSort("account")}
@@ -85,7 +82,7 @@ export function BulkSaleTable({
                 )}
               </button>
             </TableHead>
-            <TableHead className="h-9 w-[100px] select-none text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <TableHead className="h-9 w-[100px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
               <button
                 type="button"
                 onClick={() => onToggleSort("shares")}
@@ -103,7 +100,7 @@ export function BulkSaleTable({
                 )}
               </button>
             </TableHead>
-            <TableHead className="h-9 w-[110px] select-none text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <TableHead className="h-9 w-[110px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
               <button
                 type="button"
                 onClick={() => onToggleSort("price")}
@@ -121,7 +118,7 @@ export function BulkSaleTable({
                 )}
               </button>
             </TableHead>
-            <TableHead className="h-9 select-none text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <TableHead className="h-9 text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
               <button
                 type="button"
                 onClick={() => onToggleSort("profit")}
@@ -184,9 +181,7 @@ export function BulkSaleTable({
                       {account?.name}
                     </span>
                     <Badge
-                      variant={
-                        account?.type === "my" ? "secondary" : "default"
-                      }
+                      variant={account?.type === "my" ? "secondary" : "default"}
                       className="shrink-0 px-1 py-0 text-[9px] font-normal"
                     >
                       {account?.type === "my"

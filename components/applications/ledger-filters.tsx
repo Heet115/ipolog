@@ -255,8 +255,7 @@ export function LedgerFilters({
                   {(val) => {
                     if (!val || val === "all") return "All Categories"
                     return (
-                      CATEGORY_CONFIG[val as ApplicationCategory]?.label ||
-                      val
+                      CATEGORY_CONFIG[val as ApplicationCategory]?.label || val
                     )
                   }}
                 </SelectValue>

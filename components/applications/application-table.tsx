@@ -30,12 +30,7 @@ import {
   CATEGORY_CONFIG,
   inferCategoryFromAmount,
 } from "@/lib/calculations/categories"
-import type {
-  Ipo,
-  Application,
-  ApplicationAccount,
-  BankAccount,
-} from "@/types"
+import type { Ipo, Application, ApplicationAccount, BankAccount } from "@/types"
 
 interface ApplicationTableProps {
   applications: Application[]
@@ -129,8 +124,7 @@ export function ApplicationTable({
       (app: Application) => bankMap.get(app.bankAccountId)?.nickname,
       (app: Application) => bankMap.get(app.bankAccountId)?.last4,
       (app: Application) => {
-        const cat =
-          app.category || inferCategoryFromAmount(app.amountApplied)
+        const cat = app.category || inferCategoryFromAmount(app.amountApplied)
         return `${CATEGORY_CONFIG[cat]?.label} ${CATEGORY_CONFIG[cat]?.shortLabel}`
       },
       (app: Application) => app.notes,

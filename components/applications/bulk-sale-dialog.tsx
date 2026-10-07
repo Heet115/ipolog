@@ -1,10 +1,6 @@
 "use client"
 
-import {
-  Check,
-  Sparkles,
-  TrendingUp,
-} from "lucide-react"
+import { Check, Sparkles, TrendingUp } from "lucide-react"
 import {
   Dialog,
   DialogContent,

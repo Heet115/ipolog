@@ -117,7 +117,10 @@ export function MultiIpoSettlementDialog({
   }
 
   const handleOpenWhatsApp = () => {
-    const url = getWhatsAppShareUrl(whatsappMessage, account.phoneNumber || undefined)
+    const url = getWhatsAppShareUrl(
+      whatsappMessage,
+      account.phoneNumber || undefined
+    )
     window.open(url, "_blank", "noopener,noreferrer")
   }
 
@@ -158,13 +161,14 @@ export function MultiIpoSettlementDialog({
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
                 Consolidated statement for {account.name} across{" "}
-                {filteredItems.length} IPO allotment{filteredItems.length > 1 ? "s" : ""}
+                {filteredItems.length} IPO allotment
+                {filteredItems.length > 1 ? "s" : ""}
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 p-5 max-h-[65vh] overflow-y-auto">
+        <div className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto p-5">
           {/* Partner & Transfer Summary Strip */}
           <div className="flex flex-wrap items-center justify-between gap-3 border border-border/80 bg-muted/20 p-3">
             <div className="flex flex-col gap-0.5">
@@ -173,7 +177,10 @@ export function MultiIpoSettlementDialog({
                   {account.name}
                 </span>
                 {account.profitSharePercent ? (
-                  <Badge variant="outline" className="px-1.5 py-0 font-mono text-[10px]">
+                  <Badge
+                    variant="outline"
+                    className="px-1.5 py-0 font-mono text-[10px]"
+                  >
                     {account.profitSharePercent}% Share
                   </Badge>
                 ) : null}
@@ -187,7 +194,7 @@ export function MultiIpoSettlementDialog({
             </div>
 
             <div className="flex flex-col items-end gap-0.5">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              <span className="text-[10px] tracking-wider text-muted-foreground uppercase">
                 Total to Transfer
               </span>
               <span className="font-mono text-base font-bold text-primary">
@@ -206,18 +213,20 @@ export function MultiIpoSettlementDialog({
                   onClick={() => setFilterMode("pending")}
                   className={`flex-1 py-1 text-xs font-medium transition-all ${
                     filterMode === "pending"
-                      ? "bg-foreground text-background font-semibold"
+                      ? "bg-foreground font-semibold text-background"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  Pending Only ({items.filter((i) => i.settlementStatus !== "settled").length})
+                  Pending Only (
+                  {items.filter((i) => i.settlementStatus !== "settled").length}
+                  )
                 </button>
                 <button
                   type="button"
                   onClick={() => setFilterMode("all")}
                   className={`flex-1 py-1 text-xs font-medium transition-all ${
                     filterMode === "all"
-                      ? "bg-foreground text-background font-semibold"
+                      ? "bg-foreground font-semibold text-background"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -248,7 +257,7 @@ export function MultiIpoSettlementDialog({
                 value={upiId}
                 onChange={(e) => setUpiId(e.target.value)}
                 placeholder="e.g. name@oksbi"
-                className="h-8 text-xs font-mono"
+                className="h-8 font-mono text-xs"
               />
             </div>
 
@@ -269,7 +278,7 @@ export function MultiIpoSettlementDialog({
           {/* Formatted Message Preview */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                 Message Preview
               </Label>
               <Button
@@ -292,7 +301,7 @@ export function MultiIpoSettlementDialog({
                 )}
               </Button>
             </div>
-            <pre className="max-h-56 overflow-y-auto whitespace-pre-wrap rounded-none border border-border bg-muted/30 p-3 font-mono text-[11px] leading-relaxed text-foreground select-all">
+            <pre className="max-h-56 overflow-y-auto rounded-none border border-border bg-muted/30 p-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-foreground select-all">
               {whatsappMessage}
             </pre>
           </div>
@@ -341,7 +350,9 @@ export function MultiIpoSettlementDialog({
                 className="text-xs"
               >
                 <CheckCircle2 data-icon="inline-start" />
-                {settling ? "Settling..." : `Settle & Send (${pendingAppIds.length})`}
+                {settling
+                  ? "Settling..."
+                  : `Settle & Send (${pendingAppIds.length})`}
               </Button>
             )}
           </div>

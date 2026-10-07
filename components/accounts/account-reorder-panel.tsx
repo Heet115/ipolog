@@ -166,8 +166,7 @@ export function AccountReorderPanel({
           const isFirst = index === 0
           const isLast = index === reorderedAccounts.length - 1
           const isDragging = draggedIndex === index
-          const isDragOver =
-            dragOverIndex === index && draggedIndex !== index
+          const isDragOver = dragOverIndex === index && draggedIndex !== index
 
           return (
             <div
@@ -267,9 +266,7 @@ export function AccountReorderPanel({
                       {account.name}
                     </span>
                     <Badge
-                      variant={
-                        account.type === "my" ? "secondary" : "default"
-                      }
+                      variant={account.type === "my" ? "secondary" : "default"}
                       className="px-1 py-0 text-[9px] font-normal"
                     >
                       {account.type === "my"

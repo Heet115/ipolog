@@ -44,7 +44,13 @@ export function SettlementPartnerCard({
   onRevertAll,
   onToggleSingleSettlement,
 }: SettlementPartnerCardProps) {
-  const { account, pendingAmount, settledAmount, unsettledCount, applications: appItems } = entry
+  const {
+    account,
+    pendingAmount,
+    settledAmount,
+    unsettledCount,
+    applications: appItems,
+  } = entry
   const isFullySettled = unsettledCount === 0
 
   const initials =
@@ -59,7 +65,7 @@ export function SettlementPartnerCard({
   return (
     <Card
       className={cn(
-        "relative flex flex-col rounded-none border transition-all shadow-xs",
+        "relative flex flex-col rounded-none border shadow-xs transition-all",
         isFullySettled
           ? "border-border/60 bg-card/60"
           : "border-warning/40 bg-card hover:border-warning/70"
@@ -106,7 +112,8 @@ export function SettlementPartnerCard({
                     variant="warning"
                     className="rounded-none px-1.5 py-0 text-[10px]"
                   >
-                    {unsettledCount} IPO{unsettledCount === 1 ? "" : "s"} Pending
+                    {unsettledCount} IPO{unsettledCount === 1 ? "" : "s"}{" "}
+                    Pending
                   </Badge>
                 )}
               </div>
@@ -137,7 +144,7 @@ export function SettlementPartnerCard({
           {/* Headline Amounts & Actions */}
           <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
             <div className="flex flex-col items-start sm:items-end">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
                 {isFullySettled ? "Total Settled" : "Amount to Transfer"}
               </span>
               <div className="flex items-baseline gap-1.5">
@@ -147,7 +154,9 @@ export function SettlementPartnerCard({
                     isFullySettled ? "text-success" : "text-warning-foreground"
                   )}
                 >
-                  {formatCurrency(isFullySettled ? settledAmount : pendingAmount)}
+                  {formatCurrency(
+                    isFullySettled ? settledAmount : pendingAmount
+                  )}
                 </span>
                 {!isFullySettled && settledAmount > 0 && (
                   <span className="text-[11px] text-muted-foreground">
@@ -179,7 +188,11 @@ export function SettlementPartnerCard({
                   className="h-8 gap-1.5 rounded-none text-xs"
                 >
                   <CheckCircle2 className="size-3.5" />
-                  <span>{isActionLoading ? "Settling..." : `Settle All (${unsettledCount})`}</span>
+                  <span>
+                    {isActionLoading
+                      ? "Settling..."
+                      : `Settle All (${unsettledCount})`}
+                  </span>
                 </Button>
               ) : (
                 <Button
@@ -215,7 +228,7 @@ export function SettlementPartnerCard({
         {/* Expanded Itemized Allotments Table */}
         {isExpanded && (
           <div className="mt-2 flex flex-col gap-2 border-t border-border/70 pt-3">
-            <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <div className="flex items-center justify-between text-xs font-semibold tracking-wider text-muted-foreground uppercase">
               <span>Allotment Breakdown ({appItems.length} IPOs)</span>
             </div>
 
@@ -251,7 +264,7 @@ export function SettlementPartnerCard({
                         <td className="p-2.5 font-sans font-bold text-foreground">
                           <Link
                             href={`/ipos/${item.ipoId}`}
-                            className="hover:underline flex items-center gap-1 text-xs"
+                            className="flex items-center gap-1 text-xs hover:underline"
                           >
                             <span>{item.ipoName}</span>
                             <ExternalLink className="size-2.5 text-muted-foreground" />
@@ -301,7 +314,7 @@ export function SettlementPartnerCard({
                               "h-6 px-2 text-[10px]",
                               isItemSettled
                                 ? "text-muted-foreground hover:text-foreground"
-                                : "text-primary hover:text-primary/80 font-semibold"
+                                : "font-semibold text-primary hover:text-primary/80"
                             )}
                           >
                             {isSingleUpdating

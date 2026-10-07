@@ -1,10 +1,6 @@
 "use client"
 
-import {
-  CheckCircle2,
-  Search,
-  X,
-} from "lucide-react"
+import { CheckCircle2, Search, X } from "lucide-react"
 import {
   Dialog,
   DialogContent,

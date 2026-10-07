@@ -27,10 +27,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Spinner } from "@/components/ui/spinner"
 import { formatCurrency, formatBankAccount } from "@/lib/utils/ipo"
-import {
-  CATEGORY_CONFIG,
-  ALL_CATEGORIES,
-} from "@/lib/calculations/categories"
+import { CATEGORY_CONFIG, ALL_CATEGORIES } from "@/lib/calculations/categories"
 import { useEditApplicationForm } from "@/hooks/use-edit-application-form"
 import type {
   Ipo,

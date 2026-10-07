@@ -28,10 +28,7 @@ import type {
   BankAccount,
   ApplicationStatus,
 } from "@/types"
-import type {
-  RowState,
-  AllotmentSortColumn,
-} from "@/hooks/use-bulk-allotment"
+import type { RowState, AllotmentSortColumn } from "@/hooks/use-bulk-allotment"
 
 interface BulkAllotmentTableProps {
   sortedApps: Application[]
@@ -65,7 +62,7 @@ export function BulkAllotmentTable({
       <Table className="min-w-[650px]">
         <TableHeader>
           <TableRow className="border-b border-border/70 bg-muted/30">
-            <TableHead className="h-9 min-w-[170px] select-none text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <TableHead className="h-9 min-w-[170px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
               <button
                 type="button"
                 onClick={() => onToggleSort("account")}
@@ -84,7 +81,7 @@ export function BulkAllotmentTable({
               </button>
             </TableHead>
 
-            <TableHead className="h-9 min-w-[150px] select-none text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <TableHead className="h-9 min-w-[150px] text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
               <button
                 type="button"
                 onClick={() => onToggleSort("bank")}
@@ -103,7 +100,7 @@ export function BulkAllotmentTable({
               </button>
             </TableHead>
 
-            <TableHead className="h-9 min-w-[110px] select-none text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <TableHead className="h-9 min-w-[110px] text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
               <button
                 type="button"
                 onClick={() => onToggleSort("applied")}
@@ -122,7 +119,7 @@ export function BulkAllotmentTable({
               </button>
             </TableHead>
 
-            <TableHead className="h-9 min-w-[220px] select-none text-center text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <TableHead className="h-9 min-w-[220px] text-center text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
               <button
                 type="button"
                 onClick={() => onToggleSort("status")}
@@ -141,7 +138,7 @@ export function BulkAllotmentTable({
               </button>
             </TableHead>
 
-            <TableHead className="h-9 min-w-[130px] select-none text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+            <TableHead className="h-9 min-w-[130px] text-right text-xs font-semibold tracking-wider text-muted-foreground uppercase select-none">
               <button
                 type="button"
                 onClick={() => onToggleSort("invested")}
@@ -202,9 +199,7 @@ export function BulkAllotmentTable({
                       {account?.name || "Account"}
                     </span>
                     <Badge
-                      variant={
-                        account?.type === "my" ? "secondary" : "default"
-                      }
+                      variant={account?.type === "my" ? "secondary" : "default"}
                       className="shrink-0 px-1 py-0 text-[9px] font-normal"
                     >
                       {account?.type === "my"
@@ -266,7 +261,7 @@ export function BulkAllotmentTable({
                         onClick={() => onSetStatus(app.id, "not_allotted")}
                         className={`px-2 py-0.5 text-xs font-semibold transition-all ${
                           isNotAllotted
-                            ? "bg-destructive text-destructive-foreground"
+                            ? "text-destructive-foreground bg-destructive"
                             : "text-muted-foreground hover:text-foreground"
                         }`}
                       >

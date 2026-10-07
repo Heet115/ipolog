@@ -27,12 +27,7 @@ import { formatCurrency } from "@/lib/utils/ipo"
 import { useBulkAllotment } from "@/hooks/use-bulk-allotment"
 import { BulkAllotmentOverview } from "@/components/applications/bulk-allotment-overview"
 import { BulkAllotmentTable } from "@/components/applications/bulk-allotment-table"
-import type {
-  Ipo,
-  Application,
-  ApplicationAccount,
-  BankAccount,
-} from "@/types"
+import type { Ipo, Application, ApplicationAccount, BankAccount } from "@/types"
 
 interface BulkAllotmentDialogProps {
   open: boolean

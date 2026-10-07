@@ -278,7 +278,7 @@ export function AccountList({
             </div>
             {Boolean(
               accountToDelete &&
-                applications.some((a) => a.accountId === accountToDelete.id)
+              applications.some((a) => a.accountId === accountToDelete.id)
             ) && (
               <p className="mt-2 rounded-none border border-warning/40 bg-warning/10 p-2.5 text-xs font-medium text-warning-foreground">
                 ⚠️ Warning: This account has{" "}
@@ -303,7 +303,7 @@ export function AccountList({
             </AlertDialogCancel>
             {Boolean(
               accountToDelete &&
-                applications.some((a) => a.accountId === accountToDelete.id)
+              applications.some((a) => a.accountId === accountToDelete.id)
             ) && (
               <Button
                 variant="outline"

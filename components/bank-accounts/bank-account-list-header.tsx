@@ -15,10 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  BANK_SORT_LABELS,
-  type BankSortOption,
-} from "@/types/bank-account"
+import { BANK_SORT_LABELS, type BankSortOption } from "@/types/bank-account"
 
 interface BankAccountListHeaderProps {
   search: string
@@ -73,7 +70,9 @@ export function BankAccountListHeader({
         <div className="flex shrink-0 items-center">
           <Select
             value={sortBy}
-            onValueChange={(val) => val && onSortByChange(val as BankSortOption)}
+            onValueChange={(val) =>
+              val && onSortByChange(val as BankSortOption)
+            }
           >
             <SelectTrigger
               className="h-8 gap-1.5 rounded-none border border-border bg-background px-2 text-xs font-semibold"

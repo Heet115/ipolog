@@ -16,10 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  ACCOUNT_SORT_LABELS,
-  type AccountSortOption,
-} from "@/types/account"
+import { ACCOUNT_SORT_LABELS, type AccountSortOption } from "@/types/account"
 
 interface AccountListHeaderProps {
   search: string

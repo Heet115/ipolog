@@ -147,9 +147,7 @@ export function ProfileCard({ user, updateDisplayName }: ProfileCardProps) {
           <Button
             type="submit"
             size="xs"
-            disabled={
-              isSavingProfile || !hasNameChanged || !displayName.trim()
-            }
+            disabled={isSavingProfile || !hasNameChanged || !displayName.trim()}
           >
             {isSavingProfile ? (
               <>

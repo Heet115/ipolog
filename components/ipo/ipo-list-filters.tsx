@@ -72,7 +72,7 @@ export function IpoListFilters({
   return (
     <div className="flex flex-col gap-3">
       {/* Tier 1: Horizontal Scrollable Status Tabs */}
-      <div className="no-scrollbar -mx-4 flex items-center gap-1.5 overflow-x-auto border-b border-border/60 px-4 pb-2 sm:mx-0 sm:px-0">
+      <div className="-mx-4 no-scrollbar flex items-center gap-1.5 overflow-x-auto border-b border-border/60 px-4 pb-2 sm:mx-0 sm:px-0">
         <button
           type="button"
           onClick={() => onStatusFilterChange("all")}
@@ -201,24 +201,24 @@ export function IpoListFilters({
             type="button"
             onClick={() => onStatusFilterChange("archived")}
             className={cn(
-            "flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors",
-            statusFilter === "archived"
-              ? "bg-foreground text-background"
-              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-          )}
-        >
-          <span>Archived</span>
-          <span
-            className={cn(
-              "py-0.2 px-1.5 font-mono text-[10px]",
+              "flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors",
               statusFilter === "archived"
-                ? "bg-background/25 font-bold text-background"
-                : "bg-muted text-muted-foreground"
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             )}
           >
-            {statusCounts.archived}
-          </span>
-        </button>
+            <span>Archived</span>
+            <span
+              className={cn(
+                "py-0.2 px-1.5 font-mono text-[10px]",
+                statusFilter === "archived"
+                  ? "bg-background/25 font-bold text-background"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              {statusCounts.archived}
+            </span>
+          </button>
         )}
       </div>
 
@@ -257,7 +257,9 @@ export function IpoListFilters({
           {/* Type Filter Select */}
           <Select
             value={typeFilter}
-            onValueChange={(val) => val && onTypeFilterChange(val as TypeFilter)}
+            onValueChange={(val) =>
+              val && onTypeFilterChange(val as TypeFilter)
+            }
           >
             <SelectTrigger
               className="h-8 w-[130px] gap-1.5 rounded-none border border-border bg-background px-2.5 text-xs font-medium"

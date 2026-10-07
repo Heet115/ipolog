@@ -36,7 +36,8 @@ export function BankAccountAsbaAlert({ warnings }: BankAccountAsbaAlertProps) {
               variant="destructive"
               className="px-1.5 py-0 font-mono text-[9px] font-semibold"
             >
-              Over by {formatCurrency(w.exceededAmount)} ({w.utilizationPercent}%)
+              Over by {formatCurrency(w.exceededAmount)} ({w.utilizationPercent}
+              %)
             </Badge>
             {w.activeIpoNames.length > 0 && (
               <span className="text-[10px] text-muted-foreground">
