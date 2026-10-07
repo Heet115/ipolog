@@ -26,3 +26,23 @@ export function formatBankAccount(bank: BankAccount): string {
   }
   return parts.join(" ")
 }
+
+export type BankSortOption =
+  | "name_asc"
+  | "name_desc"
+  | "limit_desc"
+  | "limit_asc"
+  | "blocked_desc"
+  | "created_desc"
+  | "created_asc"
+
+export const BANK_SORT_LABELS: Record<BankSortOption, string> = {
+  name_asc: "Bank Name (A → Z)",
+  name_desc: "Bank Name (Z → A)",
+  limit_desc: "ASBA Limit (High → Low)",
+  limit_asc: "ASBA Limit (Low → High)",
+  blocked_desc: "Blocked Capital (High → Low)",
+  created_desc: "Recently Added",
+  created_asc: "Oldest First",
+}
+

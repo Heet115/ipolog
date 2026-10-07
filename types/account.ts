@@ -27,3 +27,25 @@ export interface ApplicationAccount {
   createdAt: Timestamp
   updatedAt: Timestamp
 }
+
+export type AccountSortOption =
+  | "custom"
+  | "name_asc"
+  | "name_desc"
+  | "type_my"
+  | "type_other"
+  | "profit_desc"
+  | "created_desc"
+  | "created_asc"
+
+export const ACCOUNT_SORT_LABELS: Record<AccountSortOption, string> = {
+  custom: "Custom (Priority)",
+  name_asc: "Name (A → Z)",
+  name_desc: "Name (Z → A)",
+  type_my: "My Accounts First",
+  type_other: "Partners First",
+  profit_desc: "Profit % (High → Low)",
+  created_desc: "Recently Added",
+  created_asc: "Oldest First",
+}
+

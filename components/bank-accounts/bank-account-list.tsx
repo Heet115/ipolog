@@ -1,40 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import {
-  MoreVertical,
-  Edit2,
-  Archive,
-  ArchiveRestore,
-  Trash2,
-  Landmark,
-  Search,
-  LayoutGrid,
-  Table as TableIcon,
-  AlertTriangle,
-  ArrowUpDown,
-} from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Landmark, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { useLocalStorage } from "@/hooks/use-local-storage"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   Empty,
   EmptyHeader,
@@ -53,19 +20,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { DataTable, type DataTableColumn } from "@/components/ui/data-table"
-import { toast } from "@/components/ui/toast"
-import { cn } from "@/lib/utils"
-import {
-  archiveBankAccount,
-  deleteBankAccount,
-} from "@/lib/firebase/bank-accounts"
-import {
-  calculateBankMoneySummary,
-  checkBankAsbaLimits,
-  type BankMoneySummary,
-} from "@/lib/calculations/financials"
-import { formatCurrency } from "@/lib/utils/ipo"
+import { useBankAccountList } from "@/hooks/use-bank-account-list"
+import { BankAccountCard } from "@/components/bank-accounts/bank-account-card"
+import { BankAccountListHeader } from "@/components/bank-accounts/bank-account-list-header"
+import { BankAccountAsbaAlert } from "@/components/bank-accounts/bank-account-asba-alert"
+import { BankAccountTableView } from "@/components/bank-accounts/bank-account-table-view"
 import type { BankAccount, Application, Ipo } from "@/types"
 
 interface BankAccountListProps {
@@ -77,25 +36,6 @@ interface BankAccountListProps {
   onRefresh: () => void
 }
 
-export type BankSortOption =
-  | "name_asc"
-  | "name_desc"
-  | "limit_desc"
-  | "limit_asc"
-  | "blocked_desc"
-  | "created_desc"
-  | "created_asc"
-
-export const BANK_SORT_LABELS: Record<BankSortOption, string> = {
-  name_asc: "Bank Name (A → Z)",
-  name_desc: "Bank Name (Z → A)",
-  limit_desc: "ASBA Limit (High → Low)",
-  limit_asc: "ASBA Limit (Low → High)",
-  blocked_desc: "Blocked Capital (High → Low)",
-  created_desc: "Recently Added",
-  created_asc: "Oldest First",
-}
-
 export function BankAccountList({
   bankAccounts,
   applications,
@@ -104,508 +44,55 @@ export function BankAccountList({
   onEdit,
   onRefresh,
 }: BankAccountListProps) {
-  const [search, setSearch] = useState("")
-  const [showArchived, setShowArchived] = useState(false)
-  const [viewMode, setViewMode] = useLocalStorage<"grid" | "table">(
-    "ipolog:bank-view-mode",
-    "grid"
-  )
-  const [sortBy, setSortBy] = useLocalStorage<BankSortOption>(
-    "ipolog:bank-grid-sort",
-    "name_asc"
-  )
-  const [bankToDelete, setBankToDelete] = useState<BankAccount | null>(null)
-  const [deleting, setDeleting] = useState(false)
-
-  const ipoMap = useMemo(() => new Map(ipos.map((i) => [i.id, i])), [ipos])
-
-  // Filter bank accounts
-  const filteredAccounts = bankAccounts.filter((bank) => {
-    if (!showArchived && bank.archived) return false
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      return (
-        bank.bankName.toLowerCase().includes(q) ||
-        (bank.nickname && bank.nickname.toLowerCase().includes(q)) ||
-        (bank.last4 && bank.last4.includes(q)) ||
-        (bank.notes && bank.notes.toLowerCase().includes(q))
-      )
-    }
-    return true
-  })
-
-  const archivedCount = bankAccounts.filter((bank) => bank.archived).length
-
-  const handleToggleArchive = async (bank: BankAccount) => {
-    try {
-      await archiveBankAccount(userId, bank.id, !bank.archived)
-      toast.add({
-        title: bank.archived
-          ? "Bank account restored"
-          : "Bank account archived",
-        type: "success",
-      })
-      onRefresh()
-    } catch (err) {
-      console.error(err)
-      toast.add({
-        title: "Failed to update bank account archive state",
-        type: "error",
-      })
-    }
-  }
-
-  const handleDelete = async () => {
-    if (!bankToDelete) return
-    setDeleting(true)
-    try {
-      await deleteBankAccount(userId, bankToDelete.id)
-      toast.add({
-        title: "Bank account deleted",
-        type: "success",
-      })
-      setBankToDelete(null)
-      onRefresh()
-    } catch (err) {
-      console.error(err)
-      toast.add({
-        title: "Failed to delete bank account",
-        type: "error",
-      })
-    } finally {
-      setDeleting(false)
-    }
-  }
-
-  // Precalculate summaries
-  const bankSummaryMap = useMemo(() => {
-    const map = new Map<string, BankMoneySummary>()
-    for (const b of filteredAccounts) {
-      map.set(b.id, calculateBankMoneySummary(b.id, applications, ipoMap))
-    }
-    return map
-  }, [filteredAccounts, applications, ipoMap])
-
-  // Sort accounts based on chosen sort option
-  const sortedAccounts = useMemo(() => {
-    const list = [...filteredAccounts]
-    switch (sortBy) {
-      case "name_asc":
-        return list.sort((a, b) =>
-          (a.nickname || a.bankName).localeCompare(b.nickname || b.bankName)
-        )
-      case "name_desc":
-        return list.sort((a, b) =>
-          (b.nickname || b.bankName).localeCompare(a.nickname || a.bankName)
-        )
-      case "limit_desc":
-        return list.sort((a, b) => (b.asbaLimit || 0) - (a.asbaLimit || 0))
-      case "limit_asc":
-        return list.sort((a, b) => (a.asbaLimit || 0) - (b.asbaLimit || 0))
-      case "blocked_desc":
-        return list.sort((a, b) => {
-          const blockedA = bankSummaryMap.get(a.id)?.blockedAmount || 0
-          const blockedB = bankSummaryMap.get(b.id)?.blockedAmount || 0
-          return blockedB - blockedA
-        })
-      case "created_desc":
-        return list.sort(
-          (a, b) =>
-            (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
-        )
-      case "created_asc":
-        return list.sort(
-          (a, b) =>
-            (a.createdAt?.toMillis?.() ?? 0) - (b.createdAt?.toMillis?.() ?? 0)
-        )
-      default:
-        return list
-    }
-  }, [filteredAccounts, sortBy, bankSummaryMap])
-
-  const asbaWarnings = checkBankAsbaLimits(bankAccounts, applications, ipoMap)
-  const exceededWarnings = asbaWarnings.filter((w) => w.isExceeded)
-
-  const tableColumns: DataTableColumn<BankAccount>[] = [
-    {
-      id: "bank",
-      header: "Bank Name / Nickname",
-      sortable: true,
-      sortFn: (a, b) =>
-        (a.nickname || a.bankName).localeCompare(b.nickname || b.bankName),
-      cell: (bank) => (
-        <div className="flex max-w-[220px] min-w-0 items-center gap-2">
-          <Landmark className="size-3.5 shrink-0 text-muted-foreground" />
-          <div className="flex min-w-0 flex-col">
-            <span
-              className="block truncate text-xs font-bold text-foreground"
-              title={bank.bankName}
-            >
-              {bank.bankName}
-            </span>
-            {bank.nickname && (
-              <span className="truncate text-[10px] text-muted-foreground">
-                {bank.nickname}
-              </span>
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "last4",
-      header: "Last 4",
-      align: "center",
-      cell: (bank) => (
-        <span className="font-mono text-xs text-muted-foreground">
-          {bank.last4 ? `••${bank.last4}` : "—"}
-        </span>
-      ),
-    },
-    {
-      id: "upiId",
-      header: "Linked UPI",
-      cell: (bank) => (
-        <span className="font-mono text-xs text-foreground">
-          {bank.upiId || "—"}
-        </span>
-      ),
-    },
-    {
-      id: "blocked",
-      header: "Blocked Capital",
-      align: "right",
-      sortable: true,
-      sortFn: (a, b) => {
-        const sumA = bankSummaryMap.get(a.id)?.blockedAmount || 0
-        const sumB = bankSummaryMap.get(b.id)?.blockedAmount || 0
-        return sumA - sumB
-      },
-      cell: (bank) => {
-        const summary = bankSummaryMap.get(bank.id)
-        return (
-          <span className="font-mono text-xs font-semibold text-foreground">
-            {formatCurrency(summary?.blockedAmount || 0)}
-          </span>
-        )
-      },
-    },
-    {
-      id: "invested",
-      header: "Invested Capital",
-      align: "right",
-      sortable: true,
-      sortFn: (a, b) => {
-        const sumA = bankSummaryMap.get(a.id)?.investedAmount || 0
-        const sumB = bankSummaryMap.get(b.id)?.investedAmount || 0
-        return sumA - sumB
-      },
-      cell: (bank) => {
-        const summary = bankSummaryMap.get(bank.id)
-        return (
-          <span className="font-mono text-xs font-semibold text-foreground">
-            {formatCurrency(summary?.investedAmount || 0)}
-          </span>
-        )
-      },
-    },
-    {
-      id: "total",
-      header: "Total Active Funds",
-      align: "right",
-      sortable: true,
-      sortFn: (a, b) => {
-        const sumA =
-          (bankSummaryMap.get(a.id)?.blockedAmount || 0) +
-          (bankSummaryMap.get(a.id)?.investedAmount || 0)
-        const sumB =
-          (bankSummaryMap.get(b.id)?.blockedAmount || 0) +
-          (bankSummaryMap.get(b.id)?.investedAmount || 0)
-        return sumA - sumB
-      },
-      cell: (bank) => {
-        const summary = bankSummaryMap.get(bank.id)
-        const total =
-          (summary?.blockedAmount || 0) + (summary?.investedAmount || 0)
-        return (
-          <span className="font-mono text-xs font-bold text-foreground">
-            {formatCurrency(total)}
-          </span>
-        )
-      },
-    },
-    {
-      id: "asbaLimit",
-      header: "ASBA Limit & Status",
-      align: "right",
-      sortable: true,
-      sortFn: (a, b) => (a.asbaLimit || 0) - (b.asbaLimit || 0),
-      cell: (bank) => {
-        const summary = bankSummaryMap.get(bank.id)
-        const blocked = summary?.blockedAmount || 0
-        if (!bank.asbaLimit) {
-          return (
-            <span className="font-mono text-xs text-muted-foreground">—</span>
-          )
-        }
-        const isExceeded = blocked > bank.asbaLimit
-        const isNear = !isExceeded && blocked / bank.asbaLimit >= 0.8
-        const utilPercent = Math.round((blocked / bank.asbaLimit) * 100)
-
-        return (
-          <div className="flex flex-col items-end gap-0.5">
-            <span className="font-mono text-xs font-semibold text-foreground">
-              {formatCurrency(bank.asbaLimit)}
-            </span>
-            {isExceeded ? (
-              <Badge
-                variant="destructive"
-                className="px-1.5 py-0 font-mono text-[9px]"
-              >
-                Exceeded by {formatCurrency(blocked - bank.asbaLimit)}
-              </Badge>
-            ) : isNear ? (
-              <Badge
-                variant="warning"
-                className="px-1.5 py-0 font-mono text-[9px]"
-              >
-                {utilPercent}% utilized
-              </Badge>
-            ) : (
-              <span className="font-mono text-[10px] text-muted-foreground">
-                {utilPercent}% utilized
-              </span>
-            )}
-          </div>
-        )
-      },
-    },
-    {
-      id: "apps",
-      header: "Applications",
-      align: "center",
-      sortable: true,
-      sortFn: (a, b) => {
-        const sumA = bankSummaryMap.get(a.id)?.totalApplicationsCount || 0
-        const sumB = bankSummaryMap.get(b.id)?.totalApplicationsCount || 0
-        return sumA - sumB
-      },
-      cell: (bank) => {
-        const summary = bankSummaryMap.get(bank.id)
-        return (
-          <span className="font-mono text-xs text-muted-foreground">
-            {summary?.totalApplicationsCount || 0}
-          </span>
-        )
-      },
-    },
-    {
-      id: "notes",
-      header: "Notes",
-      cell: (bank) => (
-        <span
-          className="block max-w-[150px] truncate text-xs text-muted-foreground"
-          title={bank.notes}
-        >
-          {bank.notes || "—"}
-        </span>
-      ),
-    },
-    {
-      id: "actions",
-      header: "",
-      align: "right",
-      cell: (bank) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                className="size-7 text-muted-foreground hover:text-foreground"
-              />
-            }
-          >
-            <MoreVertical className="size-3.5" />
-            <span className="sr-only">Actions</span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40 text-xs">
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => onEdit(bank)}>
-                <Edit2 data-icon="inline-start" />
-                Edit Bank
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleToggleArchive(bank)}>
-                {bank.archived ? (
-                  <>
-                    <ArchiveRestore data-icon="inline-start" />
-                    Restore
-                  </>
-                ) : (
-                  <>
-                    <Archive data-icon="inline-start" />
-                    Archive
-                  </>
-                )}
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => setBankToDelete(bank)}
-              >
-                <Trash2 data-icon="inline-start" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ]
+  const {
+    search,
+    setSearch,
+    showArchived,
+    setShowArchived,
+    viewMode,
+    setViewMode,
+    sortBy,
+    setSortBy,
+    bankToDelete,
+    setBankToDelete,
+    deleting,
+    sortedAccounts,
+    archivedCount,
+    handleToggleArchive,
+    handleDelete,
+    bankSummaryMap,
+    exceededWarnings,
+  } = useBankAccountList({ bankAccounts, applications, ipos, userId, onRefresh })
 
   return (
     <div className="flex flex-col gap-6">
       {/* ASBA Capital Limit Warning Banner */}
-      {exceededWarnings.length > 0 && (
-        <div className="flex flex-col gap-2 rounded-none border border-destructive/60 bg-destructive/10 p-3.5 text-xs">
-          <div className="flex items-center gap-2 font-bold text-destructive">
-            <AlertTriangle className="size-4 shrink-0" />
-            <span>
-              ASBA Capital Limit Exceeded: Blocked funds exceed available
-              balance across concurrent active IPOs for{" "}
-              {exceededWarnings.length} bank account
-              {exceededWarnings.length > 1 ? "s" : ""}.
-            </span>
-          </div>
-          <div className="flex flex-col gap-1.5 pl-6">
-            {exceededWarnings.map((w) => (
-              <div
-                key={w.bankId}
-                className="flex flex-wrap items-center gap-2 text-[11px] text-foreground"
-              >
-                <span className="font-bold">
-                  {w.nickname || w.bankName}
-                  {w.last4 ? ` (••${w.last4})` : ""}:
-                </span>
-                <span className="font-mono font-bold text-destructive">
-                  {formatCurrency(w.blockedAmount)} blocked
-                </span>
-                <span className="text-muted-foreground">vs</span>
-                <span className="font-mono font-medium">
-                  {formatCurrency(w.asbaLimit)} limit
-                </span>
-                <Badge
-                  variant="destructive"
-                  className="px-1.5 py-0 font-mono text-[9px] font-semibold"
-                >
-                  Over by {formatCurrency(w.exceededAmount)} (
-                  {w.utilizationPercent}%)
-                </Badge>
-                {w.activeIpoNames.length > 0 && (
-                  <span className="text-[10px] text-muted-foreground">
-                    across {w.activeIpoNames.join(", ")}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <BankAccountAsbaAlert warnings={exceededWarnings} />
 
       {/* Controls Bar: Search, Archive Toggle & View Switcher */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs md:max-w-sm">
-          <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search bank name, nickname, last 4 digits..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-8 w-full bg-background pl-8 text-xs"
-          />
-        </div>
+      <BankAccountListHeader
+        search={search}
+        onSearchChange={setSearch}
+        showArchived={showArchived}
+        onToggleArchived={() => setShowArchived(!showArchived)}
+        archivedCount={archivedCount}
+        sortBy={sortBy}
+        onSortByChange={setSortBy}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
 
-        <div className="flex flex-wrap items-center gap-2">
-          {archivedCount > 0 && (
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={() => setShowArchived(!showArchived)}
-              className="h-8 text-xs"
-            >
-              {showArchived
-                ? "Hide Archived"
-                : `Show Archived (${archivedCount})`}
-            </Button>
-          )}
-
-          {/* Grid Sort Selector */}
-          <div className="flex shrink-0 items-center">
-            <Select
-              value={sortBy}
-              onValueChange={(val) => val && setSortBy(val as BankSortOption)}
-            >
-              <SelectTrigger
-                className="h-8 gap-1.5 rounded-none border border-border bg-background px-2 text-xs font-semibold"
-                aria-label="Sort Bank Accounts"
-              >
-                <ArrowUpDown className="size-3 text-muted-foreground" />
-                <SelectValue placeholder="Sort by">
-                  {(val) => BANK_SORT_LABELS[val as BankSortOption] || "Sort"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="rounded-none">
-                {Object.entries(BANK_SORT_LABELS).map(([key, label]) => (
-                  <SelectItem key={key} value={key} label={label}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* View Mode Toggle */}
-          <div className="flex h-8 items-center rounded-none border border-border bg-background p-0.5">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold transition-all ${
-                viewMode === "grid"
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Grid View"
-            >
-              <LayoutGrid className="size-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold transition-all ${
-                viewMode === "table"
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Table View"
-            >
-              <TableIcon className="size-3.5" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {filteredAccounts.length === 0 ? (
+      {sortedAccounts.length === 0 ? (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <Landmark className="size-6 text-muted-foreground" />
             </EmptyMedia>
-            <EmptyTitle>No bank accounts match your search</EmptyTitle>
+            <EmptyTitle>No bank accounts match your filter</EmptyTitle>
             <EmptyDescription>
               {search
                 ? "Try a different search term"
-                : "Add bank accounts to easily assign funding accounts to applications"}
+                : "Add bank accounts to manage ASBA limits and fund IPO applications"}
             </EmptyDescription>
           </EmptyHeader>
           {search && (
@@ -617,21 +104,24 @@ export function BankAccountList({
           )}
         </Empty>
       ) : viewMode === "table" ? (
-        <DataTable
-          data={sortedAccounts}
-          columns={tableColumns}
-          keyExtractor={(b) => b.id}
-          pageSize={12}
-          bordered={true}
+        <BankAccountTableView
+          bankAccounts={sortedAccounts}
+          bankSummaryMap={bankSummaryMap}
+          onEdit={onEdit}
+          onToggleArchive={handleToggleArchive}
+          onDelete={(bank) => setBankToDelete(bank)}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {sortedAccounts.map((bank) => {
-            const summary = calculateBankMoneySummary(
-              bank.id,
-              applications,
-              ipoMap
-            )
+            const summary = bankSummaryMap.get(bank.id) || {
+              totalApplied: 0,
+              blockedAmount: 0,
+              investedAmount: 0,
+              activeApplicationsCount: 0,
+              totalApplicationsCount: 0,
+              relatedIpos: [],
+            }
 
             return (
               <BankAccountCard
@@ -664,27 +154,24 @@ export function BankAccountList({
                 </AlertDialogTitle>
                 <AlertDialogDescription className="text-xs">
                   Are you sure you want to permanently delete{" "}
-                  <strong>
-                    {bankToDelete?.nickname || bankToDelete?.bankName}
-                  </strong>
-                  ? This action cannot be undone.
+                  <strong>{bankToDelete?.bankName}</strong>? This action cannot
+                  be undone.
                 </AlertDialogDescription>
               </div>
             </div>
             {Boolean(
               bankToDelete &&
-              applications.some((a) => a.bankAccountId === bankToDelete.id)
+                applications.some((a) => a.bankAccountId === bankToDelete.id)
             ) && (
               <p className="mt-2 rounded-none border border-warning/40 bg-warning/10 p-2.5 text-xs font-medium text-warning-foreground">
-                ⚠️ Warning: This bank account is linked to{" "}
+                ⚠️ Warning: This bank account has{" "}
                 {
                   applications.filter(
                     (a) => a.bankAccountId === bankToDelete?.id
                   ).length
                 }{" "}
-                application(s). Deleting it will leave those applications
-                without funding bank records. We strongly recommend archiving
-                instead.
+                linked application(s). Deleting it will leave those applications
+                without bank metadata. We strongly recommend archiving instead.
               </p>
             )}
           </AlertDialogHeader>
@@ -698,7 +185,7 @@ export function BankAccountList({
             </AlertDialogCancel>
             {Boolean(
               bankToDelete &&
-              applications.some((a) => a.bankAccountId === bankToDelete.id)
+                applications.some((a) => a.bankAccountId === bankToDelete.id)
             ) && (
               <Button
                 variant="outline"
@@ -728,238 +215,5 @@ export function BankAccountList({
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
-}
-
-function BankAccountCard({
-  bank,
-  summary,
-  onEdit,
-  onToggleArchive,
-  onDelete,
-}: {
-  bank: BankAccount
-  summary: BankMoneySummary
-  onEdit: () => void
-  onToggleArchive: () => void
-  onDelete: () => void
-}) {
-  const hasLimit = Boolean(bank.asbaLimit && bank.asbaLimit > 0)
-  const isExceeded = hasLimit && summary.blockedAmount > bank.asbaLimit!
-  const isNear =
-    hasLimit && !isExceeded && summary.blockedAmount / bank.asbaLimit! >= 0.8
-  const utilPercent = hasLimit
-    ? Math.round((summary.blockedAmount / bank.asbaLimit!) * 100)
-    : 0
-
-  return (
-    <Card
-      className={cn(
-        "flex flex-col justify-between rounded-none border transition-all hover:border-foreground/40 hover:shadow-xs",
-        bank.archived
-          ? "bg-muted/20 opacity-60"
-          : isExceeded
-            ? "border-destructive/60 bg-card shadow-xs"
-            : "bg-card"
-      )}
-    >
-      <CardContent className="flex flex-col gap-3.5 p-4">
-        {/* Header: Bank Name + Nickname + Dropdown */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <div className="flex min-w-0 items-center gap-1.5">
-              <Landmark className="size-3.5 shrink-0 text-muted-foreground" />
-              <h3 className="truncate font-heading text-sm font-bold text-foreground">
-                {bank.bankName}
-              </h3>
-              {bank.archived && (
-                <Badge
-                  variant="outline"
-                  className="shrink-0 px-1 py-0 font-mono text-[9px]"
-                >
-                  Archived
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              {bank.nickname && (
-                <span className="max-w-[120px] truncate font-medium text-foreground">
-                  {bank.nickname}
-                </span>
-              )}
-              {bank.last4 && (
-                <span className="font-mono text-[11px]">••{bank.last4}</span>
-              )}
-              {summary.totalApplicationsCount > 0 && (
-                <span className="font-mono text-[10px]">
-                  • {summary.totalApplicationsCount} apps
-                </span>
-              )}
-            </div>
-            {bank.upiId && (
-              <span
-                className="max-w-[220px] truncate font-mono text-[11px] text-primary"
-                title={`Linked UPI: ${bank.upiId}`}
-              >
-                UPI: {bank.upiId}
-              </span>
-            )}
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  className="-mt-1.5 -mr-1.5 size-7 text-muted-foreground hover:text-foreground"
-                />
-              }
-            >
-              <MoreVertical className="size-3.5" />
-              <span className="sr-only">Actions</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40 text-xs">
-              <DropdownMenuGroup>
-                <DropdownMenuItem onClick={onEdit}>
-                  <Edit2 data-icon="inline-start" />
-                  Edit Bank
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onToggleArchive}>
-                  {bank.archived ? (
-                    <>
-                      <ArchiveRestore data-icon="inline-start" />
-                      Restore
-                    </>
-                  ) : (
-                    <>
-                      <Archive data-icon="inline-start" />
-                      Archive
-                    </>
-                  )}
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                <DropdownMenuItem variant="destructive" onClick={onDelete}>
-                  <Trash2 data-icon="inline-start" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* Money Metrics Strip */}
-        <div className="grid grid-cols-2 gap-2 border-y border-border/50 py-2.5 text-xs">
-          <div>
-            <span className="block text-[10px] text-muted-foreground">
-              Blocked (Active)
-            </span>
-            <span
-              className={cn(
-                "font-mono font-bold",
-                isExceeded ? "text-destructive" : "text-foreground"
-              )}
-            >
-              {formatCurrency(summary.blockedAmount)}
-            </span>
-          </div>
-          <div>
-            <span className="block text-[10px] text-muted-foreground">
-              Invested (Allotted)
-            </span>
-            <span className="font-mono font-bold text-foreground">
-              {formatCurrency(summary.investedAmount)}
-            </span>
-          </div>
-        </div>
-
-        {/* Total Capital Committed */}
-        <div className="flex items-center justify-between rounded-none border border-border/60 bg-muted/20 px-2.5 py-1.5 text-xs">
-          <span className="text-[11px] font-medium text-muted-foreground">
-            Total Active Funds:
-          </span>
-          <span className="font-mono font-bold text-foreground">
-            {formatCurrency(summary.blockedAmount + summary.investedAmount)}
-          </span>
-        </div>
-
-        {/* ASBA Capital Limit & Utilization Strip */}
-        {hasLimit && (
-          <div
-            className={cn(
-              "flex flex-col gap-1.5 rounded-none border p-2 text-xs",
-              isExceeded
-                ? "border-destructive/50 bg-destructive/10"
-                : isNear
-                  ? "border-warning/40 bg-warning/10"
-                  : "border-border/60 bg-muted/20"
-            )}
-          >
-            <div className="flex items-center justify-between text-[11px]">
-              <div className="flex items-center gap-1 font-semibold">
-                {isExceeded && (
-                  <AlertTriangle className="size-3 shrink-0 text-destructive" />
-                )}
-                <span
-                  className={
-                    isExceeded
-                      ? "font-bold text-destructive"
-                      : "text-muted-foreground"
-                  }
-                >
-                  ASBA Capital Limit:
-                </span>
-              </div>
-              <span className="font-mono font-bold text-foreground">
-                {formatCurrency(bank.asbaLimit!)}
-              </span>
-            </div>
-
-            <Progress
-              value={Math.min(utilPercent, 100)}
-              className={cn(
-                "h-1.5 w-full bg-muted/60",
-                isExceeded
-                  ? "[&_[data-slot=progress-indicator]]:bg-destructive"
-                  : isNear
-                    ? "[&_[data-slot=progress-indicator]]:bg-warning"
-                    : "[&_[data-slot=progress-indicator]]:bg-primary"
-              )}
-            />
-
-            <div className="flex items-center justify-between font-mono text-[10px]">
-              <span
-                className={cn(
-                  "font-semibold",
-                  isExceeded
-                    ? "font-bold text-destructive"
-                    : isNear
-                      ? "font-semibold text-warning-foreground"
-                      : "text-muted-foreground"
-                )}
-              >
-                {isExceeded
-                  ? `Exceeded by ${formatCurrency(summary.blockedAmount - bank.asbaLimit!)} (${utilPercent}%)`
-                  : `${utilPercent}% utilized`}
-              </span>
-              <span className="text-muted-foreground">
-                {isExceeded
-                  ? "₹0 available"
-                  : `${formatCurrency(bank.asbaLimit! - summary.blockedAmount)} available`}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Notes (if any) */}
-        {bank.notes && (
-          <p className="truncate text-[11px] text-muted-foreground italic">
-            {bank.notes}
-          </p>
-        )}
-      </CardContent>
-    </Card>
   )
 }
