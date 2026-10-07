@@ -174,14 +174,11 @@ export function useDashboardData() {
         100
       : 0
 
-  const totalInMotion =
-    metrics.totalInvested + metrics.totalBlocked + metrics.totalRefundExpected
+  const totalInMotion = metrics.activeInvested + metrics.totalBlocked
   const investedPct =
-    totalInMotion > 0 ? (metrics.totalInvested / totalInMotion) * 100 : 0
+    totalInMotion > 0 ? (metrics.activeInvested / totalInMotion) * 100 : 0
   const blockedPct =
     totalInMotion > 0 ? (metrics.totalBlocked / totalInMotion) * 100 : 0
-  const refundPct =
-    totalInMotion > 0 ? (metrics.totalRefundExpected / totalInMotion) * 100 : 0
   const userName = user?.displayName
     ? user.displayName.split(" ")[0]
     : "Investor"
@@ -214,7 +211,6 @@ export function useDashboardData() {
     totalInMotion,
     investedPct,
     blockedPct,
-    refundPct,
     userName,
     isCompletelyEmpty,
   }

@@ -48,7 +48,6 @@ export default function DashboardPage() {
     totalInMotion,
     investedPct,
     blockedPct,
-    refundPct,
     userName,
     isCompletelyEmpty,
   } = useDashboardData()
@@ -106,7 +105,6 @@ export default function DashboardPage() {
         totalInMotion={totalInMotion}
         investedPct={investedPct}
         blockedPct={blockedPct}
-        refundPct={refundPct}
       />
 
       {/* 4. Secondary Operational Metrics */}

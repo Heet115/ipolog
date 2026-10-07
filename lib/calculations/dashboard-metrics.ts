@@ -4,14 +4,16 @@ import { calculateApplicationProfit } from "./ipo-calculations"
 
 export interface DashboardMetrics {
   totalBlocked: number
-  totalInvested: number
+  totalInvested: number // Active holdings cost basis (currently invested)
+  activeInvested: number // Explicit alias for active holdings cost
+  lifetimeInvested: number // Cumulative capital deployed across all lifetime allotments
+  activeHoldingsCount: number // Applications currently holding unsold shares
   totalYourRealizedProfit: number
   totalProfitShared: number
   totalGrossRealizedProfit: number
   totalUnrealizedProfit: number
   totalNetProfit: number
   totalApplied: number
-  totalRefundExpected: number
 
   totalApplications: number
   pendingApplications: number
@@ -37,13 +39,14 @@ export function calculateDashboardMetrics(
   const accountMap = new Map(accounts.map((a) => [a.id, a]))
 
   let totalBlocked = 0
-  let totalInvested = 0
+  let activeInvested = 0
+  let lifetimeInvested = 0
+  let activeHoldingsCount = 0
   let totalYourRealizedProfit = 0
   let totalProfitShared = 0
   let totalGrossRealizedProfit = 0
   let totalUnrealizedProfit = 0
   let totalApplied = 0
-  let totalRefundExpected = 0
 
   let pendingApplications = 0
   let allottedApplications = 0
@@ -61,8 +64,19 @@ export function calculateDashboardMetrics(
       totalBlocked += app.amountApplied || 0
     } else if (app.status === "allotted") {
       allottedApplications++
-      const shares = app.allottedShares ?? 0
-      totalInvested += calculateInvestment(shares, issuePrice)
+      const shares =
+        app.allottedShares ??
+        (app.allottedLots !== undefined && ipo
+          ? app.allottedLots * ipo.lotSize
+          : app.sharesApplied ?? 0)
+      const sharesSold = app.sharesSold ?? 0
+      const unsoldShares = Math.max(0, shares - sharesSold)
+
+      activeInvested += calculateInvestment(unsoldShares, issuePrice)
+      lifetimeInvested += calculateInvestment(shares, issuePrice)
+      if (unsoldShares > 0) {
+        activeHoldingsCount++
+      }
 
       if (ipo) {
         const profit = calculateApplicationProfit(app, ipo, account)
@@ -72,11 +86,21 @@ export function calculateDashboardMetrics(
       }
     } else if (app.status === "not_allotted") {
       notAllottedApplications++
-      totalRefundExpected += app.amountApplied || 0
     } else if (app.status === "sold") {
       soldApplications++
-      const shares = app.allottedShares ?? 0
-      totalInvested += calculateInvestment(shares, issuePrice)
+      const shares =
+        app.allottedShares ??
+        (app.allottedLots !== undefined && ipo
+          ? app.allottedLots * ipo.lotSize
+          : app.sharesSold ?? 0)
+      const sharesSold = app.sharesSold ?? shares
+      const unsoldShares = Math.max(0, shares - sharesSold)
+
+      activeInvested += calculateInvestment(unsoldShares, issuePrice)
+      lifetimeInvested += calculateInvestment(shares, issuePrice)
+      if (unsoldShares > 0) {
+        activeHoldingsCount++
+      }
 
       if (ipo) {
         const profit = calculateApplicationProfit(app, ipo, account)
@@ -114,14 +138,16 @@ export function calculateDashboardMetrics(
 
   return {
     totalBlocked,
-    totalInvested,
+    totalInvested: activeInvested,
+    activeInvested,
+    lifetimeInvested,
+    activeHoldingsCount,
     totalYourRealizedProfit,
     totalProfitShared,
     totalGrossRealizedProfit,
     totalUnrealizedProfit,
     totalNetProfit: totalYourRealizedProfit + totalUnrealizedProfit,
     totalApplied,
-    totalRefundExpected,
 
     totalApplications: applications.length,
     pendingApplications,

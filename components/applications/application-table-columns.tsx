@@ -259,7 +259,7 @@ export function getApplicationTableColumns({
         if (app.status === "not_allotted") {
           return (
             <span className="font-mono text-[11px] text-muted-foreground">
-              Refund: {formatCurrency(app.amountApplied)}
+              Unblocked: {formatCurrency(app.amountApplied)}
             </span>
           )
         }

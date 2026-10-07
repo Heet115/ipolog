@@ -68,8 +68,8 @@ export function BulkAllotmentOverview({
             </strong>
           </span>
           <span className="text-xs text-muted-foreground">
-            Refunds:{" "}
-            <strong className="text-warning-foreground">
+            Unblocked:{" "}
+            <strong className="text-muted-foreground">
               {formatCurrency(totalRefund)}
             </strong>
           </span>

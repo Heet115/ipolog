@@ -20,7 +20,6 @@ interface DashboardCommandCenterProps {
   totalInMotion: number
   investedPct: number
   blockedPct: number
-  refundPct: number
 }
 
 export function DashboardCommandCenter({
@@ -31,7 +30,6 @@ export function DashboardCommandCenter({
   totalInMotion,
   investedPct,
   blockedPct,
-  refundPct,
 }: DashboardCommandCenterProps) {
   return (
     <Card className="overflow-hidden rounded-none border border-border/70 bg-card shadow-xs">
@@ -109,11 +107,11 @@ export function DashboardCommandCenter({
           </div>
         </div>
 
-        {/* Metric 3: Total Invested Capital */}
+        {/* Metric 3: Active Holdings (Currently Invested) */}
         <div className="flex flex-col justify-between gap-3 bg-gradient-to-br from-primary/5 via-transparent to-transparent p-5 sm:p-6">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-              Invested Capital
+              Active Holdings
             </span>
             <div className="flex size-8 items-center justify-center rounded-none bg-primary/10 text-primary">
               <CheckCircle2 className="size-4" />
@@ -121,11 +119,16 @@ export function DashboardCommandCenter({
           </div>
           <div>
             <p className="font-mono text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              {formatCurrency(metrics.totalInvested)}
+              {formatCurrency(metrics.activeInvested)}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              In {metrics.allottedApplications + metrics.soldApplications}{" "}
-              allotted applications
+              {metrics.activeHoldingsCount > 0 ? (
+                <span>
+                  Across {metrics.activeHoldingsCount} active holdings
+                </span>
+              ) : (
+                <span>₹0 active holdings</span>
+              )}
             </p>
           </div>
         </div>
@@ -179,21 +182,14 @@ export function DashboardCommandCenter({
                 <div
                   style={{ width: `${investedPct}%` }}
                   className="bg-primary transition-all"
-                  title={`Invested: ${formatCurrency(metrics.totalInvested)}`}
+                  title={`Active Holdings: ${formatCurrency(metrics.activeInvested)}`}
                 />
               )}
               {blockedPct > 0 && (
                 <div
                   style={{ width: `${blockedPct}%` }}
                   className="bg-warning transition-all"
-                  title={`Blocked: ${formatCurrency(metrics.totalBlocked)}`}
-                />
-              )}
-              {refundPct > 0 && (
-                <div
-                  style={{ width: `${refundPct}%` }}
-                  className="bg-muted-foreground/40 transition-all"
-                  title={`Refund: ${formatCurrency(metrics.totalRefundExpected)}`}
+                  title={`Blocked ASBA: ${formatCurrency(metrics.totalBlocked)}`}
                 />
               )}
             </div>
@@ -201,9 +197,9 @@ export function DashboardCommandCenter({
               <div className="flex items-center gap-1.5">
                 <span className="size-2 rounded-none bg-primary" />
                 <span>
-                  Invested:{" "}
+                  Active Holdings:{" "}
                   <strong className="font-mono text-foreground">
-                    {formatCurrency(metrics.totalInvested)}
+                    {formatCurrency(metrics.activeInvested)}
                   </strong>{" "}
                   ({investedPct.toFixed(0)}%)
                 </span>
@@ -218,18 +214,6 @@ export function DashboardCommandCenter({
                   ({blockedPct.toFixed(0)}%)
                 </span>
               </div>
-              {metrics.totalRefundExpected > 0 && (
-                <div className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-none bg-muted-foreground/40" />
-                  <span>
-                    Expected Refunds:{" "}
-                    <strong className="font-mono text-foreground">
-                      {formatCurrency(metrics.totalRefundExpected)}
-                    </strong>{" "}
-                    ({refundPct.toFixed(0)}%)
-                  </span>
-                </div>
-              )}
             </div>
           </div>
         </div>

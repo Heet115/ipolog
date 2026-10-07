@@ -48,10 +48,6 @@ const financialChartConfig = {
     label: "Profit Shared",
     color: "var(--chart-4)",
   },
-  refund: {
-    label: "Expected Refund",
-    color: "var(--muted-foreground)",
-  },
 } satisfies ChartConfig
 
 const statusChartConfig = {
@@ -98,11 +94,6 @@ export function DashboardCharts({ metrics }: DashboardChartsProps) {
       name: "Shared",
       amount: metrics.totalProfitShared,
       fill: "var(--chart-4)",
-    },
-    {
-      name: "Refunds",
-      amount: metrics.totalRefundExpected,
-      fill: "var(--muted-foreground)",
     },
   ].filter((d) => d.amount > 0)
 

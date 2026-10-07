@@ -354,7 +354,7 @@ export function BulkAllotmentTable({
                     </div>
                   ) : isNotAllotted ? (
                     <span className="text-[11px] text-muted-foreground">
-                      Refund: {formatCurrency(app.amountApplied)}
+                      Unblocked: {formatCurrency(app.amountApplied)}
                     </span>
                   ) : (
                     <span className="text-muted-foreground">—</span>

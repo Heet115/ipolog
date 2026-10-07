@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Wallet, Users, Clock, Landmark, ArrowUpRight } from "lucide-react"
+import { Wallet, Users, Receipt, Landmark, ArrowUpRight } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/utils/ipo"
 import type {
@@ -90,23 +90,24 @@ export function DashboardSecondaryMetrics({
         </CardContent>
       </Card>
 
-      {/* Expected Refunds */}
+      {/* Total Capital Deployed (Lifetime) */}
       <Card className="rounded-none border border-border/70 shadow-xs transition-all hover:border-border hover:shadow-sm">
         <CardContent className="flex flex-col justify-between gap-3 p-4">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">
-              Refunds in Transit
+              Total Capital Deployed
             </span>
             <div className="flex size-7 items-center justify-center rounded-none bg-muted text-muted-foreground">
-              <Clock className="size-3.5" />
+              <Receipt className="size-3.5" />
             </div>
           </div>
           <div>
             <p className="font-mono text-xl font-bold text-foreground">
-              {formatCurrency(metrics.totalRefundExpected)}
+              {formatCurrency(metrics.lifetimeInvested)}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              From {metrics.notAllottedApplications} unallotted applications
+              Across {metrics.allottedApplications + metrics.soldApplications}{" "}
+              lifetime allotments
             </p>
           </div>
         </CardContent>

@@ -25,6 +25,16 @@ export function IpoDetailStats({
 }: IpoDetailStatsProps) {
   if (!moneySummary) return null
 
+  const totalDecided =
+    moneySummary.allottedCount +
+    moneySummary.soldCount +
+    moneySummary.notAllottedCount
+  const winRate =
+    totalDecided > 0
+      ? ((moneySummary.allottedCount + moneySummary.soldCount) / totalDecided) *
+        100
+      : 0
+
   return (
     <div className="flex flex-col gap-6">
       {/* 4-Metric Money State Cards */}
@@ -77,17 +87,19 @@ export function IpoDetailStats({
           </CardContent>
         </Card>
 
-        {/* Expected Refund */}
+        {/* Allotment Rate */}
         <Card className="rounded-none border border-border/60">
           <CardContent className="flex flex-col gap-1 p-3.5">
             <span className="text-[11px] font-medium text-muted-foreground">
-              Expected Refund
+              Allotment Rate
             </span>
             <p className="font-mono text-lg font-bold text-foreground">
-              {formatCurrency(moneySummary.refundExpected)}
+              {totalDecided > 0 ? `${winRate.toFixed(0)}%` : "Pending"}
             </p>
             <span className="truncate text-[10px] text-muted-foreground">
-              {moneySummary.notAllottedCount} Unallotted Applications
+              {totalDecided > 0
+                ? `${moneySummary.allottedCount + moneySummary.soldCount} of ${totalDecided} Allotted`
+                : `${moneySummary.pendingCount} Awaiting Allotment`}
             </span>
           </CardContent>
         </Card>
