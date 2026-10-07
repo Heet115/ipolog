@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/data-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { ApplicationStatusBadge } from "@/components/applications/application-status-badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,6 +74,7 @@ import {
   CATEGORY_CONFIG,
   inferCategoryFromAmount,
 } from "@/lib/calculations/categories"
+import { getBankDisplayName } from "@/lib/utils/bank-helpers"
 import type {
   Ipo,
   Application,
@@ -80,17 +82,6 @@ import type {
   BankAccount,
   ApplicationStatus,
 } from "@/types"
-
-function getBankDisplayName(bank: BankAccount): string {
-  const parts: string[] = [bank.bankName]
-  if (bank.nickname && bank.nickname !== bank.bankName) {
-    parts.push(`(${bank.nickname})`)
-  }
-  if (bank.last4) {
-    parts.push(`••••${bank.last4}`)
-  }
-  return parts.join(" ")
-}
 
 interface ApplicationTableProps {
   applications: Application[]
@@ -284,48 +275,6 @@ export function ApplicationTable({
         title: "Failed to update settlement status",
         type: "error",
       })
-    }
-  }
-
-  const getStatusBadge = (status: ApplicationStatus) => {
-    switch (status) {
-      case "allotted":
-        return (
-          <Badge
-            variant="success"
-            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider uppercase"
-          >
-            Allotted
-          </Badge>
-        )
-      case "not_allotted":
-        return (
-          <Badge
-            variant="secondary"
-            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider uppercase"
-          >
-            Not Allotted
-          </Badge>
-        )
-      case "sold":
-        return (
-          <Badge
-            variant="info"
-            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider uppercase"
-          >
-            Sold
-          </Badge>
-        )
-      case "pending":
-      default:
-        return (
-          <Badge
-            variant="outline"
-            className="rounded-none px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
-          >
-            Pending
-          </Badge>
-        )
     }
   }
 
@@ -561,7 +510,7 @@ export function ApplicationTable({
       align: "center",
       sortable: true,
       sortFn: (a, b) => a.status.localeCompare(b.status),
-      cell: (app) => getStatusBadge(app.status),
+      cell: (app) => <ApplicationStatusBadge status={app.status} size="sm" />,
     },
     {
       id: "allotmentReturn",

@@ -78,6 +78,7 @@ import {
 import { EditApplicationDialog } from "@/components/applications/edit-application-dialog"
 import { RecordSaleDialog } from "@/components/applications/record-sale-dialog"
 import { SettlementDialog } from "@/components/applications/settlement-dialog"
+import { getBankDisplayName } from "@/lib/utils/bank-helpers"
 import type {
   Ipo,
   Application,
@@ -86,17 +87,6 @@ import type {
   ApplicationStatus,
   ApplicationCategory,
 } from "@/types"
-
-function getBankDisplayName(bank: BankAccount): string {
-  const parts: string[] = [bank.bankName]
-  if (bank.nickname && bank.nickname !== bank.bankName) {
-    parts.push(`(${bank.nickname})`)
-  }
-  if (bank.last4) {
-    parts.push(`••••${bank.last4}`)
-  }
-  return parts.join(" ")
-}
 
 interface MasterApplicationLedgerProps {
   ipos: Ipo[]

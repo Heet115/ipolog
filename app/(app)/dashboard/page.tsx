@@ -60,6 +60,8 @@ import {
   calculateReceivablesSummary,
 } from "@/lib/calculations/financials"
 import { formatCurrency, formatDate, getIpoStatus } from "@/lib/utils/ipo"
+import { getGreeting } from "@/lib/utils/greeting"
+import { ApplicationStatusBadge } from "@/components/applications/application-status-badge"
 import { DashboardCharts } from "@/components/dashboard/dashboard-charts"
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton"
 import { usePageTitle } from "@/hooks/use-page-title"
@@ -68,7 +70,6 @@ import type {
   Application,
   ApplicationAccount,
   BankAccount,
-  ApplicationStatus,
 } from "@/types"
 
 export default function DashboardPage() {
@@ -251,14 +252,6 @@ export default function DashboardPage() {
     totalInMotion > 0 ? (metrics.totalBlocked / totalInMotion) * 100 : 0
   const refundPct =
     totalInMotion > 0 ? (metrics.totalRefundExpected / totalInMotion) * 100 : 0
-
-  // Time-aware greeting
-  const getGreeting = () => {
-    const hour = new Date().getHours()
-    if (hour < 12) return "Good morning"
-    if (hour < 18) return "Good afternoon"
-    return "Good evening"
-  }
   const userName = user?.displayName
     ? user.displayName.split(" ")[0]
     : "Investor"
@@ -375,39 +368,6 @@ export default function DashboardPage() {
         </div>
       </div>
     )
-  }
-
-  const getStatusBadge = (status: ApplicationStatus) => {
-    switch (status) {
-      case "allotted":
-        return (
-          <Badge variant="success" className="px-2 py-0.5 text-xs font-medium">
-            Allotted
-          </Badge>
-        )
-      case "not_allotted":
-        return (
-          <Badge
-            variant="secondary"
-            className="px-2 py-0.5 text-xs font-medium"
-          >
-            Not Allotted
-          </Badge>
-        )
-      case "sold":
-        return (
-          <Badge variant="info" className="px-2 py-0.5 text-xs font-medium">
-            Sold
-          </Badge>
-        )
-      case "pending":
-      default:
-        return (
-          <Badge variant="outline" className="px-2 py-0.5 text-xs font-medium">
-            Pending
-          </Badge>
-        )
-    }
   }
 
   return (
@@ -1133,7 +1093,7 @@ export default function DashboardPage() {
                               </TableCell>
 
                               <TableCell className="text-center">
-                                {getStatusBadge(app.status)}
+                                <ApplicationStatusBadge status={app.status} />
                               </TableCell>
 
                               <TableCell className="text-right font-mono text-xs">
