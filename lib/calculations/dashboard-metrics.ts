@@ -68,7 +68,7 @@ export function calculateDashboardMetrics(
         app.allottedShares ??
         (app.allottedLots !== undefined && ipo
           ? app.allottedLots * ipo.lotSize
-          : app.sharesApplied ?? 0)
+          : (app.sharesApplied ?? 0))
       const sharesSold = app.sharesSold ?? 0
       const unsoldShares = Math.max(0, shares - sharesSold)
 
@@ -92,7 +92,7 @@ export function calculateDashboardMetrics(
         app.allottedShares ??
         (app.allottedLots !== undefined && ipo
           ? app.allottedLots * ipo.lotSize
-          : app.sharesSold ?? 0)
+          : (app.sharesSold ?? 0))
       const sharesSold = app.sharesSold ?? shares
       const unsoldShares = Math.max(0, shares - sharesSold)
 
