@@ -10,7 +10,10 @@ import {
 } from "firebase/firestore"
 import { db } from "@/lib/firebase/firebase"
 import type { ApplicationStatus, ApplicationCategory } from "@/types"
-import { inferCategoryFromAmount } from "@/lib/calculations/categories"
+import {
+  inferCategoryFromAmount,
+  getCategoryGroup,
+} from "@/lib/calculations/categories"
 
 /**
  * Creates multiple applications in a single batch write for efficiency.
@@ -31,11 +34,13 @@ export async function createApplicationsBatch(
 ): Promise<string[]> {
   if (applications.length === 0) return []
 
-  // Ensure no duplicate account applications are inserted within the same batch
-  const seenAccountIds = new Set<string>()
+  // Ensure no duplicate applications within the same category group are inserted within the same batch
+  const seenAccountCategoryKeys = new Set<string>()
   const uniqueApplications = applications.filter((app) => {
-    if (seenAccountIds.has(app.accountId)) return false
-    seenAccountIds.add(app.accountId)
+    const group = getCategoryGroup(app.category || "retail")
+    const key = `${app.accountId}_${group}`
+    if (seenAccountCategoryKeys.has(key)) return false
+    seenAccountCategoryKeys.add(key)
     return true
   })
 

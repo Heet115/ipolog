@@ -24,6 +24,7 @@ interface BulkApplicationStepAccountsProps {
   otherAccounts: ApplicationAccount[]
   selectedAccountIds: string[]
   appliedAccountIds: Set<string>
+  appliedCategoriesByAccount?: Map<string, ApplicationCategory[]>
   allAccountsAlreadyApplied: boolean
   hideAppliedAccounts: boolean
   onToggleHideAppliedAccounts: () => void
@@ -61,6 +62,7 @@ export function BulkApplicationStepAccounts({
   otherAccounts,
   selectedAccountIds,
   appliedAccountIds,
+  appliedCategoriesByAccount,
   allAccountsAlreadyApplied,
   hideAppliedAccounts,
   onToggleHideAppliedAccounts,
@@ -98,8 +100,8 @@ export function BulkApplicationStepAccounts({
           <Info className="size-4 text-primary" />
           <AlertDescription className="flex items-center justify-between gap-2">
             <span>
-              <strong>All Accounts Applied:</strong> Every active account in
-              your portfolio already has an application recorded for this IPO.
+              <strong>All Accounts Applied for {CATEGORY_CONFIG[defaultCategory].shortLabel}:</strong> Every active account in
+              your portfolio has already applied under this category. Switch Quota above to <strong>Shareholder</strong> or <strong>Employee</strong> to record additional eligible applications.
             </span>
             <Button
               type="button"
@@ -121,7 +123,9 @@ export function BulkApplicationStepAccounts({
             <span className="font-semibold text-foreground">
               {appliedAccountIds.size} of {activeAccounts.length}
             </span>
-            <span>accounts have already applied for this IPO</span>
+            <span>
+              accounts have applied under {CATEGORY_CONFIG[defaultCategory].shortLabel}
+            </span>
           </div>
           <Button
             type="button"
@@ -354,9 +358,27 @@ export function BulkApplicationStepAccounts({
                         variant="outline"
                         className="shrink-0 py-0 font-mono text-[10px]"
                       >
-                        Applied
+                        Applied ({CATEGORY_CONFIG[defaultCategory].shortLabel})
                       </Badge>
                     )}
+                    {!alreadyApplied &&
+                      (appliedCategoriesByAccount?.get(account.id)?.length || 0) >
+                        0 && (
+                        <Badge
+                          variant="secondary"
+                          className="shrink-0 py-0 font-mono text-[9px] text-muted-foreground"
+                          title={`Already applied in: ${appliedCategoriesByAccount
+                            ?.get(account.id)
+                            ?.map((c) => CATEGORY_CONFIG[c]?.shortLabel || c)
+                            .join(", ")}`}
+                        >
+                          Applied:{" "}
+                          {appliedCategoriesByAccount
+                            ?.get(account.id)
+                            ?.map((c) => CATEGORY_CONFIG[c]?.shortLabel || c)
+                            .join(", ")}
+                        </Badge>
+                      )}
                     {!alreadyApplied && isDuplicatePanSelected && (
                       <Badge
                         variant="outline"
@@ -479,9 +501,27 @@ export function BulkApplicationStepAccounts({
                         variant="outline"
                         className="shrink-0 py-0 font-mono text-[10px]"
                       >
-                        Applied
+                        Applied ({CATEGORY_CONFIG[defaultCategory].shortLabel})
                       </Badge>
                     )}
+                    {!alreadyApplied &&
+                      (appliedCategoriesByAccount?.get(account.id)?.length || 0) >
+                        0 && (
+                        <Badge
+                          variant="secondary"
+                          className="shrink-0 py-0 font-mono text-[9px] text-muted-foreground"
+                          title={`Already applied in: ${appliedCategoriesByAccount
+                            ?.get(account.id)
+                            ?.map((c) => CATEGORY_CONFIG[c]?.shortLabel || c)
+                            .join(", ")}`}
+                        >
+                          Applied:{" "}
+                          {appliedCategoriesByAccount
+                            ?.get(account.id)
+                            ?.map((c) => CATEGORY_CONFIG[c]?.shortLabel || c)
+                            .join(", ")}
+                        </Badge>
+                      )}
                     {!alreadyApplied && isDuplicatePanSelected && (
                       <Badge
                         variant="outline"

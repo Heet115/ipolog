@@ -93,6 +93,8 @@ function BulkApplicationForm({
     showDuplicatePanConfirm,
     setShowDuplicatePanConfirm,
     appliedAccountIds,
+    appliedCategoriesByAccount,
+    isAccountAppliedForCategory,
     activeAccounts,
     myAccounts,
     otherAccounts,
@@ -173,6 +175,7 @@ function BulkApplicationForm({
           otherAccounts={otherAccounts}
           selectedAccountIds={selectedAccountIds}
           appliedAccountIds={appliedAccountIds}
+          appliedCategoriesByAccount={appliedCategoriesByAccount}
           allAccountsAlreadyApplied={allAccountsAlreadyApplied}
           hideAppliedAccounts={hideAppliedAccounts}
           onToggleHideAppliedAccounts={() =>
@@ -226,6 +229,7 @@ function BulkApplicationForm({
           onUpdateIndividualBank={updateIndividualBank}
           onUpdateIndividualCategory={updateIndividualCategory}
           onUpdateIndividualLots={updateIndividualLots}
+          isAccountAppliedForCategory={isAccountAppliedForCategory}
           totalLots={totalLots}
           totalAmount={totalAmount}
           loading={loading}

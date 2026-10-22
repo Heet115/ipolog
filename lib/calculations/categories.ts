@@ -193,3 +193,25 @@ export function validateCategoryLots(
 
   return { isValid: true }
 }
+
+/**
+ * Category groups for SEBI duplicate application rules.
+ * - main: retail, shni, bhni (only 1 bid allowed across this group per account/PAN)
+ * - shareholder: eligible shareholder quota (can coexist with 1 main bid)
+ * - employee: eligible employee quota (can coexist with 1 main bid)
+ */
+export type CategoryGroup = "main" | "shareholder" | "employee"
+
+export function getCategoryGroup(category: ApplicationCategory): CategoryGroup {
+  if (category === "shareholder") return "shareholder"
+  if (category === "employee") return "employee"
+  return "main"
+}
+
+export function areCategoriesConflicting(
+  catA: ApplicationCategory,
+  catB: ApplicationCategory
+): boolean {
+  return getCategoryGroup(catA) === getCategoryGroup(catB)
+}
+

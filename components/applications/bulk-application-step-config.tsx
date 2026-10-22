@@ -97,6 +97,10 @@ interface BulkApplicationStepConfigProps {
     cat: ApplicationCategory
   ) => void
   onUpdateIndividualLots: (accountId: string, lots: number) => void
+  isAccountAppliedForCategory?: (
+    accountId: string,
+    category: ApplicationCategory
+  ) => boolean
   totalLots: number
   totalAmount: number
   loading: boolean
@@ -131,6 +135,7 @@ export function BulkApplicationStepConfig({
   onUpdateIndividualBank,
   onUpdateIndividualCategory,
   onUpdateIndividualLots,
+  isAccountAppliedForCategory,
   totalLots,
   totalAmount,
   loading,
@@ -547,11 +552,20 @@ export function BulkApplicationStepConfig({
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
-                        {ALL_CATEGORIES.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {CATEGORY_CONFIG[c].label}
-                          </SelectItem>
-                        ))}
+                        {ALL_CATEGORIES.map((c) => {
+                          const isApplied =
+                            isAccountAppliedForCategory?.(accountId, c) ?? false
+                          return (
+                            <SelectItem
+                              key={c}
+                              value={c}
+                              disabled={isApplied}
+                            >
+                              {CATEGORY_CONFIG[c].label}
+                              {isApplied ? " (Applied)" : ""}
+                            </SelectItem>
+                          )
+                        })}
                       </SelectContent>
                     </Select>
                   </TableCell>

@@ -8,7 +8,12 @@ import {
   calculateSharesApplied,
   calculateAmountApplied,
 } from "@/lib/calculations/financials"
-import { getCategoryMinLots } from "@/lib/calculations/categories"
+import {
+  getCategoryMinLots,
+  getCategoryGroup,
+  areCategoriesConflicting,
+  type CategoryGroup,
+} from "@/lib/calculations/categories"
 import type {
   Ipo,
   ApplicationAccount,
@@ -76,10 +81,49 @@ export function useBulkApplication({
     [sortColumn, sortDirection]
   )
 
-  const appliedAccountIds = useMemo(
-    () => new Set(existingApplications.map((a) => a.accountId)),
-    [existingApplications]
+  // Map of accountId -> Set of CategoryGroup already applied for this IPO
+  const appliedGroupsByAccount = useMemo(() => {
+    const map = new Map<string, Set<CategoryGroup>>()
+    for (const app of existingApplications) {
+      const group = getCategoryGroup(app.category || "retail")
+      const set = map.get(app.accountId) || new Set<CategoryGroup>()
+      set.add(group)
+      map.set(app.accountId, set)
+    }
+    return map
+  }, [existingApplications])
+
+  // Map of accountId -> list of ApplicationCategory already applied
+  const appliedCategoriesByAccount = useMemo(() => {
+    const map = new Map<string, ApplicationCategory[]>()
+    for (const app of existingApplications) {
+      const list = map.get(app.accountId) || []
+      list.push(app.category || "retail")
+      map.set(app.accountId, list)
+    }
+    return map
+  }, [existingApplications])
+
+  // Check if an account has already applied in a category's group
+  const isAccountAppliedForCategory = useCallback(
+    (accountId: string, category: ApplicationCategory) => {
+      const grp = getCategoryGroup(category)
+      return appliedGroupsByAccount.get(accountId)?.has(grp) || false
+    },
+    [appliedGroupsByAccount]
   )
+
+  // Accounts that have applied for the CURRENT defaultCategory group (for Step 1 dynamic disable state)
+  const appliedAccountIds = useMemo(() => {
+    const ids = new Set<string>()
+    const currentGroup = getCategoryGroup(defaultCategory)
+    appliedGroupsByAccount.forEach((groups, accId) => {
+      if (groups.has(currentGroup)) {
+        ids.add(accId)
+      }
+    })
+    return ids
+  }, [appliedGroupsByAccount, defaultCategory])
 
   const activeAccounts = useMemo(
     () => sortAccounts(accounts.filter((a) => !a.archived)),
@@ -173,14 +217,19 @@ export function useBulkApplication({
     []
   )
 
-  // Map of normalized PAN -> Account for all accounts that have ALREADY applied for this IPO
-  const appliedPanMap = useMemo(() => {
-    const map = new Map<string, ApplicationAccount>()
+  // Map of normalized PAN -> Array of { account, category } for all accounts that have ALREADY applied
+  const appliedPansMap = useMemo(() => {
+    const map = new Map<
+      string,
+      Array<{ account: ApplicationAccount; category: ApplicationCategory }>
+    >()
     for (const app of existingApplications) {
       const acc = accountMap.get(app.accountId)
       const pan = normalizePan(acc?.pan)
       if (pan && acc) {
-        map.set(pan, acc)
+        const list = map.get(pan) || []
+        list.push({ account: acc, category: app.category || "retail" })
+        map.set(pan, list)
       }
     }
     return map
@@ -201,19 +250,34 @@ export function useBulkApplication({
     return map
   }, [selectedAccountIds, accountMap, normalizePan])
 
-  // Intra-batch duplicate PAN groups (where 2 or more selected accounts share the same PAN)
+  // Intra-batch duplicate PAN groups (where 2 or more selected accounts share the same PAN AND conflicting category group)
   const intraBatchDuplicatePans = useMemo(() => {
     const duplicates: Array<{ pan: string; accounts: ApplicationAccount[] }> =
       []
     selectedPansMap.forEach((accs, pan) => {
       if (accs.length > 1) {
-        duplicates.push({ pan, accounts: accs })
+        const conflictingAccs: ApplicationAccount[] = []
+        for (let i = 0; i < accs.length; i++) {
+          for (let j = i + 1; j < accs.length; j++) {
+            const catI = accountConfigs[accs[i].id]?.category || defaultCategory
+            const catJ = accountConfigs[accs[j].id]?.category || defaultCategory
+            if (areCategoriesConflicting(catI, catJ)) {
+              if (!conflictingAccs.some((a) => a.id === accs[i].id))
+                conflictingAccs.push(accs[i])
+              if (!conflictingAccs.some((a) => a.id === accs[j].id))
+                conflictingAccs.push(accs[j])
+            }
+          }
+        }
+        if (conflictingAccs.length > 1) {
+          duplicates.push({ pan, accounts: conflictingAccs })
+        }
       }
     })
     return duplicates
-  }, [selectedPansMap])
+  }, [selectedPansMap, accountConfigs, defaultCategory])
 
-  // Selected accounts that share a PAN with an account that ALREADY applied
+  // Selected accounts that share a PAN with an account that ALREADY applied IN THE SAME CATEGORY GROUP
   const selectedPanConflictsWithApplied = useMemo(() => {
     const conflicts: Array<{
       selectedAccount: ApplicationAccount
@@ -224,19 +288,31 @@ export function useBulkApplication({
     for (const accId of selectedAccountIds) {
       const acc = accountMap.get(accId)
       const pan = normalizePan(acc?.pan)
-      if (pan && acc && appliedPanMap.has(pan)) {
-        const appliedAcc = appliedPanMap.get(pan)!
-        if (appliedAcc.id !== acc.id) {
-          conflicts.push({
-            selectedAccount: acc,
-            appliedAccount: appliedAcc,
-            pan,
-          })
+      if (pan && acc && appliedPansMap.has(pan)) {
+        const selectedCat = accountConfigs[accId]?.category || defaultCategory
+        const appliedEntries = appliedPansMap.get(pan)!
+        for (const applied of appliedEntries) {
+          // SEBI allows Retail/HNI + Shareholder under the same PAN. Only flag if category groups conflict.
+          if (areCategoriesConflicting(selectedCat, applied.category)) {
+            conflicts.push({
+              selectedAccount: acc,
+              appliedAccount: applied.account,
+              pan,
+            })
+            break
+          }
         }
       }
     }
     return conflicts
-  }, [selectedAccountIds, accountMap, appliedPanMap, normalizePan])
+  }, [
+    selectedAccountIds,
+    accountMap,
+    appliedPansMap,
+    accountConfigs,
+    defaultCategory,
+    normalizePan,
+  ])
 
   // Set of account IDs in current selection that are involved in duplicate PAN issues
   const problematicAccountIds = useMemo(() => {
@@ -258,30 +334,30 @@ export function useBulkApplication({
 
   const allAccountsAlreadyApplied =
     activeAccounts.length > 0 &&
-    activeAccounts.every((a) => appliedAccountIds.has(a.id))
+    activeAccounts.every((a) => isAccountAppliedForCategory(a.id, defaultCategory))
 
-  // Helper to check if an unapplied account shares PAN with an already applied account
+  // Helper to check if an unapplied account shares PAN with an already applied account in a conflicting category
   const getPanAppliedWarning = useCallback(
     (account: ApplicationAccount) => {
       const pan = normalizePan(account.pan)
-      if (!pan) return null
-      if (appliedPanMap.has(pan)) {
-        const appliedAcc = appliedPanMap.get(pan)!
-        if (appliedAcc.id !== account.id) {
+      if (!pan || !appliedPansMap.has(pan)) return null
+      const entries = appliedPansMap.get(pan)!
+      for (const entry of entries) {
+        if (areCategoriesConflicting(defaultCategory, entry.category)) {
           return {
             pan,
-            appliedAccountName: appliedAcc.name,
+            appliedAccountName: entry.account.name,
           }
         }
       }
       return null
     },
-    [appliedPanMap, normalizePan]
+    [appliedPansMap, defaultCategory, normalizePan]
   )
 
   const toggleAccountSelection = useCallback(
     (accountId: string) => {
-      if (appliedAccountIds.has(accountId)) return
+      if (isAccountAppliedForCategory(accountId, defaultCategory)) return
 
       setSelectedAccountIds((prev) => {
         if (prev.includes(accountId)) {
@@ -306,12 +382,12 @@ export function useBulkApplication({
         }
       })
     },
-    [appliedAccountIds, defaultBankId, defaultLots, defaultCategory]
+    [isAccountAppliedForCategory, defaultBankId, defaultLots, defaultCategory]
   )
 
   const selectAllMy = useCallback(() => {
     const available = myAccounts
-      .filter((a) => !appliedAccountIds.has(a.id))
+      .filter((a) => !isAccountAppliedForCategory(a.id, defaultCategory))
       .map((a) => a.id)
 
     setSelectedAccountIds((prev) => {
@@ -334,7 +410,7 @@ export function useBulkApplication({
     })
   }, [
     myAccounts,
-    appliedAccountIds,
+    isAccountAppliedForCategory,
     defaultBankId,
     defaultLots,
     defaultCategory,
@@ -342,7 +418,7 @@ export function useBulkApplication({
 
   const selectAllOther = useCallback(() => {
     const available = otherAccounts
-      .filter((a) => !appliedAccountIds.has(a.id))
+      .filter((a) => !isAccountAppliedForCategory(a.id, defaultCategory))
       .map((a) => a.id)
 
     setSelectedAccountIds((prev) => {
@@ -365,7 +441,7 @@ export function useBulkApplication({
     })
   }, [
     otherAccounts,
-    appliedAccountIds,
+    isAccountAppliedForCategory,
     defaultBankId,
     defaultLots,
     defaultCategory,
@@ -373,7 +449,7 @@ export function useBulkApplication({
 
   const selectAllAvailable = useCallback(() => {
     const available = activeAccounts
-      .filter((a) => !appliedAccountIds.has(a.id))
+      .filter((a) => !isAccountAppliedForCategory(a.id, defaultCategory))
       .map((a) => a.id)
 
     setSelectedAccountIds(available)
@@ -393,7 +469,7 @@ export function useBulkApplication({
     })
   }, [
     activeAccounts,
-    appliedAccountIds,
+    isAccountAppliedForCategory,
     defaultBankId,
     defaultLots,
     defaultCategory,
@@ -414,20 +490,41 @@ export function useBulkApplication({
       )
       setDefaultLots(recommendedLots)
 
+      // When switching category, deselect accounts that have already applied for this quota
+      setSelectedAccountIds((prev) => {
+        const eligible = prev.filter((id) => !isAccountAppliedForCategory(id, cat))
+        const deselected = prev.length - eligible.length
+        if (deselected > 0) {
+          toast.add({
+            title: `${deselected} account(s) deselected because they already applied in this quota.`,
+            type: "warning",
+          })
+        }
+        return eligible
+      })
+
       setAccountConfigs((prev) => {
         const updated: Record<string, AccountConfig> = {}
         for (const id of selectedAccountIds) {
-          updated[id] = {
-            accountId: id,
-            bankAccountId: prev[id]?.bankAccountId || defaultBankId,
-            lots: recommendedLots,
-            category: cat,
+          if (!isAccountAppliedForCategory(id, cat)) {
+            updated[id] = {
+              accountId: id,
+              bankAccountId: prev[id]?.bankAccountId || defaultBankId,
+              lots: recommendedLots,
+              category: cat,
+            }
           }
         }
         return updated
       })
     },
-    [ipo.lotSize, ipo.issuePrice, selectedAccountIds, defaultBankId]
+    [
+      ipo.lotSize,
+      ipo.issuePrice,
+      selectedAccountIds,
+      defaultBankId,
+      isAccountAppliedForCategory,
+    ]
   )
 
   const applyGlobalBank = useCallback(
@@ -486,6 +583,14 @@ export function useBulkApplication({
 
   const updateIndividualCategory = useCallback(
     (accountId: string, cat: ApplicationCategory) => {
+      if (isAccountAppliedForCategory(accountId, cat)) {
+        toast.add({
+          title: `This account has already applied under the ${cat.toUpperCase()} category for this IPO.`,
+          type: "warning",
+        })
+        return
+      }
+
       const minLots = getCategoryMinLots(cat, ipo.lotSize, ipo.issuePrice)
       setAccountConfigs((prev) => {
         const currentLots = prev[accountId]?.lots || defaultLots
@@ -500,7 +605,13 @@ export function useBulkApplication({
         }
       })
     },
-    [ipo.lotSize, ipo.issuePrice, defaultLots, defaultBankId]
+    [
+      ipo.lotSize,
+      ipo.issuePrice,
+      defaultLots,
+      defaultBankId,
+      isAccountAppliedForCategory,
+    ]
   )
 
   const updateIndividualLots = useCallback(
@@ -545,14 +656,15 @@ export function useBulkApplication({
         throw new Error("No accounts selected")
       }
 
-      // Filter out any accounts that already have applications (race condition / double-submit guard)
-      const sanitizedAccountIds = selectedAccountIds.filter(
-        (id) => !appliedAccountIds.has(id)
-      )
+      // Filter out any accounts that already have applications in the same category group (race condition / double-submit guard)
+      const sanitizedAccountIds = selectedAccountIds.filter((id) => {
+        const cat = accountConfigs[id]?.category || defaultCategory
+        return !isAccountAppliedForCategory(id, cat)
+      })
 
       if (sanitizedAccountIds.length === 0) {
         throw new Error(
-          "All selected accounts have already applied for this IPO."
+          "All selected accounts have already applied under their chosen category for this IPO."
         )
       }
 
@@ -604,7 +716,7 @@ export function useBulkApplication({
     }
   }, [
     selectedAccountIds,
-    appliedAccountIds,
+    isAccountAppliedForCategory,
     accountConfigs,
     defaultBankId,
     defaultCategory,
@@ -723,6 +835,8 @@ export function useBulkApplication({
     showDuplicatePanConfirm,
     setShowDuplicatePanConfirm,
     appliedAccountIds,
+    appliedCategoriesByAccount,
+    isAccountAppliedForCategory,
     activeAccounts,
     myAccounts,
     otherAccounts,
