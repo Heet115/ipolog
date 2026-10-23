@@ -100,8 +100,14 @@ export function BulkApplicationStepAccounts({
           <Info className="size-4 text-primary" />
           <AlertDescription className="flex items-center justify-between gap-2">
             <span>
-              <strong>All Accounts Applied for {CATEGORY_CONFIG[defaultCategory].shortLabel}:</strong> Every active account in
-              your portfolio has already applied under this category. Switch Quota above to <strong>Shareholder</strong> or <strong>Employee</strong> to record additional eligible applications.
+              <strong>
+                All Accounts Applied for{" "}
+                {CATEGORY_CONFIG[defaultCategory].shortLabel}:
+              </strong>{" "}
+              Every active account in your portfolio has already applied under
+              this category. Switch Quota above to <strong>Shareholder</strong>{" "}
+              or <strong>Employee</strong> to record additional eligible
+              applications.
             </span>
             <Button
               type="button"
@@ -124,7 +130,8 @@ export function BulkApplicationStepAccounts({
               {appliedAccountIds.size} of {activeAccounts.length}
             </span>
             <span>
-              accounts have applied under {CATEGORY_CONFIG[defaultCategory].shortLabel}
+              accounts have applied under{" "}
+              {CATEGORY_CONFIG[defaultCategory].shortLabel}
             </span>
           </div>
           <Button
@@ -362,8 +369,8 @@ export function BulkApplicationStepAccounts({
                       </Badge>
                     )}
                     {!alreadyApplied &&
-                      (appliedCategoriesByAccount?.get(account.id)?.length || 0) >
-                        0 && (
+                      (appliedCategoriesByAccount?.get(account.id)?.length ||
+                        0) > 0 && (
                         <Badge
                           variant="secondary"
                           className="shrink-0 py-0 font-mono text-[9px] text-muted-foreground"
@@ -505,8 +512,8 @@ export function BulkApplicationStepAccounts({
                       </Badge>
                     )}
                     {!alreadyApplied &&
-                      (appliedCategoriesByAccount?.get(account.id)?.length || 0) >
-                        0 && (
+                      (appliedCategoriesByAccount?.get(account.id)?.length ||
+                        0) > 0 && (
                         <Badge
                           variant="secondary"
                           className="shrink-0 py-0 font-mono text-[9px] text-muted-foreground"

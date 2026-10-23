@@ -214,4 +214,3 @@ export function areCategoriesConflicting(
 ): boolean {
   return getCategoryGroup(catA) === getCategoryGroup(catB)
 }
-

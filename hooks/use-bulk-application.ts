@@ -334,7 +334,9 @@ export function useBulkApplication({
 
   const allAccountsAlreadyApplied =
     activeAccounts.length > 0 &&
-    activeAccounts.every((a) => isAccountAppliedForCategory(a.id, defaultCategory))
+    activeAccounts.every((a) =>
+      isAccountAppliedForCategory(a.id, defaultCategory)
+    )
 
   // Helper to check if an unapplied account shares PAN with an already applied account in a conflicting category
   const getPanAppliedWarning = useCallback(
@@ -492,7 +494,9 @@ export function useBulkApplication({
 
       // When switching category, deselect accounts that have already applied for this quota
       setSelectedAccountIds((prev) => {
-        const eligible = prev.filter((id) => !isAccountAppliedForCategory(id, cat))
+        const eligible = prev.filter(
+          (id) => !isAccountAppliedForCategory(id, cat)
+        )
         const deselected = prev.length - eligible.length
         if (deselected > 0) {
           toast.add({

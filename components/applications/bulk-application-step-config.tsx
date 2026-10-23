@@ -556,11 +556,7 @@ export function BulkApplicationStepConfig({
                           const isApplied =
                             isAccountAppliedForCategory?.(accountId, c) ?? false
                           return (
-                            <SelectItem
-                              key={c}
-                              value={c}
-                              disabled={isApplied}
-                            >
+                            <SelectItem key={c} value={c} disabled={isApplied}>
                               {CATEGORY_CONFIG[c].label}
                               {isApplied ? " (Applied)" : ""}
                             </SelectItem>
