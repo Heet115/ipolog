@@ -204,7 +204,10 @@ export function getApplicationTableColumns({
           return (
             <div className="flex flex-col items-end gap-0.5">
               <span className="text-xs font-semibold text-foreground">
-                {shares} sh ({app.allottedLots || 1} lot)
+                {shares} sh
+                {app.allottedLots && app.allottedLots > 0
+                  ? ` (${app.allottedLots} lot${app.allottedLots > 1 ? "s" : ""})`
+                  : ""}
               </span>
               {currPrice && (
                 <span className="font-mono text-[10px] font-semibold text-success">

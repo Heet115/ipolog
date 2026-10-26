@@ -12,6 +12,7 @@ import {
   detectRegistrar,
   getRegistrarPortalUrl,
 } from "@/lib/utils/registrars"
+import { isShareBasedAllotment } from "@/lib/calculations/categories"
 import type {
   Ipo,
   Application,
@@ -95,10 +96,19 @@ export function useCheckAllotment({
 
     setUpdatingAppId(applicationId)
     try {
+      const isShareBased = isShareBasedAllotment(app.category || "retail")
       const allottedLots =
-        status === "allotted" ? app.allottedLots || app.lotsApplied || 1 : 0
+        status === "allotted"
+          ? isShareBased
+            ? 0
+            : app.allottedLots || app.lotsApplied || 1
+          : 0
       const allottedShares =
-        status === "allotted" ? allottedLots * ipo.lotSize : 0
+        status === "allotted"
+          ? isShareBased
+            ? (app.allottedShares ?? app.sharesApplied)
+            : allottedLots * ipo.lotSize
+          : 0
 
       await updateApplication(userId, applicationId, {
         status,

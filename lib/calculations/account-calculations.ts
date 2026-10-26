@@ -114,7 +114,7 @@ export function calculateReceivablesSummary(
       accountId: account.id,
       accountName: account.name,
       allottedShares,
-      allottedLots: app.allottedLots || 1,
+      allottedLots: app.allottedLots ?? 0,
       issuePrice,
       salePrice,
       saleProceeds,
@@ -227,7 +227,10 @@ export function calculateAccountMoneySummary(
       pendingCount++
     } else if (app.status === "allotted") {
       allottedCount++
-      const shares = app.allottedShares ?? 0
+      const shares =
+        app.allottedShares !== undefined && app.allottedShares >= 0
+          ? app.allottedShares
+          : (app.allottedLots || 1) * (ipo?.lotSize || 1)
       totalInvested += calculateInvestment(shares, issuePrice)
     } else if (app.status === "not_allotted") {
       notAllottedCount++

@@ -9,6 +9,7 @@ import {
   updateApplicationsBankBatch,
   updateApplicationsStatusBatch,
 } from "@/lib/firebase/applications"
+import { isShareBasedAllotment } from "@/lib/calculations/categories"
 import type { DataTableFilterPill } from "@/components/ui/data-table"
 import type {
   Ipo,
@@ -84,7 +85,12 @@ export function useApplicationTable({
         const updates = selectedApps.map((app) => ({
           applicationId: app.id,
           status,
-          allottedLots: status === "allotted" ? app.lotsApplied : 0,
+          allottedLots:
+            status === "allotted"
+              ? isShareBasedAllotment(app.category || "retail")
+                ? 0
+                : app.lotsApplied
+              : 0,
           allottedShares: status === "allotted" ? app.sharesApplied : 0,
         }))
         await updateApplicationsStatusBatch(userId, updates)

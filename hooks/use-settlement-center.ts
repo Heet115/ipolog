@@ -214,7 +214,7 @@ export function useSettlementCenter({
       applicationId: item.applicationId,
       ipoName: item.ipoName,
       allottedShares: item.allottedShares || 0,
-      allottedLots: item.allottedLots || 1,
+      allottedLots: item.allottedLots ?? 0,
       issuePrice: item.issuePrice || 0,
       investedAmount: item.investedAmount,
       salePrice: item.salePrice || 0,

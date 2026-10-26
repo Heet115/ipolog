@@ -296,9 +296,16 @@ export function getLedgerColumns({
         }
 
         if (app.status === "allotted") {
+          const shares =
+            app.allottedShares ??
+            (app.allottedLots !== undefined
+              ? app.allottedLots * (ipo?.lotSize || 1)
+              : 0)
           return (
             <span className="font-mono text-[10px] text-muted-foreground">
-              {app.allottedLots} lot{app.allottedLots === 1 ? "" : "s"} held
+              {app.allottedLots && app.allottedLots > 0
+                ? `${app.allottedLots} lot${app.allottedLots === 1 ? "" : "s"} held`
+                : `${shares} sh held`}
             </span>
           )
         }

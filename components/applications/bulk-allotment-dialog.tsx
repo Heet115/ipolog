@@ -103,6 +103,7 @@ function BulkAllotmentForm({
     error,
     setStatus,
     setAllottedLots,
+    setAllottedShares,
     handleAllAllotted,
     handleAllNotAllotted,
     handleResetToPending,
@@ -180,6 +181,7 @@ function BulkAllotmentForm({
         onToggleSort={toggleSort}
         onSetStatus={setStatus}
         onSetAllottedLots={setAllottedLots}
+        onSetAllottedShares={setAllottedShares}
       />
 
       <DialogFooter className="flex flex-col-reverse gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-end">

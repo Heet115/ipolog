@@ -271,7 +271,10 @@ export function SettlementPartnerCard({
                           </Link>
                         </td>
                         <td className="p-2.5 text-right text-muted-foreground">
-                          {item.allottedShares} ({item.allottedLots}L)
+                          {item.allottedShares}
+                          {item.allottedLots > 0
+                            ? ` (${item.allottedLots}L)`
+                            : " sh"}
                         </td>
                         <td className="p-2.5 text-right text-muted-foreground">
                           {formatCurrency(item.investedAmount)}

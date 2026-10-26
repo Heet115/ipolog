@@ -10,7 +10,10 @@ import {
 } from "@/lib/firebase/applications"
 import { calculateApplicationProfit } from "@/lib/calculations/financials"
 import { getBankDisplayName } from "@/lib/utils/bank-helpers"
-import { inferCategoryFromAmount } from "@/lib/calculations/categories"
+import {
+  inferCategoryFromAmount,
+  isShareBasedAllotment,
+} from "@/lib/calculations/categories"
 import type { DataTableFilterPill } from "@/components/ui/data-table"
 import type {
   Ipo,
@@ -280,7 +283,12 @@ export function useMasterLedger({
         const updates = selectedApps.map((app) => ({
           applicationId: app.id,
           status,
-          allottedLots: status === "allotted" ? app.lotsApplied : undefined,
+          allottedLots:
+            status === "allotted"
+              ? isShareBasedAllotment(app.category || "retail")
+                ? 0
+                : app.lotsApplied
+              : undefined,
           allottedShares: status === "allotted" ? app.sharesApplied : undefined,
         }))
         await updateApplicationsStatusBatch(userId, updates)

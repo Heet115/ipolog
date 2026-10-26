@@ -210,7 +210,13 @@ export function calculateIpoMoneySummary(
       blockedAmount += app.amountApplied || 0
     } else if (app.status === "allotted") {
       allottedCount++
-      const shares = app.allottedShares ?? 0
+      const lotSize =
+        app.lotsApplied > 0 && app.sharesApplied > 0
+          ? Math.round(app.sharesApplied / app.lotsApplied)
+          : 1
+      const shares =
+        app.allottedShares ??
+        (app.allottedLots !== undefined ? app.allottedLots * lotSize : 0)
       totalAllottedShares += shares
       investedAmount += calculateInvestment(shares, issuePrice)
     } else if (app.status === "not_allotted") {
@@ -218,7 +224,13 @@ export function calculateIpoMoneySummary(
       refundExpected += app.amountApplied || 0
     } else if (app.status === "sold") {
       soldCount++
-      const shares = app.allottedShares ?? 0
+      const lotSize =
+        app.lotsApplied > 0 && app.sharesApplied > 0
+          ? Math.round(app.sharesApplied / app.lotsApplied)
+          : 1
+      const shares =
+        app.allottedShares ??
+        (app.allottedLots !== undefined ? app.allottedLots * lotSize : 0)
       totalAllottedShares += shares
       investedAmount += calculateInvestment(shares, issuePrice)
     }

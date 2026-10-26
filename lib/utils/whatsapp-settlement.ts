@@ -56,7 +56,7 @@ export function calculateSettlement(
 
   const allottedShares =
     application.allottedShares || (application.allottedLots || 1) * ipo.lotSize
-  const allottedLots = application.allottedLots || 1
+  const allottedLots = application.allottedLots ?? 0
   const issuePrice = ipo.issuePrice || 0
   const investedAmount = Math.round(allottedShares * issuePrice)
 
@@ -145,9 +145,11 @@ export function formatWhatsAppSettlementMessage(
   lines.push("")
 
   lines.push(`*Allotment & Sale Details*`)
-  lines.push(
-    `• Allotted: ${calc.allottedShares} shares (${calc.allottedLots} lot${calc.allottedLots > 1 ? "s" : ""})`
-  )
+  const lotText =
+    calc.allottedLots > 0
+      ? ` (${calc.allottedLots} lot${calc.allottedLots > 1 ? "s" : ""})`
+      : ""
+  lines.push(`• Allotted: ${calc.allottedShares} shares${lotText}`)
   lines.push(`• Issue Price: ₹${calc.issuePrice}`)
   lines.push(
     `• Capital Applied: ${formatInr(calc.investedAmount)} (Paid by ${funderName})`
@@ -295,9 +297,11 @@ export function formatMultiIpoWhatsAppSettlementMessage(
   items.forEach((item, idx) => {
     const isLoss = item.grossProfit < 0
     lines.push(`*${idx + 1}. ${item.ipoName}*`)
-    lines.push(
-      `• Allotted: ${item.allottedShares} shares (${item.allottedLots} lot${item.allottedLots > 1 ? "s" : ""})`
-    )
+    const lotText =
+      item.allottedLots > 0
+        ? ` (${item.allottedLots} lot${item.allottedLots > 1 ? "s" : ""})`
+        : ""
+    lines.push(`• Allotted: ${item.allottedShares} shares${lotText}`)
     lines.push(
       `• Capital Applied: ${formatInr(item.investedAmount)} (Paid by ${funderName})`
     )

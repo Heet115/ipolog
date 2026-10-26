@@ -194,7 +194,12 @@ export function CheckAllotmentItem({
         >
           <CheckCircle2 className="size-3" data-icon="inline-start" />
           Allotted
-          {isAllotted && app.allottedLots ? ` (${app.allottedLots}L)` : ""}
+          {isAllotted &&
+            (app.allottedLots && app.allottedLots > 0
+              ? ` (${app.allottedLots}L)`
+              : app.allottedShares
+                ? ` (${app.allottedShares} sh)`
+                : "")}
         </Button>
         <Button
           type="button"

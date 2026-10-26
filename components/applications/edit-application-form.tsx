@@ -68,6 +68,9 @@ export function EditApplicationForm({
     setStatus,
     allottedLots,
     setAllottedLots,
+    allottedShares,
+    setAllottedShares,
+    isShareBased,
     applicationDate,
     setApplicationDate,
     notes,
@@ -238,21 +241,38 @@ export function EditApplicationForm({
 
             {status === "allotted" && (
               <Field>
-                <FieldLabel htmlFor="edit-allotted-lots">
-                  Allotted Lots
+                <FieldLabel
+                  htmlFor={
+                    isShareBased ? "edit-allotted-shares" : "edit-allotted-lots"
+                  }
+                >
+                  {isShareBased ? "Allotted Shares (Qty)" : "Allotted Lots"}
                 </FieldLabel>
-                <Input
-                  id="edit-allotted-lots"
-                  type="number"
-                  min="1"
-                  max={numLots}
-                  step="1"
-                  value={allottedLots}
-                  onChange={(e) => setAllottedLots(e.target.value)}
-                  placeholder={`Max ${numLots}`}
-                  disabled={loading}
-                  className="font-mono"
-                />
+                {isShareBased ? (
+                  <Input
+                    id="edit-allotted-shares"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={allottedShares}
+                    onChange={(e) => setAllottedShares(e.target.value)}
+                    placeholder={`Applied: ${sharesApplied} sh`}
+                    disabled={loading}
+                    className="font-mono"
+                  />
+                ) : (
+                  <Input
+                    id="edit-allotted-lots"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={allottedLots}
+                    onChange={(e) => setAllottedLots(e.target.value)}
+                    placeholder={`Applied: ${numLots}`}
+                    disabled={loading}
+                    className="font-mono"
+                  />
+                )}
               </Field>
             )}
           </div>

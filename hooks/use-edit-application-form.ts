@@ -14,6 +14,7 @@ import {
 import {
   getCategoryMinLots,
   validateCategoryLots,
+  isShareBasedAllotment,
 } from "@/lib/calculations/categories"
 import type {
   Ipo,
@@ -48,6 +49,14 @@ export function useEditApplicationForm({
       ? String(application.allottedLots)
       : ""
   )
+  const [allottedShares, setAllottedShares] = useState(
+    application.allottedShares !== undefined
+      ? String(application.allottedShares)
+      : application.allottedLots !== undefined && application.allottedLots > 0
+        ? String(application.allottedLots * ipo.lotSize)
+        : ""
+  )
+  const isShareBased = isShareBasedAllotment(category)
   const [applicationDate, setApplicationDate] = useState<Date | undefined>(
     application.applicationDate?.toDate?.() ?? undefined
   )
@@ -76,6 +85,9 @@ export function useEditApplicationForm({
     const minLots = getCategoryMinLots(newCat, ipo.lotSize, ipo.issuePrice)
     if (numLots < minLots) {
       setLotsApplied(String(minLots))
+    }
+    if (isShareBasedAllotment(newCat) && !allottedShares) {
+      setAllottedShares(String(sharesApplied))
     }
   }
 
@@ -117,17 +129,22 @@ export function useEditApplicationForm({
     setLoading(true)
 
     try {
-      const numAllottedLots =
-        status === "allotted" || status === "sold"
-          ? parseInt(allottedLots, 10) || numLots
-          : status === "not_allotted"
-            ? 0
-            : undefined
+      let finalAllottedLots: number | undefined
+      let finalAllottedShares: number | undefined
 
-      const finalAllottedShares =
-        numAllottedLots !== undefined
-          ? numAllottedLots * ipo.lotSize
-          : undefined
+      if (status === "allotted" || status === "sold") {
+        if (isShareBased) {
+          finalAllottedShares = parseInt(allottedShares, 10) || sharesApplied
+          finalAllottedLots = 0
+        } else {
+          finalAllottedLots = parseInt(allottedLots, 10) || numLots
+          finalAllottedShares = finalAllottedLots * ipo.lotSize
+        }
+      } else if (status === "not_allotted") {
+        finalAllottedLots = 0
+        finalAllottedShares = 0
+      }
+
       await updateApplication(userId, application.id, {
         bankAccountId,
         category,
@@ -135,7 +152,7 @@ export function useEditApplicationForm({
         sharesApplied,
         amountApplied,
         status,
-        allottedLots: numAllottedLots,
+        allottedLots: finalAllottedLots,
         allottedShares: finalAllottedShares,
         applicationDate: applicationDate
           ? Timestamp.fromDate(applicationDate)
@@ -167,6 +184,9 @@ export function useEditApplicationForm({
     setStatus,
     allottedLots,
     setAllottedLots,
+    allottedShares,
+    setAllottedShares,
+    isShareBased,
     applicationDate,
     setApplicationDate,
     notes,

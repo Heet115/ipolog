@@ -214,3 +214,12 @@ export function areCategoriesConflicting(
 ): boolean {
   return getCategoryGroup(catA) === getCategoryGroup(catB)
 }
+
+/**
+ * Returns true for categories where allotment is in shares (not lots).
+ * Shareholder and Employee quotas can receive arbitrary share quantities
+ * that don't follow standard lot-size structure.
+ */
+export function isShareBasedAllotment(category: ApplicationCategory): boolean {
+  return category === "shareholder" || category === "employee"
+}

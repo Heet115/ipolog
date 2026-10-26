@@ -21,6 +21,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency, formatBankAccount } from "@/lib/utils/ipo"
+import { isShareBasedAllotment } from "@/lib/calculations/categories"
+import { CATEGORY_CONFIG } from "@/lib/calculations/categories"
 import type {
   Ipo,
   Application,
@@ -43,6 +45,7 @@ interface BulkAllotmentTableProps {
   ) => void
   onSetStatus: (appId: string, status: ApplicationStatus) => void
   onSetAllottedLots: (appId: string, lots: number) => void
+  onSetAllottedShares: (appId: string, shares: number) => void
 }
 
 export function BulkAllotmentTable({
@@ -56,6 +59,7 @@ export function BulkAllotmentTable({
   onToggleSort,
   onSetStatus,
   onSetAllottedLots,
+  onSetAllottedShares,
 }: BulkAllotmentTableProps) {
   return (
     <div className="max-h-[340px] min-w-0 overflow-x-auto overflow-y-auto rounded-none border border-border/80">
@@ -144,7 +148,7 @@ export function BulkAllotmentTable({
                 onClick={() => onToggleSort("invested")}
                 className="ml-auto inline-flex flex-row-reverse items-center gap-1 font-semibold transition-colors hover:text-foreground"
               >
-                Invested / Lots
+                Invested / Qty
                 {sortColumn === "invested" ? (
                   sortDirection === "asc" ? (
                     <ArrowUp className="size-3 text-foreground" />
@@ -166,6 +170,7 @@ export function BulkAllotmentTable({
             const state = rowStates[app.id] || {
               status: app.status,
               allottedLots: app.allottedLots ?? app.lotsApplied,
+              allottedShares: app.allottedShares ?? app.sharesApplied,
             }
 
             const isSold = app.status === "sold"
@@ -173,10 +178,12 @@ export function BulkAllotmentTable({
             const isNotAllotted = state.status === "not_allotted"
             const isPending = state.status === "pending"
 
+            const isShareBased = isShareBasedAllotment(app.category || "retail")
+            const currentShares = isShareBased
+              ? state.allottedShares
+              : state.allottedLots * ipo.lotSize
             const currentInvested =
-              isAllotted || isSold
-                ? state.allottedLots * ipo.lotSize * ipo.issuePrice
-                : 0
+              isAllotted || isSold ? currentShares * ipo.issuePrice : 0
 
             return (
               <TableRow
@@ -206,6 +213,14 @@ export function BulkAllotmentTable({
                         ? "My"
                         : `${account?.profitSharePercent}%`}
                     </Badge>
+                    {app.category && app.category !== "retail" && (
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 px-1 py-0 text-[9px] font-normal"
+                      >
+                        {CATEGORY_CONFIG[app.category].shortLabel}
+                      </Badge>
+                    )}
                   </div>
                 </TableCell>
 
@@ -283,61 +298,126 @@ export function BulkAllotmentTable({
                   )}
                 </TableCell>
 
-                {/* Allotted Lots Stepper / Invested Calculation */}
+                {/* Allotted Quantity Stepper / Invested Calculation */}
                 <TableCell className="text-right font-mono text-xs">
                   {isAllotted ? (
                     <div className="flex flex-col items-end gap-1">
-                      <div className="flex items-center rounded-none border bg-background">
-                        <button
-                          type="button"
-                          aria-label="Decrease allotted lots"
-                          disabled={state.allottedLots <= 1}
-                          onClick={() =>
-                            onSetAllottedLots(app.id, state.allottedLots - 1)
-                          }
-                          className="px-1.5 py-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
-                        >
-                          <Minus className="size-2.5" />
-                        </button>
-                        <Input
-                          type="number"
-                          aria-label="Allotted lots"
-                          min={1}
-                          max={app.lotsApplied}
-                          value={
-                            state.allottedLots === 0 ? "" : state.allottedLots
-                          }
-                          onChange={(e) => {
-                            const val = e.target.value
-                            if (val === "") {
-                              onSetAllottedLots(app.id, 0)
-                            } else {
-                              const parsed = parseInt(val, 10)
-                              onSetAllottedLots(
-                                app.id,
-                                isNaN(parsed) ? 0 : parsed
-                              )
+                      {isShareBased ? (
+                        /* Share-based input for Shareholder / Employee */
+                        <div className="flex flex-col items-end gap-0.5">
+                          <div className="flex items-center rounded-none border bg-background">
+                            <button
+                              type="button"
+                              aria-label="Decrease allotted shares"
+                              disabled={state.allottedShares <= 1}
+                              onClick={() =>
+                                onSetAllottedShares(
+                                  app.id,
+                                  state.allottedShares - 1
+                                )
+                              }
+                              className="px-1.5 py-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                            >
+                              <Minus className="size-2.5" />
+                            </button>
+                            <Input
+                              type="number"
+                              aria-label="Allotted shares"
+                              min={1}
+                              value={
+                                state.allottedShares === 0
+                                  ? ""
+                                  : state.allottedShares
+                              }
+                              onChange={(e) => {
+                                const val = e.target.value
+                                if (val === "") {
+                                  onSetAllottedShares(app.id, 0)
+                                } else {
+                                  const parsed = parseInt(val, 10)
+                                  onSetAllottedShares(
+                                    app.id,
+                                    isNaN(parsed) ? 0 : parsed
+                                  )
+                                }
+                              }}
+                              onBlur={() => {
+                                if (state.allottedShares <= 0) {
+                                  onSetAllottedShares(app.id, 1)
+                                }
+                              }}
+                              className="h-6 w-14 [appearance:textfield] border-0 p-0 text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            />
+                            <button
+                              type="button"
+                              aria-label="Increase allotted shares"
+                              onClick={() =>
+                                onSetAllottedShares(
+                                  app.id,
+                                  state.allottedShares + 1
+                                )
+                              }
+                              className="px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
+                            >
+                              <Plus className="size-2.5" />
+                            </button>
+                          </div>
+                          <span className="text-[9px] text-muted-foreground">
+                            shares
+                          </span>
+                        </div>
+                      ) : (
+                        /* Lot-based input for Retail / sHNI / bHNI */
+                        <div className="flex items-center rounded-none border bg-background">
+                          <button
+                            type="button"
+                            aria-label="Decrease allotted lots"
+                            disabled={state.allottedLots <= 1}
+                            onClick={() =>
+                              onSetAllottedLots(app.id, state.allottedLots - 1)
                             }
-                          }}
-                          onBlur={() => {
-                            if (state.allottedLots <= 0) {
-                              onSetAllottedLots(app.id, 1)
+                            className="px-1.5 py-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                          >
+                            <Minus className="size-2.5" />
+                          </button>
+                          <Input
+                            type="number"
+                            aria-label="Allotted lots"
+                            min={1}
+                            value={
+                              state.allottedLots === 0 ? "" : state.allottedLots
                             }
-                          }}
-                          className="h-6 w-10 [appearance:textfield] border-0 p-0 text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                        <button
-                          type="button"
-                          aria-label="Increase allotted lots"
-                          disabled={state.allottedLots >= app.lotsApplied}
-                          onClick={() =>
-                            onSetAllottedLots(app.id, state.allottedLots + 1)
-                          }
-                          className="px-1.5 py-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
-                        >
-                          <Plus className="size-2.5" />
-                        </button>
-                      </div>
+                            onChange={(e) => {
+                              const val = e.target.value
+                              if (val === "") {
+                                onSetAllottedLots(app.id, 0)
+                              } else {
+                                const parsed = parseInt(val, 10)
+                                onSetAllottedLots(
+                                  app.id,
+                                  isNaN(parsed) ? 0 : parsed
+                                )
+                              }
+                            }}
+                            onBlur={() => {
+                              if (state.allottedLots <= 0) {
+                                onSetAllottedLots(app.id, 1)
+                              }
+                            }}
+                            className="h-6 w-10 [appearance:textfield] border-0 p-0 text-center text-xs font-bold [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          />
+                          <button
+                            type="button"
+                            aria-label="Increase allotted lots"
+                            onClick={() =>
+                              onSetAllottedLots(app.id, state.allottedLots + 1)
+                            }
+                            className="px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
+                          >
+                            <Plus className="size-2.5" />
+                          </button>
+                        </div>
+                      )}
                       <span className="text-xs font-bold text-success">
                         {formatCurrency(currentInvested)}
                       </span>
@@ -345,8 +425,9 @@ export function BulkAllotmentTable({
                   ) : isSold ? (
                     <div className="flex flex-col items-end gap-0.5">
                       <span className="text-xs font-semibold text-foreground">
-                        {state.allottedLots} lot
-                        {state.allottedLots > 1 ? "s" : ""}
+                        {isShareBased
+                          ? `${state.allottedShares} share${state.allottedShares > 1 ? "s" : ""}`
+                          : `${state.allottedLots} lot${state.allottedLots > 1 ? "s" : ""}`}
                       </span>
                       <span className="text-[10px] font-semibold text-muted-foreground">
                         {formatCurrency(currentInvested)}

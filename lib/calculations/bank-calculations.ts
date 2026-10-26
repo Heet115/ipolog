@@ -40,7 +40,11 @@ export function calculateBankMoneySummary(
       activeApplicationsCount++
       blockedAmount += app.amountApplied || 0
     } else if (app.status === "allotted" || app.status === "sold") {
-      const shares = app.allottedShares ?? 0
+      const shares =
+        app.allottedShares ??
+        (app.allottedLots !== undefined
+          ? app.allottedLots * (ipo?.lotSize || 1)
+          : 0)
       investedAmount += calculateInvestment(shares, issuePrice)
     }
   }
